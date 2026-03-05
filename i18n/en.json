@@ -1,0 +1,54 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "next": "Next",
+    "back": "Back",
+    "done": "Done"
+  },
+  "safety": {
+    "safe": "Safe",
+    "modify": "Modify",
+    "avoid": "Avoid"
+  },
+  "tabs": {
+    "home": "Home",
+    "exercises": "Exercises",
+    "workout": "Workout",
+    "progress": "Progress",
+    "nutrition": "Nutrition"
+  },
+  "consent": {
+    "title": "Welcome to SpineFlow",
+    "subtitle": "Your safe gym companion for scoliosis",
+    "accept": "Accept & Continue"
+  },
+  "onboarding": {
+    "surgery": {
+      "title": "Have you had spinal surgery?",
+      "subtitle": "This significantly affects which exercises are safe",
+      "none": "No surgery",
+      "partial": "Partial spinal fusion",
+      "full": "Long/full spinal fusion",
+      "vbt": "Vertebral Body Tethering",
+      "rods": "Growing rods / MAGEC"
+    },
+    "curveType": {
+      "title": "What's your scoliosis type?",
+      "subtitle": "Determines curve-specific exercise modifications",
+      "thoracic": "Thoracic",
+      "lumbar": "Lumbar",
+      "thoracolumbar": "Thoracolumbar",
+      "scurve": "S-Curve",
+      "unsure": "Not sure"
+    },
+    "goal": {
+      "title": "Your main goal?",
+      "subtitle": "We'll optimize your plan for this",
+      "muscle": "Build Muscle",
+      "strength": "Get Stronger",
+      "posture": "Fix Posture",
+      "pain": "Reduce Pain"
+    }
+  }
+}

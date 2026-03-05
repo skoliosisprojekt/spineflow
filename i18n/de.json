@@ -1,0 +1,54 @@
+{
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "next": "Weiter",
+    "back": "Zurück",
+    "done": "Fertig"
+  },
+  "safety": {
+    "safe": "Sicher",
+    "modify": "Anpassen",
+    "avoid": "Vermeiden"
+  },
+  "tabs": {
+    "home": "Start",
+    "exercises": "Übungen",
+    "workout": "Training",
+    "progress": "Fortschritt",
+    "nutrition": "Ernährung"
+  },
+  "consent": {
+    "title": "Willkommen bei SpineFlow",
+    "subtitle": "Ihr sicherer Trainingsbegleiter für Skoliose",
+    "accept": "Akzeptieren & Weiter"
+  },
+  "onboarding": {
+    "surgery": {
+      "title": "Hatten Sie eine Wirbelsäulenoperation?",
+      "subtitle": "Dies beeinflusst maßgeblich, welche Übungen sicher sind",
+      "none": "Keine Operation",
+      "partial": "Teilweise Wirbelsäulenfusion",
+      "full": "Lange/vollständige Wirbelsäulenfusion",
+      "vbt": "Wirbelkörper-Tethering",
+      "rods": "Wachstumsstangen / MAGEC"
+    },
+    "curveType": {
+      "title": "Welcher Skoliosetyp haben Sie?",
+      "subtitle": "Bestimmt kurvenspezifische Übungsanpassungen",
+      "thoracic": "Thorakal",
+      "lumbar": "Lumbal",
+      "thoracolumbar": "Thorakolumbal",
+      "scurve": "S-Kurve",
+      "unsure": "Unsicher"
+    },
+    "goal": {
+      "title": "Ihr Hauptziel?",
+      "subtitle": "Wir optimieren Ihren Plan dafür",
+      "muscle": "Muskeln aufbauen",
+      "strength": "Stärker werden",
+      "posture": "Haltung verbessern",
+      "pain": "Schmerzen reduzieren"
+    }
+  }
+}
