@@ -1,80 +1,64 @@
-import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
-
-import { useProfileStore } from '../stores/profileStore';
-import { useAuthStore } from '../stores/authStore';
+import { Stack, useRouter, useSegments } from 'expo-router';
+import { ActivityIndicator, View } from 'react-native';
 import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../stores/authStore';
+import { useSettingsStore, useProfileStore } from '../stores/settingsStore';
+import { Session } from '@supabase/supabase-js';
 
 export default function RootLayout() {
-  const auth = useAuthStore();
-  const profile = useProfileStore();
-  const segments = useSegments();
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const [isReady, setIsReady] = useState(false);
+  const segments = useSegments();
+  const { isAuthenticated, consentGiven, profileComplete, welcomeSeen,
+          setAuth, clearAuth, loadPersistedState } = useAuthStore();
+  const { loadSettings } = useSettingsStore();
+  const { loadProfile } = useProfileStore();
 
-  // 1. Initialize auth on mount
   useEffect(() => {
+    const init = async () => {
+      await loadPersistedState();
+      await loadSettings();
+      await loadProfile();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) setAuth(session.user.id, session.user.email || '');
+      setIsLoading(false);
+    };
+    init();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        if (session) {
-          auth.setSession(session);
-          auth.setUser(session.user);
-        } else {
-          auth.setSession(null);
-          auth.setUser(null);
-        }
-        auth.setLoading(false);
-        setIsReady(true);
+      (_event: string, session: Session | null) => {
+        if (session?.user) setAuth(session.user.id, session.user.email || '');
+        else clearAuth();
       }
     );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        auth.setSession(session);
-        auth.setUser(session.user);
-      }
-      auth.setLoading(false);
-      setIsReady(true);
-    }).catch(() => {
-      auth.setLoading(false);
-      setIsReady(true);
-    });
-
-    const timeout = setTimeout(() => setIsReady(true), 3000);
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
-  // 2. Navigation state machine (Section 12)
+  // Navigation state machine
   useEffect(() => {
-    if (!isReady) return;
-
+    if (isLoading) return;
+    const inWelcome = segments[0] === 'welcome';
     const inAuth = segments[0] === 'auth';
     const inConsent = segments[0] === 'consent';
     const inOnboarding = segments[0] === 'onboarding';
-    const inTabs = segments[0] === '(tabs)';
-    const isAuthenticated = auth.isAuthenticated;
-    const hasConsent = !!profile.profile.hasAcceptedConsent;
-    const hasOnboarded = !!profile.profile.hasCompletedOnboarding;
 
-    if (!isAuthenticated) {
+    if (!welcomeSeen) {
+      if (!inWelcome) router.replace('/welcome');
+    } else if (!isAuthenticated) {
       if (!inAuth) router.replace('/auth/login');
-    } else if (!hasConsent) {
+    } else if (!consentGiven) {
       if (!inConsent) router.replace('/consent');
-    } else if (!hasOnboarded) {
+    } else if (!profileComplete) {
       if (!inOnboarding) router.replace('/onboarding/surgery');
     } else {
-      if (!inTabs) router.replace('/(tabs)');
+      if (inWelcome || inAuth || inConsent || inOnboarding) router.replace('/(tabs)');
     }
-  }, [isReady, auth.isAuthenticated, profile.profile.hasAcceptedConsent, profile.profile.hasCompletedOnboarding, segments]);
+  }, [isAuthenticated, consentGiven, profileComplete, welcomeSeen, isLoading, segments]);
 
-  if (!isReady) {
+  if (isLoading) {
     return (
-      <View style={styles.loading}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F2F2F7' }}>
         <ActivityIndicator size="large" color="#00B894" />
       </View>
     );
@@ -82,20 +66,13 @@ export default function RootLayout() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
+      <Stack.Screen name="welcome" />
       <Stack.Screen name="auth" />
       <Stack.Screen name="consent" />
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="exercise/[id]" options={{ presentation: 'card' }} />
+      <Stack.Screen name="settings" options={{ presentation: 'card' }} />
     </Stack>
   );
 }
-
-const styles = StyleSheet.create({
-  loading: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F2F2F7',
-  },
-});

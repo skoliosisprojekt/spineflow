@@ -36,12 +36,16 @@
           "user-scalable": false
         }
       },
-      "resources": ["./web.css"]
+      "resources": [
+        "./web.css"
+      ]
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-localization"
+      "expo-localization",
+      "expo-sqlite",
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true

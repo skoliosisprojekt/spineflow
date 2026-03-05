@@ -1,0 +1,256 @@
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+
+interface Option {
+  id: string;
+  label: string;
+  description?: string;
+  icon: keyof typeof MaterialIcons.glyphMap;
+}
+
+interface OnboardingStepProps {
+  step: number;
+  totalSteps: number;
+  title: string;
+  subtitle: string;
+  options: Option[];
+  selected: string | string[];
+  onSelect: (id: string) => void;
+  onNext: () => void;
+  onBack?: () => void;
+  multiSelect?: boolean;
+}
+
+export default function OnboardingStep({
+  step,
+  totalSteps,
+  title,
+  subtitle,
+  options,
+  selected,
+  onSelect,
+  onNext,
+  onBack,
+  multiSelect = false,
+}: OnboardingStepProps) {
+  const isSelected = (id: string) =>
+    multiSelect ? (selected as string[]).includes(id) : selected === id;
+
+  const hasSelection = multiSelect
+    ? (selected as string[]).length > 0
+    : selected !== '';
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        {onBack && (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={onBack}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <MaterialIcons name="arrow-back" size={24} color="#1C1C1E" />
+          </TouchableOpacity>
+        )}
+
+        {/* Progress Bar */}
+        <View style={styles.progressContainer}>
+          {Array.from({ length: totalSteps }).map((_, i) => (
+            <View
+              key={i}
+              style={[
+                styles.progressDot,
+                i < step ? styles.progressDone : i === step ? styles.progressActive : styles.progressInactive,
+              ]}
+            />
+          ))}
+        </View>
+
+        <Text style={styles.stepLabel}>Step {step + 1} of {totalSteps}</Text>
+      </View>
+
+      {/* Content */}
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.subtitle}>{subtitle}</Text>
+
+        <View style={styles.optionsContainer}>
+          {options.map((option) => (
+            <TouchableOpacity
+              key={option.id}
+              style={[styles.optionCard, isSelected(option.id) && styles.optionCardSelected]}
+              onPress={() => onSelect(option.id)}
+              accessibilityRole={multiSelect ? 'checkbox' : 'radio'}
+              accessibilityState={{ selected: isSelected(option.id) }}
+              accessibilityLabel={`${option.label}. ${option.description || ''}`}
+            >
+              <View style={[styles.iconContainer, isSelected(option.id) && styles.iconContainerSelected]}>
+                <MaterialIcons
+                  name={option.icon}
+                  size={24}
+                  color={isSelected(option.id) ? '#FFFFFF' : '#8E8E93'}
+                />
+              </View>
+              <View style={styles.optionText}>
+                <Text style={[styles.optionLabel, isSelected(option.id) && styles.optionLabelSelected]}>
+                  {option.label}
+                </Text>
+                {option.description && (
+                  <Text style={styles.optionDescription}>{option.description}</Text>
+                )}
+              </View>
+              {isSelected(option.id) && (
+                <MaterialIcons name="check-circle" size={24} color="#00B894" />
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+
+      {/* Next Button */}
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={[styles.nextButton, !hasSelection && styles.nextButtonDisabled]}
+          onPress={onNext}
+          disabled={!hasSelection}
+          accessibilityRole="button"
+          accessibilityLabel="Continue to next step"
+        >
+          <Text style={styles.nextButtonText}>Continue</Text>
+          <MaterialIcons name="arrow-forward" size={20} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F2F2F7',
+  },
+  header: {
+    paddingTop: 60,
+    paddingHorizontal: 24,
+    paddingBottom: 8,
+  },
+  backButton: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 8,
+  },
+  progressDot: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+  },
+  progressDone: {
+    backgroundColor: '#00B894',
+  },
+  progressActive: {
+    backgroundColor: '#00B894',
+  },
+  progressInactive: {
+    backgroundColor: '#E5E5EA',
+  },
+  stepLabel: {
+    fontSize: 12,
+    color: '#8E8E93',
+  },
+  content: {
+    padding: 24,
+    paddingTop: 16,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#1C1C1E',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#8E8E93',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  optionsContainer: {
+    gap: 12,
+  },
+  optionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+    minHeight: 64,
+  },
+  optionCardSelected: {
+    borderColor: '#00B894',
+    backgroundColor: '#F0FDF9',
+  },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#F2F2F7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  iconContainerSelected: {
+    backgroundColor: '#00B894',
+  },
+  optionText: {
+    flex: 1,
+  },
+  optionLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1C1C1E',
+  },
+  optionLabelSelected: {
+    color: '#009B7D',
+  },
+  optionDescription: {
+    fontSize: 12,
+    color: '#8E8E93',
+    marginTop: 2,
+  },
+  footer: {
+    padding: 24,
+    paddingBottom: 40,
+  },
+  nextButton: {
+    flexDirection: 'row',
+    backgroundColor: '#00B894',
+    borderRadius: 12,
+    paddingVertical: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    minHeight: 48,
+  },
+  nextButtonDisabled: {
+    backgroundColor: '#AEAEB2',
+  },
+  nextButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

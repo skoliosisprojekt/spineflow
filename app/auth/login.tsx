@@ -1,145 +1,288 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
-import { useAuthStore } from '../../stores/authStore';
-
-const C = {
-  bg: '#F2F2F7',
-  card: '#FFFFFF',
-  accent: '#00B894',
-  text: '#1C1C1E',
-  text2: '#3C3C43',
-  text3: '#8E8E93',
-  sep: '#E5E5EA',
-};
 
 export default function LoginScreen() {
   const router = useRouter();
-  const auth = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields.');
+    setError('');
+    if (!email.trim() || !password) {
+      setError('Please enter your email and password.');
       return;
     }
+
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        Alert.alert('Login Error', error.message);
-      } else if (data.session) {
-        auth.setSession(data.session);
-        auth.setUser(data.session.user);
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+
+      if (authError) {
+        setError(authError.message);
       }
     } catch (e) {
-      Alert.alert('Error', 'An unexpected error occurred.');
+      setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const valid = email.length > 0 && password.length > 0;
-
   return (
-    <View style={s.container}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-          <View style={s.logoWrap}>
-            <MaterialIcons name="fitness-center" size={48} color={C.accent} />
-            <Text style={s.logoText}>SpineFlow</Text>
-          </View>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Logo */}
+        <View style={styles.logoContainer}>
+          <MaterialIcons name="fitness-center" size={48} color="#00B894" />
+          <Text style={styles.logoText}>SpineFlow</Text>
+          <Text style={styles.subtitle}>Your safe gym companion for scoliosis</Text>
+        </View>
 
-          <Text style={s.heading}>Welcome back</Text>
-          <Text style={s.sub}>Sign in to your account</Text>
+        {/* Form */}
+        <View style={styles.form}>
+          <Text style={styles.title}>Welcome Back</Text>
 
-          <View style={s.form}>
-            <View style={s.inputWrap}>
-              <MaterialIcons name="email" size={20} color={C.text3} style={s.inputIcon} />
-              <TextInput
-                style={s.input}
-                placeholder="Email"
-                placeholderTextColor={C.text3}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
+          {/* Error Banner */}
+          {error !== '' && (
+            <View style={styles.errorBanner}>
+              <MaterialIcons name="error-outline" size={18} color="#FF3B30" />
+              <Text style={styles.errorBannerText}>{error}</Text>
             </View>
-            <View style={s.inputWrap}>
-              <MaterialIcons name="lock" size={20} color={C.text3} style={s.inputIcon} />
-              <TextInput
-                style={s.input}
-                placeholder="Password"
-                placeholderTextColor={C.text3}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
-            </View>
+          )}
 
-            <TouchableOpacity
-              style={[s.btn, (!valid || loading) && s.btnDisabled]}
-              onPress={handleLogin}
-              disabled={!valid || loading}
-            >
-              <Text style={s.btnText}>{loading ? 'Signing in...' : 'Log In'}</Text>
-            </TouchableOpacity>
+          {/* Email */}
+          <View style={styles.inputContainer}>
+            <MaterialIcons name="email" size={20} color="#8E8E93" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Email address"
+              placeholderTextColor="#AEAEB2"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+            />
+          </View>
 
-            <TouchableOpacity onPress={() => router.push('/auth/forgot-password')} style={s.linkBtn}>
-              <Text style={s.linkText}>Forgot Password?</Text>
+          {/* Password */}
+          <View style={styles.inputContainer}>
+            <MaterialIcons name="lock" size={20} color="#8E8E93" style={styles.inputIcon} />
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              placeholder="Password"
+              placeholderTextColor="#AEAEB2"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoComplete="current-password"
+            />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+              <MaterialIcons name={showPassword ? 'visibility' : 'visibility-off'} size={20} color="#8E8E93" />
             </TouchableOpacity>
           </View>
 
-          <View style={s.footer}>
-            <Text style={s.footerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => router.push('/auth/register')}>
-              <Text style={s.footerLink}>Register</Text>
-            </TouchableOpacity>
+          {/* Forgot Password */}
+          <TouchableOpacity
+            style={styles.forgotContainer}
+            onPress={() => router.push('/auth/forgot-password' as any)}
+            accessibilityRole="link"
+            accessibilityLabel="Reset your password"
+          >
+            <Text style={styles.forgotText}>Forgot password?</Text>
+          </TouchableOpacity>
+
+          {/* Login Button */}
+          <TouchableOpacity
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleLogin}
+            disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel="Log in"
+          >
+            <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Log In'}</Text>
+          </TouchableOpacity>
+
+          {/* Divider */}
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+
+          {/* Register Button */}
+          <TouchableOpacity
+            style={styles.registerButton}
+            onPress={() => router.push('/auth/register' as any)}
+            accessibilityRole="button"
+            accessibilityLabel="Create a new account"
+          >
+            <Text style={styles.registerButtonText}>Create New Account</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bg },
-  scroll: { flexGrow: 1, padding: 24, paddingTop: 80, alignItems: 'center' },
-  logoWrap: { alignItems: 'center', marginBottom: 24 },
-  logoText: { fontSize: 28, fontWeight: '700', color: C.text, marginTop: 8 },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, marginBottom: 4 },
-  sub: { fontSize: 14, color: C.text3, marginBottom: 28 },
-  form: { width: '100%', maxWidth: 400 },
-  inputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: C.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: C.sep,
-    marginBottom: 12,
-    paddingHorizontal: 14,
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F2F2F7',
   },
-  inputIcon: { marginRight: 10 },
-  input: { flex: 1, paddingVertical: 14, fontSize: 16, color: C.text },
-  btn: {
-    backgroundColor: C.accent,
-    paddingVertical: 15,
-    borderRadius: 12,
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 24,
+  },
+  logoContainer: {
     alignItems: 'center',
+    marginBottom: 32,
+  },
+  logoText: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#1C1C1E',
     marginTop: 8,
   },
-  btnDisabled: { backgroundColor: C.sep },
-  btnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  linkBtn: { alignItems: 'center', paddingVertical: 16 },
-  linkText: { color: C.text3, fontSize: 14 },
-  footer: { flexDirection: 'row', marginTop: 24 },
-  footerText: { fontSize: 14, color: C.text3 },
-  footerLink: { fontSize: 14, color: C.accent, fontWeight: '600' },
+  subtitle: {
+    fontSize: 14,
+    color: '#8E8E93',
+    marginTop: 4,
+  },
+  form: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#1C1C1E',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F2F2F7',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    minHeight: 48,
+  },
+  inputIcon: {
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1C1C1E',
+    paddingVertical: 12,
+  },
+  eyeIcon: {
+    padding: 8,
+    minWidth: 48,
+    minHeight: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  forgotContainer: {
+    alignItems: 'flex-end',
+    marginBottom: 20,
+    minHeight: 48,
+    justifyContent: 'center',
+  },
+  forgotText: {
+    fontSize: 14,
+    color: '#00B894',
+    fontWeight: '500',
+  },
+  button: {
+    backgroundColor: '#00B894',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    minHeight: 48,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF0EF',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+    gap: 8,
+  },
+  errorBannerText: {
+    flex: 1,
+    color: '#FF3B30',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E5EA',
+  },
+  dividerText: {
+    marginHorizontal: 12,
+    fontSize: 13,
+    color: '#8E8E93',
+  },
+  registerButton: {
+    borderWidth: 2,
+    borderColor: '#00B894',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    minHeight: 48,
+  },
+  registerButtonText: {
+    color: '#00B894',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
