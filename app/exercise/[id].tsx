@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { View, Text, ScrollView, Pressable, StyleSheet, Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { exercises, exerciseNames, exerciseTips, exerciseMods, exerciseFusionMods } from '../../data/exercises';
 import { getSafety } from '../../lib/safety';
 import { useProfileStore } from '../../stores/settingsStore';
@@ -13,6 +14,7 @@ import type { SafetyLevel } from '../../types';
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const { curveType, surgery } = useProfileStore();
   const { addExercise, hasExercise, removeExercise } = useWorkoutStore();
   const navigation = useNavigation();
@@ -48,7 +50,7 @@ export default function ExerciseDetailScreen() {
         </View>
         <View style={styles.centered}>
           <MaterialIcons name="error-outline" size={48} color="#E5E5EA" />
-          <Text style={styles.errorText}>Exercise not found</Text>
+          <Text style={styles.errorText}>{t('exerciseDetail.notFound')}</Text>
         </View>
       </View>
     );
@@ -56,11 +58,14 @@ export default function ExerciseDetailScreen() {
 
   const name = exerciseNames[exercise.id] || `Exercise ${exercise.id}`;
   const safety: SafetyLevel = getSafety(exercise.id, exercise.safety, curveType, surgery);
-  const tip = exerciseTips[exercise.id];
-  const mod = exerciseMods[exercise.id];
-  const fusionMod = exerciseFusionMods[exercise.id];
+  const tipKey = `exerciseTips.${exercise.id}`;
+  const tip = t(tipKey) !== tipKey ? t(tipKey) : exerciseTips[exercise.id];
+  const modKey = `exerciseMods.${exercise.id}`;
+  const mod = t(modKey) !== modKey ? t(modKey) : exerciseMods[exercise.id];
+  const fusionModKey = `exerciseFusionMods.${exercise.id}`;
+  const fusionMod = t(fusionModKey) !== fusionModKey ? t(fusionModKey) : exerciseFusionMods[exercise.id];
   const hasSurgery = surgery !== 'none';
-  const muscleLabel = exercise.muscle.charAt(0).toUpperCase() + exercise.muscle.slice(1);
+  const muscleLabel = t(`muscles.${exercise.muscle}`);
 
   return (
     <View style={styles.container}>
@@ -90,7 +95,7 @@ export default function ExerciseDetailScreen() {
           <View style={styles.avoidWarning} accessibilityRole="alert">
             <MaterialIcons name="block" size={20} color="#FF3B30" />
             <Text style={styles.avoidText}>
-              This exercise is not recommended for your curve type. Performing it may cause injury. Consult your doctor before attempting.
+              {t('exerciseDetail.avoidWarning')}
             </Text>
           </View>
         )}
@@ -99,12 +104,12 @@ export default function ExerciseDetailScreen() {
         <View style={styles.infoRow}>
           <View style={styles.infoCard}>
             <MaterialIcons name="repeat" size={20} color="#00B894" />
-            <Text style={styles.infoLabel}>Sets x Reps</Text>
+            <Text style={styles.infoLabel}>{t('exerciseDetail.setsReps')}</Text>
             <Text style={styles.infoValue}>{exercise.sets}</Text>
           </View>
           <View style={styles.infoCard}>
             <MaterialIcons name="timer" size={20} color="#00B894" />
-            <Text style={styles.infoLabel}>Rest</Text>
+            <Text style={styles.infoLabel}>{t('exerciseDetail.rest')}</Text>
             <Text style={styles.infoValue}>{exercise.rest}</Text>
           </View>
         </View>
@@ -113,12 +118,12 @@ export default function ExerciseDetailScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialIcons name="track-changes" size={18} color="#1C1C1E" />
-            <Text style={styles.sectionTitle}>Target Muscles</Text>
+            <Text style={styles.sectionTitle}>{t('exerciseDetail.targetMuscles')}</Text>
           </View>
           <View style={styles.targetList}>
-            {exercise.targets.map((t) => (
-              <View key={t} style={styles.targetChip}>
-                <Text style={styles.targetText}>{t}</Text>
+            {exercise.targets.map((tgt) => (
+              <View key={tgt} style={styles.targetChip}>
+                <Text style={styles.targetText}>{tgt}</Text>
               </View>
             ))}
           </View>
@@ -128,10 +133,10 @@ export default function ExerciseDetailScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialIcons name="fitness-center" size={18} color="#1C1C1E" />
-            <Text style={styles.sectionTitle}>Equipment Needed</Text>
+            <Text style={styles.sectionTitle}>{t('exerciseDetail.equipmentNeeded')}</Text>
           </View>
           {exercise.equip.length === 0 ? (
-            <Text style={styles.bodyText}>No equipment needed (bodyweight)</Text>
+            <Text style={styles.bodyText}>{t('exerciseDetail.noEquipment')}</Text>
           ) : (
             <View style={styles.targetList}>
               {exercise.equip.map((e) => (
@@ -148,7 +153,7 @@ export default function ExerciseDetailScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <MaterialIcons name="lightbulb-outline" size={18} color="#00B894" />
-              <Text style={[styles.sectionTitle, { color: '#00B894' }]}>Coach Tip</Text>
+              <Text style={[styles.sectionTitle, { color: '#00B894' }]}>{t('exerciseDetail.coachTip')}</Text>
             </View>
             <Text style={styles.bodyText}>{tip}</Text>
           </View>
@@ -159,7 +164,7 @@ export default function ExerciseDetailScreen() {
           <View style={[styles.section, styles.modSection]}>
             <View style={styles.sectionHeader}>
               <MaterialIcons name="warning" size={18} color="#CC7700" />
-              <Text style={[styles.sectionTitle, { color: '#CC7700' }]}>Modification Required</Text>
+              <Text style={[styles.sectionTitle, { color: '#CC7700' }]}>{t('exerciseDetail.modRequired')}</Text>
             </View>
             <Text style={styles.bodyText}>{mod}</Text>
           </View>
@@ -170,7 +175,7 @@ export default function ExerciseDetailScreen() {
           <View style={[styles.section, styles.surgerySection]}>
             <View style={styles.sectionHeader}>
               <MaterialIcons name="local-hospital" size={18} color="#FF3B30" />
-              <Text style={[styles.sectionTitle, { color: '#FF3B30' }]}>Post-Surgery Note</Text>
+              <Text style={[styles.sectionTitle, { color: '#FF3B30' }]}>{t('exerciseDetail.postSurgeryNote')}</Text>
             </View>
             <Text style={styles.bodyText}>{fusionMod}</Text>
           </View>
@@ -180,13 +185,13 @@ export default function ExerciseDetailScreen() {
         {safety === 'avoid' ? (
           <View style={styles.blockedButton} accessibilityRole="alert">
             <MaterialIcons name="block" size={20} color="#FF3B30" />
-            <Text style={styles.blockedButtonText}>Not safe for your condition</Text>
+            <Text style={styles.blockedButtonText}>{t('exerciseDetail.notSafe')}</Text>
           </View>
         ) : hasExercise(exercise.id) ? (
           <View>
             <View style={[styles.addButton, styles.addedButton]}>
               <MaterialIcons name="check-circle" size={20} color="#FFFFFF" />
-              <Text style={styles.addButtonText}>Added to Workout</Text>
+              <Text style={styles.addButtonText}>{t('exerciseDetail.addedToWorkout')}</Text>
             </View>
             <Pressable
               style={({ pressed }) => [styles.removeButton, pressed && { opacity: 0.7 }]}
@@ -195,7 +200,7 @@ export default function ExerciseDetailScreen() {
               accessibilityLabel="Remove from workout"
             >
               <MaterialIcons name="delete-outline" size={16} color="#FF3B30" />
-              <Text style={styles.removeButtonText}>Remove from Workout</Text>
+              <Text style={styles.removeButtonText}>{t('exerciseDetail.removeFromWorkout')}</Text>
             </Pressable>
           </View>
         ) : (
@@ -206,7 +211,7 @@ export default function ExerciseDetailScreen() {
             accessibilityLabel="Add to workout"
           >
             <MaterialIcons name="add" size={20} color="#FFFFFF" />
-            <Text style={styles.addButtonText}>Add to Workout</Text>
+            <Text style={styles.addButtonText}>{t('exerciseDetail.addToWorkout')}</Text>
           </Pressable>
         )}
       </ScrollView>
@@ -216,7 +221,7 @@ export default function ExerciseDetailScreen() {
         <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
           <View style={styles.overlayCard}>
             <MaterialIcons name="check-circle" size={48} color="#00B894" />
-            <Text style={styles.overlayText}>Added to Workout</Text>
+            <Text style={styles.overlayText}>{t('exerciseDetail.addedToWorkout')}</Text>
           </View>
         </Animated.View>
       )}

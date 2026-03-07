@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { View, Text, TextInput, FlatList, Pressable, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { exercises, muscleGroups } from '../../data/exercises';
 import { getSafety } from '../../lib/safety';
 import { useProfileStore } from '../../stores/settingsStore';
@@ -15,6 +16,7 @@ export default function ExercisesScreen() {
   const [filter, setFilter] = useState<MuscleFilter>('all');
   const [search, setSearch] = useState('');
   const router = useRouter();
+  const { t } = useTranslation();
   const { curveType, surgery } = useProfileStore();
 
   const filtered = useMemo(() => {
@@ -54,8 +56,8 @@ export default function ExercisesScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title} accessibilityRole="header">Exercises</Text>
-        <Text style={styles.subtitle}>{exercises.length} exercises with safety ratings</Text>
+        <Text style={styles.title} accessibilityRole="header">{t('exercises.title')}</Text>
+        <Text style={styles.subtitle}>{t('exercises.subtitle', { count: exercises.length })}</Text>
       </View>
 
       {/* Search */}
@@ -63,13 +65,13 @@ export default function ExercisesScreen() {
         <MaterialIcons name="search" size={20} color="#8E8E93" style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search exercises..."
+          placeholder={t('exercises.searchPlaceholder')}
           placeholderTextColor="#AEAEB2"
           value={search}
           onChangeText={setSearch}
           autoCorrect={false}
           autoCapitalize="none"
-          accessibilityLabel="Search exercises"
+          accessibilityLabel={t('exercises.searchPlaceholder')}
         />
         {search.length > 0 && (
           <Pressable
@@ -99,10 +101,10 @@ export default function ExercisesScreen() {
               style={[styles.filterChip, active && styles.filterChipActive]}
               accessibilityRole="button"
               accessibilityState={{ selected: active }}
-              accessibilityLabel={`Filter: ${item.label}`}
+              accessibilityLabel={t(`muscles.${item.id}`)}
             >
               <Text style={[styles.filterLabel, active && styles.filterLabelActive]}>
-                {item.label}
+                {t(`muscles.${item.id}`)}
               </Text>
             </Pressable>
           );
@@ -118,8 +120,8 @@ export default function ExercisesScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <MaterialIcons name="search-off" size={48} color="#E5E5EA" />
-            <Text style={styles.emptyTitle}>No exercises found</Text>
-            <Text style={styles.emptyText}>Try a different search or filter</Text>
+            <Text style={styles.emptyTitle}>{t('exercises.noResults')}</Text>
+            <Text style={styles.emptyText}>{t('exercises.noResultsHint')}</Text>
           </View>
         }
       />

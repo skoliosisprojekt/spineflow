@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 
@@ -13,6 +14,7 @@ export default function ConsentScreen() {
   const [loading, setLoading] = useState(false);
 
   const { setConsentGiven, userId } = useAuthStore();
+  const { t } = useTranslation();
 
   const allAccepted = tosAccepted && privacyAccepted && disclaimerAccepted;
 
@@ -52,9 +54,9 @@ export default function ConsentScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <MaterialIcons name="verified-user" size={48} color="#00B894" />
-          <Text style={styles.title}>Before we begin</Text>
+          <Text style={styles.title}>{t('consent.title')}</Text>
           <Text style={styles.subtitle}>
-            Please read and accept the following documents to continue using SpineFlow.
+            {t('consent.subtitle')}
           </Text>
         </View>
 
@@ -62,18 +64,11 @@ export default function ConsentScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <MaterialIcons name="description" size={24} color="#007AFF" />
-            <Text style={styles.cardTitle}>Terms of Service</Text>
+            <Text style={styles.cardTitle}>{t('consent.tosTitle')}</Text>
           </View>
           <ScrollView style={styles.legalText} nestedScrollEnabled>
             <Text style={styles.legalContent}>
-              By using SpineFlow, you agree to the following terms:{'\n\n'}
-              1. SpineFlow is a fitness companion app for informational purposes only.{'\n'}
-              2. You must be at least 16 years old to use this service.{'\n'}
-              3. Your account may be terminated for violations of these terms.{'\n'}
-              4. Subscription payments are handled by Apple/Google and are subject to their terms.{'\n'}
-              5. SpineFlow reserves the right to update these terms with notice.{'\n'}
-              6. These terms are governed by the laws of Switzerland.{'\n\n'}
-              Full terms available at www.spineflow.app/terms
+              {t('consent.tosContent')}
             </Text>
           </ScrollView>
           <TouchableOpacity
@@ -88,7 +83,7 @@ export default function ConsentScreen() {
               size={24}
               color={tosAccepted ? '#00B894' : '#8E8E93'}
             />
-            <Text style={styles.checkboxLabel}>I accept the Terms of Service</Text>
+            <Text style={styles.checkboxLabel}>{t('consent.tosAccept')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -96,18 +91,11 @@ export default function ConsentScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <MaterialIcons name="privacy-tip" size={24} color="#AF52DE" />
-            <Text style={styles.cardTitle}>Privacy Policy</Text>
+            <Text style={styles.cardTitle}>{t('consent.privacyTitle')}</Text>
           </View>
           <ScrollView style={styles.legalText} nestedScrollEnabled>
             <Text style={styles.legalContent}>
-              SpineFlow collects and processes the following data:{'\n\n'}
-              • Email address (for authentication){'\n'}
-              • Scoliosis type and surgery history (for personalized safety ratings){'\n'}
-              • Workout logs (for progress tracking){'\n'}
-              • Nutrition logs (for calorie tracking){'\n\n'}
-              Your health data is stored securely in Switzerland (Zurich) and is never shared with third parties. You can delete all your data at any time via Settings.{'\n\n'}
-              SpineFlow complies with the GDPR (EU) and nDSG (Swiss Federal Data Protection Act).{'\n\n'}
-              Full policy available at www.spineflow.app/privacy
+              {t('consent.privacyContent')}
             </Text>
           </ScrollView>
           <TouchableOpacity
@@ -122,7 +110,7 @@ export default function ConsentScreen() {
               size={24}
               color={privacyAccepted ? '#00B894' : '#8E8E93'}
             />
-            <Text style={styles.checkboxLabel}>I accept the Privacy Policy</Text>
+            <Text style={styles.checkboxLabel}>{t('consent.privacyAccept')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -130,17 +118,11 @@ export default function ConsentScreen() {
         <View style={[styles.card, styles.disclaimerCard]}>
           <View style={styles.cardHeader}>
             <MaterialIcons name="health-and-safety" size={24} color="#FF3B30" />
-            <Text style={styles.cardTitle}>Medical & Liability Disclaimer</Text>
+            <Text style={styles.cardTitle}>{t('consent.disclaimerTitle')}</Text>
           </View>
           <ScrollView style={styles.legalText} nestedScrollEnabled>
             <Text style={styles.legalContent}>
-              IMPORTANT — PLEASE READ CAREFULLY{'\n\n'}
-              SpineFlow is NOT a medical device, NOT a medical application, and does NOT provide medical advice, diagnosis, or treatment.{'\n\n'}
-              ALL EXERCISES ARE PERFORMED AT YOUR OWN RISK. SpineFlow accepts NO LIABILITY for any injury, damage, or harm arising from the use of this application.{'\n\n'}
-              The safety ratings ("Safe", "Modify", "Avoid") are GENERAL GUIDELINES ONLY. They are not personalized medical recommendations.{'\n\n'}
-              You MUST consult a qualified medical professional before beginning any exercise program, especially if you have had spinal surgery.{'\n\n'}
-              If there is any conflict between SpineFlow's recommendations and your doctor's instructions, ALWAYS FOLLOW YOUR DOCTOR.{'\n\n'}
-              Full disclaimer available at www.spineflow.app/disclaimer
+              {t('consent.disclaimerContent')}
             </Text>
           </ScrollView>
           <TouchableOpacity
@@ -155,7 +137,7 @@ export default function ConsentScreen() {
               size={24}
               color={disclaimerAccepted ? '#00B894' : '#8E8E93'}
             />
-            <Text style={styles.checkboxLabel}>I accept the Medical & Liability Disclaimer</Text>
+            <Text style={styles.checkboxLabel}>{t('consent.disclaimerAccept')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -168,7 +150,7 @@ export default function ConsentScreen() {
           accessibilityLabel="Continue to app setup"
         >
           <Text style={styles.buttonText}>
-            {loading ? 'Saving...' : 'Continue'}
+            {loading ? t('consent.saving') : t('consent.continue')}
           </Text>
         </TouchableOpacity>
       </ScrollView>

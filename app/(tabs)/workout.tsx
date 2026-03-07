@@ -1,15 +1,18 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Animated } from 'react-native';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Animated, KeyboardAvoidingView, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useWorkoutStore, WorkoutExercise } from '../../stores/workoutStore';
-import { useHistoryStore } from '../../stores/historyStore';
+import { useHistoryStore, WorkoutRecord } from '../../stores/historyStore';
+import { shareWorkout } from '../../lib/exportWorkout';
 import { usePlanStore } from '../../stores/planStore';
 import { useProfileStore } from '../../stores/settingsStore';
 import { getSafety } from '../../lib/safety';
-import { exercises as allExercises, exerciseNames, exerciseMods, exerciseFusionMods } from '../../data/exercises';
+import { exercises as allExercises, exerciseNames, exerciseMods, exerciseFusionMods, exerciseTips } from '../../data/exercises';
 
 function RestBar({ onSkip }: { onSkip?: () => void }) {
+  const { t } = useTranslation();
   const [elapsed, setElapsed] = useState(0);
   const [target, setTarget] = useState(90);
   const [editing, setEditing] = useState(false);
@@ -43,7 +46,7 @@ function RestBar({ onSkip }: { onSkip?: () => void }) {
       <View style={styles.restBarHeader}>
         <MaterialIcons name="timer" size={14} color={barColor} />
         <Text style={[styles.restBarLabel, { color: barColor }]}>
-          {done ? 'Rest complete' : 'Resting...'}
+          {done ? t('workout.restComplete') : t('workout.resting')}
         </Text>
         <Text style={styles.restBarTime}>
           {elapsedMins}:{elapsedSecs < 10 ? '0' : ''}{elapsedSecs}
@@ -73,7 +76,7 @@ function RestBar({ onSkip }: { onSkip?: () => void }) {
         </Text>
         {onSkip && (
           <Pressable onPress={onSkip} hitSlop={8} accessibilityRole="button" accessibilityLabel="Skip rest">
-            <Text style={styles.restBarSkip}>Skip</Text>
+            <Text style={styles.restBarSkip}>{t('common.skip')}</Text>
           </Pressable>
         )}
       </View>
@@ -88,6 +91,8 @@ interface WorkoutExerciseCardProps {
   item: WorkoutExercise;
   safetyLevel: 'safe' | 'modify' | 'avoid';
   safetyNote?: string;
+  fusionNote?: string;
+  lastSets?: { weight: number; reps: number }[];
   onUpdateSet: (setIndex: number, field: 'weight' | 'reps', value: number) => void;
   onToggleSet: (setIndex: number) => void;
   onAddSet: () => void;
@@ -95,10 +100,14 @@ interface WorkoutExerciseCardProps {
   onRemoveExercise: () => void;
 }
 
-function WorkoutExerciseCard({ item, safetyLevel, safetyNote, onUpdateSet, onToggleSet, onAddSet, onRemoveSet, onRemoveExercise }: WorkoutExerciseCardProps) {
+function WorkoutExerciseCard({ item, safetyLevel, safetyNote, fusionNote, lastSets, onUpdateSet, onToggleSet, onAddSet, onRemoveSet, onRemoveExercise }: WorkoutExerciseCardProps) {
+  const { t } = useTranslation();
   const exercise = allExercises.find((e) => e.id === item.exerciseId);
   const name = exerciseNames[item.exerciseId] || `Exercise ${item.exerciseId}`;
   const completedSets = item.sets.filter((s) => s.completed).length;
+  const tipKey = `exerciseTips.${item.exerciseId}`;
+  const tip = t(tipKey) !== tipKey ? t(tipKey) : exerciseTips[item.exerciseId];
+  const [showTip, setShowTip] = useState(false);
 
   // Find the index where rest bar should appear: after the last completed set, before the first uncompleted
   const restAfterIndex = (() => {
@@ -122,11 +131,19 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, onUpdateSet, onTog
 
   return (
     <View style={styles.exerciseCard}>
-      {/* Safety Warning */}
+      {/* Modification Warning */}
       {safetyLevel === 'modify' && safetyNote && (
         <View style={styles.safetyBanner}>
           <MaterialIcons name="warning" size={14} color="#CC7700" />
-          <Text style={styles.safetyBannerText} numberOfLines={2}>{safetyNote}</Text>
+          <Text style={styles.safetyBannerText}>{safetyNote}</Text>
+        </View>
+      )}
+
+      {/* Post-Surgery Note */}
+      {fusionNote && (
+        <View style={styles.fusionBanner}>
+          <MaterialIcons name="local-hospital" size={14} color="#FF3B30" />
+          <Text style={styles.fusionBannerText}>{fusionNote}</Text>
         </View>
       )}
 
@@ -135,9 +152,19 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, onUpdateSet, onTog
         <View style={{ flex: 1 }}>
           <Text style={styles.exerciseName}>{name}</Text>
           <Text style={styles.exerciseMeta}>
-            {exercise?.muscle} · {completedSets}/{item.sets.length} sets done
+            {exercise?.muscle} · {t('workout.setsDone', { completed: completedSets, total: item.sets.length })}
           </Text>
         </View>
+        {tip && (
+          <Pressable
+            onPress={() => setShowTip(!showTip)}
+            style={styles.tipToggleBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Show form tips"
+          >
+            <MaterialIcons name={showTip ? 'expand-less' : 'lightbulb-outline'} size={18} color="#FF9500" />
+          </Pressable>
+        )}
         <Pressable
           onPress={onRemoveExercise}
           style={styles.removeBtn}
@@ -148,16 +175,26 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, onUpdateSet, onTog
         </Pressable>
       </View>
 
+      {/* Form Tip */}
+      {showTip && tip && (
+        <View style={styles.tipBanner}>
+          <MaterialIcons name="lightbulb" size={14} color="#FF9500" />
+          <Text style={styles.tipBannerText}>{tip}</Text>
+        </View>
+      )}
+
       {/* Set Headers */}
       <View style={styles.setRow}>
-        <Text style={[styles.setHeader, { width: 36 }]}>Set</Text>
-        <Text style={[styles.setHeader, { flex: 1 }]}>Weight (kg)</Text>
-        <Text style={[styles.setHeader, { flex: 1 }]}>Reps</Text>
-        <View style={{ width: 44 }} />
+        <Text style={[styles.setHeader, { width: 36 }]}>{t('workout.set')}</Text>
+        <Text style={[styles.setHeader, { flex: 1 }]}>{t('workout.weightKg')}</Text>
+        <Text style={[styles.setHeader, { flex: 1 }]}>{t('workout.reps')}</Text>
+        <Text style={[styles.setHeader, { width: 44 }]}></Text>
       </View>
 
       {/* Sets */}
-      {item.sets.map((s, i) => (
+      {item.sets.map((s, i) => {
+        const prev = lastSets && lastSets[i];
+        return (
         <View key={i}>
           <View style={[styles.setRow, s.completed && styles.setRowDone]}>
             <Text style={[styles.setNumber, s.completed && styles.setTextDone]}>{i + 1}</Text>
@@ -166,8 +203,8 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, onUpdateSet, onTog
               value={s.weight > 0 ? String(s.weight) : ''}
               onChangeText={(t) => onUpdateSet(i, 'weight', Number(t) || 0)}
               keyboardType="numeric"
-              placeholder="0"
-              placeholderTextColor="#AEAEB2"
+              placeholder={prev ? String(prev.weight) : '0'}
+              placeholderTextColor="#C7C7CC"
               editable={!s.completed}
               accessibilityLabel={`Set ${i + 1} weight`}
             />
@@ -176,8 +213,8 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, onUpdateSet, onTog
               value={s.reps > 0 ? String(s.reps) : ''}
               onChangeText={(t) => onUpdateSet(i, 'reps', Number(t) || 0)}
               keyboardType="numeric"
-              placeholder="0"
-              placeholderTextColor="#AEAEB2"
+              placeholder={prev ? String(prev.reps) : '0'}
+              placeholderTextColor="#C7C7CC"
               editable={!s.completed}
               accessibilityLabel={`Set ${i + 1} reps`}
             />
@@ -199,13 +236,14 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, onUpdateSet, onTog
             <RestBar onSkip={() => setRestSkipped(true)} />
           )}
         </View>
-      ))}
+        );
+      })}
 
       {/* Add / Remove Set */}
       <View style={styles.setActions}>
         <Pressable onPress={onAddSet} style={styles.addSetBtn} accessibilityRole="button" accessibilityLabel="Add a set">
           <MaterialIcons name="add" size={16} color="#00B894" />
-          <Text style={styles.addSetText}>Add Set</Text>
+          <Text style={styles.addSetText}>{t('workout.addSet')}</Text>
         </Pressable>
       </View>
     </View>
@@ -221,53 +259,58 @@ interface WorkoutSummary {
   highlights: { icon: keyof typeof MaterialIcons.glyphMap; text: string }[];
 }
 
-function buildHighlights(exercises: WorkoutExercise[], stats: Omit<WorkoutSummary, 'highlights'>): WorkoutSummary['highlights'] {
+function buildHighlights(exercises: WorkoutExercise[], stats: Omit<WorkoutSummary, 'highlights'>, t: (key: string, opts?: Record<string, any>) => string): WorkoutSummary['highlights'] {
   const h: WorkoutSummary['highlights'] = [];
+
+  // Only count exercises that were actually performed (have completed sets)
+  const performed = exercises.filter((e) => e.sets.some((s) => s.completed));
 
   // Completion rate
   const pct = stats.totalSets > 0 ? stats.completedSets / stats.totalSets : 0;
   if (pct >= 1) {
-    h.push({ icon: 'star', text: 'All sets completed — perfect session!' });
+    h.push({ icon: 'star', text: t('workout.highlightAllSets') });
   } else if (pct >= 0.8) {
-    h.push({ icon: 'thumb-up', text: `${Math.round(pct * 100)}% of sets completed — strong effort!` });
+    h.push({ icon: 'thumb-up', text: t('workout.highlightStrongEffort', { pct: Math.round(pct * 100) }) });
   } else if (pct >= 0.5) {
-    h.push({ icon: 'trending-up', text: `${Math.round(pct * 100)}% of sets done — keep pushing!` });
+    h.push({ icon: 'trending-up', text: t('workout.highlightKeepPushing', { pct: Math.round(pct * 100) }) });
   }
 
-  // Muscle variety
+  // Muscle variety — only from performed exercises
   const muscles = new Set<string>();
-  exercises.forEach((we) => {
+  performed.forEach((we) => {
     const ex = allExercises.find((e) => e.id === we.exerciseId);
     if (ex) muscles.add(ex.muscle);
   });
   if (muscles.size >= 3) {
-    h.push({ icon: 'accessibility-new', text: `${muscles.size} muscle groups trained — great variety!` });
+    h.push({ icon: 'accessibility-new', text: t('workout.highlightMuscleGroups', { count: muscles.size }) });
   } else if (muscles.size >= 2) {
-    h.push({ icon: 'accessibility-new', text: `${muscles.size} muscle groups trained` });
+    h.push({ icon: 'accessibility-new', text: t('workout.highlightMuscleGroupsSimple', { count: muscles.size }) });
   }
 
   // Volume milestone
   if (stats.totalVolume >= 5000) {
-    h.push({ icon: 'local-fire-department', text: `${stats.totalVolume.toLocaleString()} kg total volume — impressive!` });
+    h.push({ icon: 'local-fire-department', text: t('workout.highlightVolumeImpressive', { volume: stats.totalVolume.toLocaleString() }) });
   } else if (stats.totalVolume >= 1000) {
-    h.push({ icon: 'fitness-center', text: `${stats.totalVolume.toLocaleString()} kg total volume moved` });
+    h.push({ icon: 'fitness-center', text: t('workout.highlightVolumeMoved', { volume: stats.totalVolume.toLocaleString() }) });
   }
 
   // Rep count
   if (stats.totalReps >= 100) {
-    h.push({ icon: 'bolt', text: `${stats.totalReps} reps — high volume work!` });
+    h.push({ icon: 'bolt', text: t('workout.highlightHighVolume', { count: stats.totalReps }) });
   } else if (stats.totalReps >= 50) {
-    h.push({ icon: 'bolt', text: `${stats.totalReps} total reps completed` });
+    h.push({ icon: 'bolt', text: t('workout.highlightTotalReps', { count: stats.totalReps }) });
   }
 
-  // Multiple exercises
-  if (stats.exerciseCount >= 5) {
-    h.push({ icon: 'format-list-numbered', text: `${stats.exerciseCount} exercises — full workout!` });
+  // Multiple exercises — only count performed
+  if (performed.length >= 5) {
+    h.push({ icon: 'format-list-numbered', text: t('workout.highlightFullWorkout', { count: performed.length }) });
+  } else if (performed.length >= 3) {
+    h.push({ icon: 'format-list-numbered', text: t('workout.highlightExercisesCompleted', { count: performed.length }) });
   }
 
   // Fallback
   if (h.length === 0) {
-    h.push({ icon: 'check-circle', text: 'You showed up and put in the work!' });
+    h.push({ icon: 'check-circle', text: t('workout.highlightShowedUp') });
   }
 
   return h;
@@ -275,25 +318,47 @@ function buildHighlights(exercises: WorkoutExercise[], stats: Omit<WorkoutSummar
 
 export default function WorkoutScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { exercises, addExercise, updateSet, toggleSetComplete, addSet, removeSet, removeExercise, clearWorkout, loadWorkout } = useWorkoutStore();
   const saveWorkout = useHistoryStore((s) => s.saveWorkout);
+  const workoutHistory = useHistoryStore((s) => s.workouts);
   const { plan, loadPlan } = usePlanStore();
   const { curveType, surgery } = useProfileStore();
   const [summary, setSummary] = useState<WorkoutSummary | null>(null);
+  const [lastRecord, setLastRecord] = useState<WorkoutRecord | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  // Build a map of exerciseId -> last completed sets from history
+  const lastSetsMap = useMemo(() => {
+    const map = new Map<number, { weight: number; reps: number }[]>();
+    for (const w of workoutHistory) {
+      for (const ex of w.exercises) {
+        if (!map.has(ex.exerciseId) && ex.sets.length > 0) {
+          map.set(ex.exerciseId, ex.sets);
+        }
+      }
+    }
+    return map;
+  }, [workoutHistory]);
 
   const getExSafety = useCallback((exerciseId: number) => {
     const ex = allExercises.find((e) => e.id === exerciseId);
-    if (!ex) return { level: 'safe' as const, note: undefined };
+    if (!ex) return { level: 'safe' as const, note: undefined, fusionNote: undefined };
     const level = getSafety(exerciseId, ex.safety, curveType, surgery);
     const hasSurgery = surgery !== 'none';
-    let note: string | undefined;
-    if (hasSurgery && exerciseFusionMods[exerciseId]) note = exerciseFusionMods[exerciseId];
-    else if (level === 'modify' && exerciseMods[exerciseId]) note = exerciseMods[exerciseId];
-    return { level, note };
-  }, [curveType, surgery]);
+    // Translated mod note
+    const modKey = `exerciseMods.${exerciseId}`;
+    const rawMod = t(modKey) !== modKey ? t(modKey) : exerciseMods[exerciseId];
+    const note = (level === 'modify' && rawMod) ? rawMod : undefined;
+    // Translated fusion note
+    const fusionKey = `exerciseFusionMods.${exerciseId}`;
+    const rawFusion = t(fusionKey) !== fusionKey ? t(fusionKey) : exerciseFusionMods[exerciseId];
+    const fusionNote = (hasSurgery && rawFusion) ? rawFusion : undefined;
+    return { level, note, fusionNote };
+  }, [curveType, surgery, t]);
 
-  useEffect(() => { loadWorkout(); loadPlan(); }, []);
+  const loadHistory = useHistoryStore((s) => s.loadHistory);
+  useEffect(() => { loadWorkout(); loadPlan(); loadHistory(); }, []);
 
   const loadPlanExercises = () => {
     if (!plan) return;
@@ -306,20 +371,22 @@ export default function WorkoutScreen() {
   const completedSets = exercises.reduce((sum, e) => sum + e.sets.filter((s) => s.completed).length, 0);
 
   const handleFinish = () => {
+    // Only count exercises that were actually performed
+    const performed = exercises.filter((e) => e.sets.some((s) => s.completed));
     const base = {
-      exerciseCount: exercises.length,
+      exerciseCount: performed.length,
       totalSets,
       completedSets,
       totalVolume: exercises.reduce((sum, e) => sum + e.sets.filter((s) => s.completed).reduce((v, s) => v + s.weight * s.reps, 0), 0),
       totalReps: exercises.reduce((sum, e) => sum + e.sets.filter((s) => s.completed).reduce((r, s) => r + s.reps, 0), 0),
     };
-    const stats: WorkoutSummary = { ...base, highlights: buildHighlights(exercises, base) };
+    const stats: WorkoutSummary = { ...base, highlights: buildHighlights(exercises, base, t) };
 
-    // Save to history
-    saveWorkout({
+    // Save to history — only include exercises with completed sets
+    const record: WorkoutRecord = {
       id: Date.now().toString(),
       date: new Date().toISOString(),
-      exercises: exercises.map((e) => ({
+      exercises: performed.map((e) => ({
         exerciseId: e.exerciseId,
         sets: e.sets.filter((s) => s.completed).map((s) => ({ weight: s.weight, reps: s.reps })),
       })),
@@ -327,7 +394,9 @@ export default function WorkoutScreen() {
       completedSets: base.completedSets,
       totalVolume: base.totalVolume,
       totalReps: base.totalReps,
-    });
+    };
+    saveWorkout(record);
+    setLastRecord(record);
 
     setSummary(stats);
     Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
@@ -344,24 +413,24 @@ export default function WorkoutScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title} accessibilityRole="header">Workout</Text>
+          <Text style={styles.title} accessibilityRole="header">{t('workout.title')}</Text>
         </View>
         {plan && plan.exercises.length > 0 ? (
           <ScrollView contentContainerStyle={styles.planPreview} showsVerticalScrollIndicator={false}>
             <View style={styles.planCard}>
               <View style={styles.planHeader}>
                 <MaterialIcons name="auto-awesome" size={22} color="#FF9500" />
-                <Text style={styles.planTitle}>Your Workout Plan</Text>
+                <Text style={styles.planTitle}>{t('workout.yourPlan')}</Text>
               </View>
               <Text style={styles.planSubtitle}>
-                {plan.exercises.length} exercises tailored for your {plan.profile.curveType} scoliosis
+                {t('workout.planSubtitle', { count: plan.exercises.length, curveType: plan.profile.curveType })}
               </Text>
               {plan.exercises.map((pe, i) => (
                 <View key={pe.exerciseId} style={styles.planExRow}>
                   <Text style={styles.planExNum}>{i + 1}</Text>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.planExName}>{exerciseNames[pe.exerciseId] || `Exercise ${pe.exerciseId}`}</Text>
-                    <Text style={styles.planExSets}>{pe.sets} sets{pe.note ? ` · ${pe.note}` : ''}</Text>
+                    <Text style={styles.planExSets}>{t('workout.planSets', { count: pe.sets })}{pe.note ? ` · ${pe.note}` : ''}</Text>
                   </View>
                   {pe.note && <MaterialIcons name="info-outline" size={14} color="#FF9500" />}
                 </View>
@@ -374,21 +443,21 @@ export default function WorkoutScreen() {
               accessibilityLabel="Start planned workout"
             >
               <MaterialIcons name="play-arrow" size={20} color="#FFFFFF" />
-              <Text style={styles.startPlanBtnText}>Start Workout</Text>
+              <Text style={styles.startPlanBtnText}>{t('workout.startWorkout')}</Text>
             </Pressable>
             <Pressable
               style={styles.browseLinkBtn}
               onPress={() => router.push('/(tabs)/exercises' as any)}
               accessibilityRole="button"
             >
-              <Text style={styles.browseLinkText}>Or browse exercises manually</Text>
+              <Text style={styles.browseLinkText}>{t('workout.browseManualy')}</Text>
             </Pressable>
           </ScrollView>
         ) : (
           <View style={styles.empty}>
             <MaterialIcons name="fitness-center" size={56} color="#E5E5EA" />
-            <Text style={styles.emptyTitle}>No exercises yet</Text>
-            <Text style={styles.emptyText}>Add exercises from the library to start your workout</Text>
+            <Text style={styles.emptyTitle}>{t('workout.noExercises')}</Text>
+            <Text style={styles.emptyText}>{t('workout.noExercisesDesc')}</Text>
             <Pressable
               style={styles.browseBtn}
               onPress={() => router.push('/(tabs)/exercises' as any)}
@@ -396,7 +465,7 @@ export default function WorkoutScreen() {
               accessibilityLabel="Browse exercises"
             >
               <MaterialIcons name="search" size={18} color="#FFFFFF" />
-              <Text style={styles.browseBtnText}>Browse Exercises</Text>
+              <Text style={styles.browseBtnText}>{t('workout.browseExercises')}</Text>
             </Pressable>
           </View>
         )}
@@ -405,11 +474,15 @@ export default function WorkoutScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+    >
       <View style={styles.header}>
         <View>
-          <Text style={styles.title} accessibilityRole="header">Workout</Text>
-          <Text style={styles.subtitle}>{exercises.length} exercises · {completedSets}/{totalSets} sets</Text>
+          <Text style={styles.title} accessibilityRole="header">{t('workout.title')}</Text>
+          <Text style={styles.subtitle}>{t('workout.exercisesCount', { count: exercises.length, completed: completedSets, total: totalSets })}</Text>
         </View>
         <Pressable
           onPress={() => router.push('/(tabs)/exercises' as any)}
@@ -426,7 +499,7 @@ export default function WorkoutScreen() {
         <View style={[styles.progressFill, { width: totalSets > 0 ? `${(completedSets / totalSets) * 100}%` : '0%' }]} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Exercise Cards */}
         {exercises.map((item) => {
           const s = getExSafety(item.exerciseId);
@@ -436,6 +509,8 @@ export default function WorkoutScreen() {
               item={item}
               safetyLevel={s.level}
               safetyNote={s.note}
+              fusionNote={s.fusionNote}
+              lastSets={lastSetsMap.get(item.exerciseId)}
               onUpdateSet={(si, f, v) => updateSet(item.exerciseId, si, f, v)}
               onToggleSet={(si) => toggleSetComplete(item.exerciseId, si)}
               onAddSet={() => addSet(item.exerciseId)}
@@ -453,7 +528,7 @@ export default function WorkoutScreen() {
           accessibilityLabel="Finish workout"
         >
           <MaterialIcons name="check" size={20} color="#FFFFFF" />
-          <Text style={styles.finishBtnText}>Finish Workout</Text>
+          <Text style={styles.finishBtnText}>{t('workout.finish')}</Text>
         </Pressable>
 
         <Pressable
@@ -462,7 +537,7 @@ export default function WorkoutScreen() {
           accessibilityRole="button"
           accessibilityLabel="Cancel workout"
         >
-          <Text style={styles.cancelBtnText}>Cancel Workout</Text>
+          <Text style={styles.cancelBtnText}>{t('workout.cancelWorkout')}</Text>
         </Pressable>
       </ScrollView>
 
@@ -473,23 +548,23 @@ export default function WorkoutScreen() {
             <View style={styles.summaryIconRing}>
               <MaterialIcons name="emoji-events" size={48} color="#FF9500" />
             </View>
-            <Text style={styles.summaryTitle}>Workout Complete</Text>
-            <Text style={styles.summarySubtitle}>Great job! Here is your summary:</Text>
+            <Text style={styles.summaryTitle}>{t('workout.complete')}</Text>
+            <Text style={styles.summarySubtitle}>{t('workout.greatJob')}</Text>
 
             <View style={styles.summaryStats}>
               <View style={styles.summaryStat}>
                 <Text style={styles.summaryStatValue}>{summary.exerciseCount}</Text>
-                <Text style={styles.summaryStatLabel}>Exercises</Text>
+                <Text style={styles.summaryStatLabel}>{t('workout.exercisesLabel')}</Text>
               </View>
               <View style={styles.summaryStatDivider} />
               <View style={styles.summaryStat}>
                 <Text style={styles.summaryStatValue}>{summary.completedSets}/{summary.totalSets}</Text>
-                <Text style={styles.summaryStatLabel}>Sets</Text>
+                <Text style={styles.summaryStatLabel}>{t('workout.setsLabel')}</Text>
               </View>
               <View style={styles.summaryStatDivider} />
               <View style={styles.summaryStat}>
                 <Text style={styles.summaryStatValue}>{summary.totalReps}</Text>
-                <Text style={styles.summaryStatLabel}>Reps</Text>
+                <Text style={styles.summaryStatLabel}>{t('workout.repsLabel')}</Text>
               </View>
             </View>
 
@@ -497,7 +572,7 @@ export default function WorkoutScreen() {
               <View style={styles.summaryVolumeRow}>
                 <MaterialIcons name="fitness-center" size={16} color="#00B894" />
                 <Text style={styles.summaryVolumeText}>
-                  Total Volume: {summary.totalVolume.toLocaleString()} kg
+                  {t('workout.totalVolume', { volume: summary.totalVolume.toLocaleString() })}
                 </Text>
               </View>
             )}
@@ -512,18 +587,30 @@ export default function WorkoutScreen() {
               ))}
             </View>
 
+            {lastRecord && (
+              <Pressable
+                style={({ pressed }) => [styles.summaryExportBtn, pressed && { opacity: 0.85 }]}
+                onPress={() => shareWorkout(lastRecord)}
+                accessibilityRole="button"
+                accessibilityLabel="Export workout as text"
+              >
+                <MaterialIcons name="share" size={16} color="#00B894" />
+                <Text style={styles.summaryExportBtnText}>{t('workout.exportWorkout')}</Text>
+              </Pressable>
+            )}
+
             <Pressable
               style={({ pressed }) => [styles.summaryDoneBtn, pressed && { opacity: 0.85 }]}
               onPress={dismissSummary}
               accessibilityRole="button"
               accessibilityLabel="Done"
             >
-              <Text style={styles.summaryDoneBtnText}>Done</Text>
+              <Text style={styles.summaryDoneBtnText}>{t('common.done')}</Text>
             </Pressable>
           </View>
         </Animated.View>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -633,6 +720,22 @@ const styles = StyleSheet.create({
   },
   exerciseName: { fontSize: 16, fontWeight: '700', color: '#1C1C1E' },
   exerciseMeta: { fontSize: 12, color: '#8E8E93', marginTop: 2 },
+
+  tipToggleBtn: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: '#FFF8F0', justifyContent: 'center', alignItems: 'center', marginRight: 6,
+  },
+  tipBanner: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 6,
+    backgroundColor: '#FFF8F0', borderRadius: 8, padding: 10, marginBottom: 10,
+  },
+  tipBannerText: { flex: 1, fontSize: 12, fontWeight: '500', color: '#8B6914', lineHeight: 17 },
+
+  lastWorkoutRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingVertical: 4, paddingHorizontal: 2, marginBottom: 4,
+  },
+  lastWorkoutText: { fontSize: 11, fontWeight: '500', color: '#AEAEB2' },
   removeBtn: {
     width: 36,
     height: 36,
@@ -812,6 +915,23 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#009B7D',
   },
+  summaryExportBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderWidth: 1.5,
+    borderColor: '#00B894',
+    borderRadius: 14,
+    paddingVertical: 12,
+    width: '100%',
+    marginBottom: 10,
+  },
+  summaryExportBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#00B894',
+  },
   summaryDoneBtn: {
     backgroundColor: '#00B894',
     borderRadius: 14,
@@ -866,6 +986,25 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
     color: '#CC7700',
+    lineHeight: 15,
+  },
+  fusionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFF0F0',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: '#FF3B30',
+  },
+  fusionBannerText: {
+    flex: 1,
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#CC2920',
     lineHeight: 15,
   },
 

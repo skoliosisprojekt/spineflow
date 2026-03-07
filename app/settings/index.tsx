@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import { SUPPORTED_LANGUAGES, setAppLanguage } from '../../i18n';
 import { useSettingsStore, useProfileStore } from '../../stores/settingsStore';
 import { useAuthStore } from '../../stores/authStore';
 import { usePlanStore } from '../../stores/planStore';
@@ -9,52 +11,6 @@ import { supabase } from '../../lib/supabase';
 import type { ThemeMode, WeightUnit, SurgeryType, CurveType, GoalType, ExperienceType, BodyType } from '../../types';
 
 type OptionItem<T extends string> = { value: T; label: string };
-
-const SURGERY_OPTIONS: OptionItem<SurgeryType>[] = [
-  { value: 'none', label: 'No Surgery' },
-  { value: 'partial', label: 'Partial Fusion' },
-  { value: 'full', label: 'Full Fusion' },
-  { value: 'vbt', label: 'VBT' },
-  { value: 'rods', label: 'Rods' },
-];
-
-const CURVE_OPTIONS: OptionItem<CurveType>[] = [
-  { value: 'thoracic', label: 'Thoracic' },
-  { value: 'lumbar', label: 'Lumbar' },
-  { value: 'thoracolumbar', label: 'Thoracolumbar' },
-  { value: 'scurve', label: 'S-Curve' },
-  { value: 'unsure', label: 'Unsure' },
-];
-
-const GOAL_OPTIONS: OptionItem<GoalType>[] = [
-  { value: 'muscle', label: 'Build Muscle' },
-  { value: 'strength', label: 'Get Stronger' },
-  { value: 'posture', label: 'Improve Posture' },
-  { value: 'pain', label: 'Reduce Pain' },
-];
-
-const EXPERIENCE_OPTIONS: OptionItem<ExperienceType>[] = [
-  { value: 'beginner', label: 'Beginner' },
-  { value: 'intermediate', label: 'Intermediate' },
-  { value: 'advanced', label: 'Advanced' },
-];
-
-const BODY_OPTIONS: OptionItem<BodyType>[] = [
-  { value: 'hardgainer', label: 'Hardgainer' },
-  { value: 'normal', label: 'Normal' },
-  { value: 'softgainer', label: 'Softgainer' },
-];
-
-const THEME_OPTIONS: OptionItem<ThemeMode>[] = [
-  { value: 'system', label: 'System' },
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
-];
-
-const UNIT_OPTIONS: OptionItem<WeightUnit>[] = [
-  { value: 'kg', label: 'Kilograms (kg)' },
-  { value: 'lbs', label: 'Pounds (lbs)' },
-];
 
 function SegmentedPicker<T extends string>({ options, value, onChange }: { options: OptionItem<T>[]; value: T; onChange: (v: T) => void }) {
   return (
@@ -89,19 +45,61 @@ function SettingRow({ icon, label, value, color }: { icon: keyof typeof Material
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const { email } = useAuthStore();
   const { theme, units, setTheme, setUnits, loadSettings } = useSettingsStore();
   const {
-    surgery, curveType, goal, experience, bodyType,
-    setSurgery, setCurveType, setGoal, setExperience, setBodyType,
+    surgery, curveType, goal, experience, bodyType, equipment,
+    setSurgery, setCurveType, setGoal, setExperience, setBodyType, setEquipment,
     saveProfile, loadProfile,
   } = useProfileStore();
 
   const { generatePlan } = usePlanStore();
   const [dirty, setDirty] = useState(false);
   const [planRegenerated, setPlanRegenerated] = useState(false);
+  const [customInput, setCustomInput] = useState('');
 
   useEffect(() => { loadSettings(); loadProfile(); }, []);
+
+  const SURGERY_OPTIONS: OptionItem<SurgeryType>[] = [
+    { value: 'none', label: t('settings.noSurgery') },
+    { value: 'partial', label: t('settings.partialFusion') },
+    { value: 'full', label: t('settings.fullFusion') },
+    { value: 'vbt', label: t('settings.vbt') },
+    { value: 'rods', label: t('settings.rods') },
+  ];
+  const CURVE_OPTIONS: OptionItem<CurveType>[] = [
+    { value: 'thoracic', label: t('settings.thoracic') },
+    { value: 'lumbar', label: t('settings.lumbar') },
+    { value: 'thoracolumbar', label: t('settings.thoracolumbar') },
+    { value: 'scurve', label: t('settings.scurve') },
+    { value: 'unsure', label: t('settings.unsure') },
+  ];
+  const GOAL_OPTIONS: OptionItem<GoalType>[] = [
+    { value: 'muscle', label: t('settings.buildMuscle') },
+    { value: 'strength', label: t('settings.getStronger') },
+    { value: 'posture', label: t('settings.improvePosture') },
+    { value: 'pain', label: t('settings.reducePain') },
+  ];
+  const EXPERIENCE_OPTIONS: OptionItem<ExperienceType>[] = [
+    { value: 'beginner', label: t('settings.beginner') },
+    { value: 'intermediate', label: t('settings.intermediate') },
+    { value: 'advanced', label: t('settings.advanced') },
+  ];
+  const BODY_OPTIONS: OptionItem<BodyType>[] = [
+    { value: 'hardgainer', label: t('settings.hardgainer') },
+    { value: 'normal', label: t('settings.normal') },
+    { value: 'softgainer', label: t('settings.softgainer') },
+  ];
+  const THEME_OPTIONS: OptionItem<ThemeMode>[] = [
+    { value: 'system', label: t('settings.system') },
+    { value: 'light', label: t('settings.light') },
+    { value: 'dark', label: t('settings.dark') },
+  ];
+  const UNIT_OPTIONS: OptionItem<WeightUnit>[] = [
+    { value: 'kg', label: t('settings.kg') },
+    { value: 'lbs', label: t('settings.lbs') },
+  ];
 
   const handleSave = async () => {
     await saveProfile();
@@ -125,63 +123,163 @@ export default function SettingsScreen() {
     setDirty(true);
   };
 
+  const handleLanguageChange = async (langCode: string) => {
+    await setAppLanguage(langCode);
+  };
+
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
           <MaterialIcons name="arrow-back" size={24} color="#1C1C1E" />
         </Pressable>
-        <Text style={styles.title}>Settings</Text>
+        <Text style={styles.title}>{t('settings.title')}</Text>
         <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Account */}
-        <Text style={styles.sectionTitle}>Account</Text>
+        <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
         <View style={styles.card}>
-          <SettingRow icon="email" label="Email" value={email || '—'} color="#5B8DEF" />
+          <SettingRow icon="email" label={t('settings.email')} value={email || '—'} color="#5B8DEF" />
         </View>
 
         {/* Appearance */}
-        <Text style={styles.sectionTitle}>Appearance</Text>
+        <Text style={styles.sectionTitle}>{t('settings.appearance')}</Text>
         <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Theme</Text>
+          <Text style={styles.fieldLabel}>{t('settings.theme')}</Text>
           <SegmentedPicker options={THEME_OPTIONS} value={theme} onChange={(v) => setTheme(v)} />
 
           <View style={styles.cardDivider} />
 
-          <Text style={styles.fieldLabel}>Weight Unit</Text>
+          <Text style={styles.fieldLabel}>{t('settings.weightUnit')}</Text>
           <SegmentedPicker options={UNIT_OPTIONS} value={units} onChange={(v) => setUnits(v)} />
+
+          <View style={styles.cardDivider} />
+
+          <Text style={styles.fieldLabel}>{t('settings.language')}</Text>
+          <View style={styles.segmented}>
+            {SUPPORTED_LANGUAGES.map((lang) => {
+              const active = i18n.language === lang.code;
+              return (
+                <Pressable
+                  key={lang.code}
+                  style={[styles.segmentedItem, active && styles.segmentedItemActive]}
+                  onPress={() => handleLanguageChange(lang.code)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                >
+                  <Text style={[styles.segmentedText, active && styles.segmentedTextActive]}>{lang.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
 
         {/* Scoliosis Profile */}
-        <Text style={styles.sectionTitle}>Scoliosis Profile</Text>
+        <Text style={styles.sectionTitle}>{t('settings.scoliosisProfile')}</Text>
         <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Surgery History</Text>
+          <Text style={styles.fieldLabel}>{t('settings.surgeryHistory')}</Text>
           <SegmentedPicker options={SURGERY_OPTIONS} value={surgery} onChange={(v) => updateProfile(setSurgery, v)} />
 
           <View style={styles.cardDivider} />
 
-          <Text style={styles.fieldLabel}>Curve Type</Text>
+          <Text style={styles.fieldLabel}>{t('settings.curveType')}</Text>
           <SegmentedPicker options={CURVE_OPTIONS} value={curveType} onChange={(v) => updateProfile(setCurveType, v)} />
 
           <View style={styles.cardDivider} />
 
-          <Text style={styles.fieldLabel}>Main Goal</Text>
+          <Text style={styles.fieldLabel}>{t('settings.mainGoal')}</Text>
           <SegmentedPicker options={GOAL_OPTIONS} value={goal} onChange={(v) => updateProfile(setGoal, v)} />
         </View>
 
         {/* Training Profile */}
-        <Text style={styles.sectionTitle}>Training Profile</Text>
+        <Text style={styles.sectionTitle}>{t('settings.trainingProfile')}</Text>
         <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Experience Level</Text>
+          <Text style={styles.fieldLabel}>{t('settings.experienceLevel')}</Text>
           <SegmentedPicker options={EXPERIENCE_OPTIONS} value={experience} onChange={(v) => updateProfile(setExperience, v)} />
 
           <View style={styles.cardDivider} />
 
-          <Text style={styles.fieldLabel}>Body Type</Text>
+          <Text style={styles.fieldLabel}>{t('settings.bodyType')}</Text>
           <SegmentedPicker options={BODY_OPTIONS} value={bodyType} onChange={(v) => updateProfile(setBodyType, v)} />
+        </View>
+
+        {/* Equipment */}
+        <Text style={styles.sectionTitle}>{t('settings.equipment')}</Text>
+        <View style={styles.card}>
+          <Text style={styles.fieldLabel}>{t('onboarding.yourEquipment')}</Text>
+          <View style={styles.equipChips}>
+            {equipment.filter((e) => !e.startsWith('custom:')).map((eq) => {
+              const labelKey = `onboarding.equipment.${eq}`;
+              return (
+                <Pressable
+                  key={eq}
+                  style={[styles.equipChip, styles.equipChipActive]}
+                  onPress={() => { setEquipment(equipment.filter((e) => e !== eq)); setDirty(true); }}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.equipChipText}>{t(labelKey)}</Text>
+                  <MaterialIcons name="close" size={12} color="#00B894" />
+                </Pressable>
+              );
+            })}
+            {equipment.filter((e) => e.startsWith('custom:')).map((eq) => (
+              <Pressable
+                key={eq}
+                style={[styles.equipChip, styles.equipChipCustom]}
+                onPress={() => { setEquipment(equipment.filter((e) => e !== eq)); setDirty(true); }}
+                accessibilityRole="button"
+              >
+                <MaterialIcons name="build" size={12} color="#FF9500" />
+                <Text style={styles.equipChipTextCustom}>{eq.replace('custom:', '')}</Text>
+                <MaterialIcons name="close" size={12} color="#FF9500" />
+              </Pressable>
+            ))}
+          </View>
+
+          <View style={styles.cardDivider} />
+
+          <Text style={styles.fieldLabel}>{t('onboarding.customEquipment')}</Text>
+          <View style={styles.customInputRow}>
+            <TextInput
+              style={styles.customInput}
+              placeholder={t('onboarding.customEquipmentPlaceholder')}
+              placeholderTextColor="#AEAEB2"
+              value={customInput}
+              onChangeText={setCustomInput}
+              onSubmitEditing={() => {
+                const name = customInput.trim();
+                if (!name) return;
+                const key = `custom:${name}`;
+                if (!equipment.includes(key)) { setEquipment([...equipment, key]); setDirty(true); }
+                setCustomInput('');
+              }}
+              returnKeyType="done"
+            />
+            <Pressable
+              style={({ pressed }) => [styles.customAddBtn, pressed && { opacity: 0.7 }, !customInput.trim() && { opacity: 0.4 }]}
+              onPress={() => {
+                const name = customInput.trim();
+                if (!name) return;
+                const key = `custom:${name}`;
+                if (!equipment.includes(key)) { setEquipment([...equipment, key]); setDirty(true); }
+                setCustomInput('');
+              }}
+              disabled={!customInput.trim()}
+              accessibilityRole="button"
+            >
+              <MaterialIcons name="add" size={18} color="#FFFFFF" />
+            </Pressable>
+          </View>
+          <View style={styles.disclaimerRow}>
+            <MaterialIcons name="warning" size={14} color="#FF9500" />
+            <Text style={styles.disclaimerText}>{t('onboarding.customDisclaimer')}</Text>
+          </View>
         </View>
 
         {/* Save / Regenerate */}
@@ -192,7 +290,7 @@ export default function SettingsScreen() {
             accessibilityRole="button"
           >
             <MaterialIcons name="save" size={18} color="#FFFFFF" />
-            <Text style={styles.saveBtnText}>Save Profile Changes</Text>
+            <Text style={styles.saveBtnText}>{t('settings.saveChanges')}</Text>
           </Pressable>
         )}
 
@@ -203,7 +301,7 @@ export default function SettingsScreen() {
         >
           <MaterialIcons name="auto-awesome" size={18} color={planRegenerated ? '#00B894' : '#FF9500'} />
           <Text style={[styles.regenerateBtnText, planRegenerated && { color: '#00B894' }]}>
-            {planRegenerated ? 'Plan Updated!' : 'Regenerate Workout Plan'}
+            {planRegenerated ? t('settings.planUpdated') : t('settings.regeneratePlan')}
           </Text>
         </Pressable>
 
@@ -214,7 +312,7 @@ export default function SettingsScreen() {
           accessibilityRole="button"
         >
           <MaterialIcons name="logout" size={18} color="#FF3B30" />
-          <Text style={styles.logoutBtnText}>Log Out</Text>
+          <Text style={styles.logoutBtnText}>{t('settings.logOut')}</Text>
         </Pressable>
 
         {/* App Info */}
@@ -223,7 +321,7 @@ export default function SettingsScreen() {
           <Text style={styles.appVersion}>Version 1.0.0</Text>
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -346,6 +444,28 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   logoutBtnText: { fontSize: 15, fontWeight: '600', color: '#FF3B30' },
+
+  // Equipment
+  equipChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  equipChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6,
+  },
+  equipChipActive: { backgroundColor: '#E8FAF5', borderWidth: 1, borderColor: '#00B89430' },
+  equipChipText: { fontSize: 13, fontWeight: '600', color: '#00B894' },
+  equipChipCustom: { backgroundColor: '#FFF3E0', borderWidth: 1, borderColor: '#FF950030' },
+  equipChipTextCustom: { fontSize: 13, fontWeight: '600', color: '#1C1C1E' },
+  customInputRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  customInput: {
+    flex: 1, backgroundColor: '#F2F2F7', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10,
+    fontSize: 14, color: '#1C1C1E',
+  },
+  customAddBtn: {
+    width: 40, height: 40, borderRadius: 10, backgroundColor: '#FF9500',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  disclaimerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: 4 },
+  disclaimerText: { fontSize: 11, color: '#8E8E93', lineHeight: 16, flex: 1 },
 
   appInfo: {
     alignItems: 'center',

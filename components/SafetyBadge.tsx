@@ -1,13 +1,14 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import type { SafetyLevel } from '../types';
 
 const safetyConfig: Record<SafetyLevel, {
-  bg: string; color: string; icon: keyof typeof MaterialIcons.glyphMap; label: string;
+  bg: string; color: string; icon: keyof typeof MaterialIcons.glyphMap; labelKey: string;
 }> = {
-  safe:   { bg: '#E8FAF5', color: '#009B7D', icon: 'check-circle',  label: 'Safe' },
-  modify: { bg: '#FFF3E0', color: '#CC7700', icon: 'warning',       label: 'Modify' },
-  avoid:  { bg: '#FFF0EF', color: '#FF3B30', icon: 'block',         label: 'Avoid' },
+  safe:   { bg: '#E8FAF5', color: '#009B7D', icon: 'check-circle',  labelKey: 'safety.safe' },
+  modify: { bg: '#FFF3E0', color: '#CC7700', icon: 'warning',       labelKey: 'safety.modify' },
+  avoid:  { bg: '#FFF0EF', color: '#FF3B30', icon: 'block',         labelKey: 'safety.avoid' },
 };
 
 interface SafetyBadgeProps {
@@ -16,13 +17,14 @@ interface SafetyBadgeProps {
 }
 
 export default function SafetyBadge({ level, size = 'small' }: SafetyBadgeProps) {
+  const { t } = useTranslation();
   const config = safetyConfig[level];
   const isSmall = size === 'small';
 
   return (
     <View
       style={[styles.badge, { backgroundColor: config.bg }, isSmall ? styles.small : styles.medium]}
-      accessibilityLabel={`Exercise safety: ${config.label}`}
+      accessibilityLabel={t(config.labelKey)}
       accessibilityRole="text"
     >
       <MaterialIcons
@@ -31,7 +33,7 @@ export default function SafetyBadge({ level, size = 'small' }: SafetyBadgeProps)
         color={config.color}
       />
       <Text style={[styles.label, { color: config.color }, isSmall ? styles.labelSmall : styles.labelMedium]}>
-        {config.label}
+        {t(config.labelKey)}
       </Text>
     </View>
   );

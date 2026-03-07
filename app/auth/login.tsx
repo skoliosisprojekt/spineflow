@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 
 export default function LoginScreen() {
@@ -21,11 +22,12 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { t } = useTranslation();
 
   const handleLogin = async () => {
     setError('');
     if (!email.trim() || !password) {
-      setError('Please enter your email and password.');
+      setError(t('auth.enterEmailPassword'));
       return;
     }
 
@@ -40,7 +42,7 @@ export default function LoginScreen() {
         setError(authError.message);
       }
     } catch (e) {
-      setError('Something went wrong. Please try again.');
+      setError(t('common.somethingWrong'));
     } finally {
       setLoading(false);
     }
@@ -59,12 +61,12 @@ export default function LoginScreen() {
         <View style={styles.logoContainer}>
           <MaterialIcons name="fitness-center" size={48} color="#00B894" />
           <Text style={styles.logoText}>SpineFlow</Text>
-          <Text style={styles.subtitle}>Your safe gym companion for scoliosis</Text>
+          <Text style={styles.subtitle}>{t('auth.tagline')}</Text>
         </View>
 
         {/* Form */}
         <View style={styles.form}>
-          <Text style={styles.title}>Welcome Back</Text>
+          <Text style={styles.title}>{t('auth.welcomeBack')}</Text>
 
           {/* Error Banner */}
           {error !== '' && (
@@ -79,7 +81,7 @@ export default function LoginScreen() {
             <MaterialIcons name="email" size={20} color="#8E8E93" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Email address"
+              placeholder={t('auth.emailPlaceholder')}
               placeholderTextColor="#AEAEB2"
               value={email}
               onChangeText={setEmail}
@@ -94,7 +96,7 @@ export default function LoginScreen() {
             <MaterialIcons name="lock" size={20} color="#8E8E93" style={styles.inputIcon} />
             <TextInput
               style={[styles.input, { flex: 1 }]}
-              placeholder="Password"
+              placeholder={t('auth.passwordPlaceholder')}
               placeholderTextColor="#AEAEB2"
               value={password}
               onChangeText={setPassword}
@@ -113,7 +115,7 @@ export default function LoginScreen() {
             accessibilityRole="link"
             accessibilityLabel="Reset your password"
           >
-            <Text style={styles.forgotText}>Forgot password?</Text>
+            <Text style={styles.forgotText}>{t('auth.forgotPassword')}</Text>
           </TouchableOpacity>
 
           {/* Login Button */}
@@ -124,13 +126,13 @@ export default function LoginScreen() {
             accessibilityRole="button"
             accessibilityLabel="Log in"
           >
-            <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Log In'}</Text>
+            <Text style={styles.buttonText}>{loading ? t('auth.loggingIn') : t('auth.logIn')}</Text>
           </TouchableOpacity>
 
           {/* Divider */}
           <View style={styles.dividerRow}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
+            <Text style={styles.dividerText}>{t('common.or')}</Text>
             <View style={styles.dividerLine} />
           </View>
 
@@ -141,7 +143,7 @@ export default function LoginScreen() {
             accessibilityRole="button"
             accessibilityLabel="Create a new account"
           >
-            <Text style={styles.registerButtonText}>Create New Account</Text>
+            <Text style={styles.registerButtonText}>{t('auth.createNewAccount')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

@@ -1,7 +1,10 @@
 import { Tabs } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 export default function TabsLayout() {
+  const { t } = useTranslation();
+
   return (
     <Tabs
       screenOptions={{
@@ -25,51 +28,51 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('tabs.home'),
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="home" size={size} color={color} />
           ),
-          tabBarAccessibilityLabel: 'Home tab',
+          tabBarAccessibilityLabel: t('tabs.home'),
         }}
       />
       <Tabs.Screen
         name="exercises"
         options={{
-          title: 'Exercises',
+          title: t('tabs.exercises'),
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="fitness-center" size={size} color={color} />
           ),
-          tabBarAccessibilityLabel: 'Exercises tab',
+          tabBarAccessibilityLabel: t('tabs.exercises'),
         }}
       />
       <Tabs.Screen
         name="workout"
         options={{
-          title: 'Workout',
+          title: t('tabs.workout'),
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="play-circle-outline" size={size} color={color} />
           ),
-          tabBarAccessibilityLabel: 'Workout tab',
+          tabBarAccessibilityLabel: t('tabs.workout'),
         }}
       />
       <Tabs.Screen
         name="progress"
         options={{
-          title: 'Progress',
+          title: t('tabs.progress'),
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="bar-chart" size={size} color={color} />
           ),
-          tabBarAccessibilityLabel: 'Progress tab',
+          tabBarAccessibilityLabel: t('tabs.progress'),
         }}
       />
       <Tabs.Screen
         name="nutrition"
         options={{
-          title: 'Nutrition',
+          title: t('tabs.nutrition'),
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="restaurant" size={size} color={color} />
           ),
-          tabBarAccessibilityLabel: 'Nutrition tab',
+          tabBarAccessibilityLabel: t('tabs.nutrition'),
         }}
       />
     </Tabs>

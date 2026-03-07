@@ -1,25 +1,27 @@
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import OnboardingStep from '../../components/OnboardingStep';
 import { useProfileStore } from '../../stores/settingsStore';
 import type { GoalType } from '../../types';
 
-const options = [
-  { id: 'muscle', label: 'Build Muscle', description: 'Gain size and definition', icon: 'fitness-center' as const },
-  { id: 'strength', label: 'Get Stronger', description: 'Increase overall strength', icon: 'flash-on' as const },
-  { id: 'posture', label: 'Fix Posture', description: 'Improve alignment and balance', icon: 'accessibility-new' as const },
-  { id: 'pain', label: 'Reduce Pain', description: 'Manage scoliosis-related discomfort', icon: 'healing' as const },
-];
-
 export default function GoalScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { goal, setGoal } = useProfileStore();
+
+  const options = [
+    { id: 'muscle', label: t('onboarding.goal.muscle'), description: t('onboarding.goal.muscleDesc'), icon: 'fitness-center' as const },
+    { id: 'strength', label: t('onboarding.goal.strength'), description: t('onboarding.goal.strengthDesc'), icon: 'flash-on' as const },
+    { id: 'posture', label: t('onboarding.goal.posture'), description: t('onboarding.goal.postureDesc'), icon: 'accessibility-new' as const },
+    { id: 'pain', label: t('onboarding.goal.pain'), description: t('onboarding.goal.painDesc'), icon: 'healing' as const },
+  ];
 
   return (
     <OnboardingStep
       step={2}
       totalSteps={6}
-      title="Your main goal?"
-      subtitle="We'll optimize your exercise plan for this."
+      title={t('onboarding.goal.title')}
+      subtitle={t('onboarding.goal.subtitle')}
       options={options}
       selected={goal}
       onSelect={(id) => setGoal(id as GoalType)}

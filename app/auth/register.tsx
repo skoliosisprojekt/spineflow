@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 
 export default function RegisterScreen() {
@@ -23,24 +24,25 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; confirm?: string; age?: string; form?: string }>({});
+  const { t } = useTranslation();
 
   const validate = (): boolean => {
     const newErrors: typeof errors = {};
 
     if (!email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('auth.emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Please enter a valid email';
+      newErrors.email = t('auth.emailInvalid');
     }
 
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('auth.passwordRequired');
     } else if (password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+      newErrors.password = t('auth.passwordTooShort');
     }
 
     if (password !== confirmPassword) {
-      newErrors.confirm = 'Passwords do not match';
+      newErrors.confirm = t('auth.passwordsNoMatch');
     }
 
     setErrors(newErrors);
@@ -50,7 +52,7 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     const valid = validate();
     if (!ageConfirmed) {
-      setErrors((prev) => ({ ...prev, age: 'You must confirm you are at least 16 years old.' }));
+      setErrors((prev) => ({ ...prev, age: t('auth.ageRequired') }));
     }
     if (!valid || !ageConfirmed) return;
 
@@ -68,7 +70,7 @@ export default function RegisterScreen() {
         // Auth state change will trigger navigation automatically
       }
     } catch (e) {
-      setErrors({ form: 'Something went wrong. Please try again.' });
+      setErrors({ form: t('common.somethingWrong') });
     } finally {
       setLoading(false);
     }
@@ -88,22 +90,22 @@ export default function RegisterScreen() {
         <View style={styles.logoContainer}>
           <MaterialIcons name="fitness-center" size={48} color="#00B894" />
           <Text style={styles.logoText}>SpineFlow</Text>
-          <Text style={styles.subtitle}>Your safe gym companion for scoliosis</Text>
+          <Text style={styles.subtitle}>{t('auth.tagline')}</Text>
         </View>
 
         {/* Form */}
         <View style={styles.form}>
-          <Text style={styles.title}>Create Account</Text>
+          <Text style={styles.title}>{t('auth.createAccount')}</Text>
 
           {/* Email */}
           <View style={styles.inputContainer}>
             <MaterialIcons name="email" size={20} color="#8E8E93" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Email address"
+              placeholder={t('auth.emailPlaceholder')}
               placeholderTextColor="#AEAEB2"
               value={email}
-              onChangeText={(t) => { setEmail(t); setErrors({ ...errors, email: undefined }); }}
+              onChangeText={(v) => { setEmail(v); setErrors({ ...errors, email: undefined }); }}
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
@@ -116,10 +118,10 @@ export default function RegisterScreen() {
             <MaterialIcons name="lock" size={20} color="#8E8E93" style={styles.inputIcon} />
             <TextInput
               style={[styles.input, { flex: 1 }]}
-              placeholder="Password (min. 8 characters)"
+              placeholder={t('auth.passwordMin')}
               placeholderTextColor="#AEAEB2"
               value={password}
-              onChangeText={(t) => { setPassword(t); setErrors({ ...errors, password: undefined }); }}
+              onChangeText={(v) => { setPassword(v); setErrors({ ...errors, password: undefined }); }}
               secureTextEntry={!showPassword}
               autoComplete="new-password"
             />
@@ -134,10 +136,10 @@ export default function RegisterScreen() {
             <MaterialIcons name="lock-outline" size={20} color="#8E8E93" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Confirm password"
+              placeholder={t('auth.confirmPassword')}
               placeholderTextColor="#AEAEB2"
               value={confirmPassword}
-              onChangeText={(t) => { setConfirmPassword(t); setErrors({ ...errors, confirm: undefined }); }}
+              onChangeText={(v) => { setConfirmPassword(v); setErrors({ ...errors, confirm: undefined }); }}
               secureTextEntry={!showPassword}
               autoComplete="new-password"
             />
@@ -157,7 +159,7 @@ export default function RegisterScreen() {
               size={24}
               color={ageConfirmed ? '#00B894' : '#8E8E93'}
             />
-            <Text style={styles.checkboxLabel}>I confirm I am at least 16 years old</Text>
+            <Text style={styles.checkboxLabel}>{t('auth.ageConfirm')}</Text>
           </TouchableOpacity>
           {errors.age && <Text style={styles.errorText}>{errors.age}</Text>}
 
@@ -178,9 +180,9 @@ export default function RegisterScreen() {
             accessibilityLabel="Create account"
           >
             {loading ? (
-              <Text style={styles.buttonText}>Creating account...</Text>
+              <Text style={styles.buttonText}>{t('auth.creatingAccount')}</Text>
             ) : (
-              <Text style={styles.buttonText}>Create Account</Text>
+              <Text style={styles.buttonText}>{t('auth.createAccount')}</Text>
             )}
           </TouchableOpacity>
 
@@ -192,7 +194,7 @@ export default function RegisterScreen() {
             accessibilityLabel="Go to login screen"
           >
             <Text style={styles.linkText}>
-              Already have an account? <Text style={styles.linkBold}>Log In</Text>
+              {t('auth.alreadyHaveAccount')} <Text style={styles.linkBold}>{t('auth.logIn')}</Text>
             </Text>
           </TouchableOpacity>
         </View>

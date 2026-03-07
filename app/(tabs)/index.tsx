@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useProfileStore } from '../../stores/settingsStore';
 import { useWorkoutStore } from '../../stores/workoutStore';
 import { useHistoryStore } from '../../stores/historyStore';
@@ -9,6 +10,7 @@ import { useNutritionStore } from '../../stores/nutritionStore';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { surgery, curveType, goal } = useProfileStore();
   const workoutExercises = useWorkoutStore((s) => s.exercises);
   const { workouts, loadHistory } = useHistoryStore();
@@ -63,17 +65,17 @@ export default function HomeScreen() {
         <View style={styles.statCard}>
           <MaterialIcons name="local-fire-department" size={20} color="#FF3B30" />
           <Text style={[styles.statValue, { color: '#FF3B30' }]}>{streak}</Text>
-          <Text style={styles.statLabel}>Streak</Text>
+          <Text style={styles.statLabel}>{t('home.streak')}</Text>
         </View>
         <View style={styles.statCard}>
           <MaterialIcons name="emoji-events" size={20} color="#FF9500" />
           <Text style={[styles.statValue, { color: '#FF9500' }]}>{totalWorkouts}</Text>
-          <Text style={styles.statLabel}>Workouts</Text>
+          <Text style={styles.statLabel}>{t('home.workouts')}</Text>
         </View>
         <View style={styles.statCard}>
           <MaterialIcons name="water-drop" size={20} color="#5B8DEF" />
           <Text style={[styles.statValue, { color: '#5B8DEF' }]}>{hydrationPct}%</Text>
-          <Text style={styles.statLabel}>Hydration</Text>
+          <Text style={styles.statLabel}>{t('home.hydration')}</Text>
         </View>
       </View>
 
@@ -87,8 +89,8 @@ export default function HomeScreen() {
         >
           <View style={styles.activeDot} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.activeTitle}>Workout in progress</Text>
-            <Text style={styles.activeSubtitle}>{workoutExercises.length} exercises added</Text>
+            <Text style={styles.activeTitle}>{t('home.workoutInProgress')}</Text>
+            <Text style={styles.activeSubtitle}>{t('home.exercisesAdded', { count: workoutExercises.length })}</Text>
           </View>
           <MaterialIcons name="arrow-forward" size={20} color="#FFFFFF" />
         </Pressable>
@@ -100,15 +102,15 @@ export default function HomeScreen() {
           <View style={styles.cardHeader}>
             <MaterialIcons name="check-circle" size={20} color="#00B894" />
             <Text style={styles.cardTitle}>
-              {todayWorkouts === 1 ? '1 workout today' : `${todayWorkouts} workouts today`}
+              {todayWorkouts === 1 ? t('home.workoutToday') : t('home.workoutsToday', { count: todayWorkouts })}
             </Text>
           </View>
-          <Text style={styles.cardDescription}>Keep up the great work!</Text>
+          <Text style={styles.cardDescription}>{t('home.keepItUp')}</Text>
         </View>
       )}
 
       {/* Quick Actions */}
-      <Text style={styles.sectionTitle}>Quick Actions</Text>
+      <Text style={styles.sectionTitle}>{t('home.quickActions')}</Text>
       <View style={styles.actionsGrid}>
         <Pressable
           style={({ pressed }) => [styles.actionCard, pressed && { opacity: 0.8 }]}
@@ -118,7 +120,7 @@ export default function HomeScreen() {
           <View style={[styles.actionIcon, { backgroundColor: '#E8FAF5' }]}>
             <MaterialIcons name="fitness-center" size={22} color="#00B894" />
           </View>
-          <Text style={styles.actionLabel}>Exercises</Text>
+          <Text style={styles.actionLabel}>{t('tabs.exercises')}</Text>
         </Pressable>
 
         <Pressable
@@ -129,7 +131,7 @@ export default function HomeScreen() {
           <View style={[styles.actionIcon, { backgroundColor: '#FFF3E0' }]}>
             <MaterialIcons name="play-circle-outline" size={22} color="#FF9500" />
           </View>
-          <Text style={styles.actionLabel}>Workout</Text>
+          <Text style={styles.actionLabel}>{t('tabs.workout')}</Text>
         </Pressable>
 
         <Pressable
@@ -140,7 +142,7 @@ export default function HomeScreen() {
           <View style={[styles.actionIcon, { backgroundColor: '#EDE7F6' }]}>
             <MaterialIcons name="water-drop" size={22} color="#AF52DE" />
           </View>
-          <Text style={styles.actionLabel}>Nutrition</Text>
+          <Text style={styles.actionLabel}>{t('tabs.nutrition')}</Text>
         </Pressable>
 
         <Pressable
@@ -151,25 +153,25 @@ export default function HomeScreen() {
           <View style={[styles.actionIcon, { backgroundColor: '#E3F2FD' }]}>
             <MaterialIcons name="bar-chart" size={22} color="#5B8DEF" />
           </View>
-          <Text style={styles.actionLabel}>Progress</Text>
+          <Text style={styles.actionLabel}>{t('tabs.progress')}</Text>
         </Pressable>
       </View>
 
       {/* Profile Summary */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Your Profile</Text>
+        <Text style={styles.cardTitle}>{t('home.yourProfile')}</Text>
         <View style={styles.profileRow}>
-          <Text style={styles.profileLabel}>Scoliosis Type</Text>
+          <Text style={styles.profileLabel}>{t('home.scoliosisType')}</Text>
           <View style={styles.badge}><Text style={styles.badgeText}>{curveType}</Text></View>
         </View>
         <View style={styles.separator} />
         <View style={styles.profileRow}>
-          <Text style={styles.profileLabel}>Surgery History</Text>
+          <Text style={styles.profileLabel}>{t('home.surgeryHistory')}</Text>
           <View style={styles.badge}><Text style={styles.badgeText}>{surgery}</Text></View>
         </View>
         <View style={styles.separator} />
         <View style={styles.profileRow}>
-          <Text style={styles.profileLabel}>Main Goal</Text>
+          <Text style={styles.profileLabel}>{t('home.mainGoal')}</Text>
           <View style={styles.badge}><Text style={styles.badgeText}>{goal}</Text></View>
         </View>
       </View>
@@ -178,10 +180,10 @@ export default function HomeScreen() {
       <View style={[styles.card, styles.safetyCard]}>
         <View style={styles.cardHeader}>
           <MaterialIcons name="health-and-safety" size={20} color="#00B894" />
-          <Text style={styles.cardTitle}>Safety First</Text>
+          <Text style={styles.cardTitle}>{t('home.safetyFirst')}</Text>
         </View>
         <Text style={styles.cardDescription}>
-          All exercises are rated for your specific curve type and surgery history. Always listen to your body.
+          {t('home.safetyDesc')}
         </Text>
       </View>
     </ScrollView>
@@ -201,7 +203,7 @@ const styles = StyleSheet.create({
   },
   greeting: { fontSize: 28, fontWeight: '800', color: '#1C1C1E' },
   date: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
-  settingsButton: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  settingsButton: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', marginRight: 40 },
 
   // Stats row
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },

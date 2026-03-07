@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { ReactNode } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 interface Option {
@@ -19,6 +20,7 @@ interface OnboardingStepProps {
   onNext: () => void;
   onBack?: () => void;
   multiSelect?: boolean;
+  extraContent?: ReactNode;
 }
 
 export default function OnboardingStep({
@@ -32,6 +34,7 @@ export default function OnboardingStep({
   onNext,
   onBack,
   multiSelect = false,
+  extraContent,
 }: OnboardingStepProps) {
   const isSelected = (id: string) =>
     multiSelect ? (selected as string[]).includes(id) : selected === id;
@@ -41,7 +44,10 @@ export default function OnboardingStep({
     : selected !== '';
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       {/* Header */}
       <View style={styles.header}>
         {onBack && (
@@ -72,7 +78,7 @@ export default function OnboardingStep({
       </View>
 
       {/* Content */}
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.subtitle}>{subtitle}</Text>
 
@@ -107,6 +113,7 @@ export default function OnboardingStep({
             </TouchableOpacity>
           ))}
         </View>
+        {extraContent}
       </ScrollView>
 
       {/* Next Button */}
@@ -122,7 +129,7 @@ export default function OnboardingStep({
           <MaterialIcons name="arrow-forward" size={20} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -1,21 +1,22 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, Modal } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useNutritionStore, HydrationEntry, MealEntry, MealType } from '../../stores/nutritionStore';
 import type { HydrationType } from '../../types';
 
-const QUICK_ADDS: { type: HydrationType; label: string; amount: number; icon: keyof typeof MaterialIcons.glyphMap; color: string }[] = [
-  { type: 'water', label: 'Water', amount: 250, icon: 'water-drop', color: '#5B8DEF' },
-  { type: 'water', label: 'Large Water', amount: 500, icon: 'water-drop', color: '#5B8DEF' },
-  { type: 'shake', label: 'Protein Shake', amount: 300, icon: 'blender', color: '#AF52DE' },
-  { type: 'bcaa', label: 'BCAA', amount: 300, icon: 'science', color: '#FF9500' },
+const QUICK_ADDS: { type: HydrationType; labelKey: string; amount: number; icon: keyof typeof MaterialIcons.glyphMap; color: string }[] = [
+  { type: 'water', labelKey: 'nutrition.water', amount: 250, icon: 'water-drop', color: '#5B8DEF' },
+  { type: 'water', labelKey: 'nutrition.largeWater', amount: 500, icon: 'water-drop', color: '#5B8DEF' },
+  { type: 'shake', labelKey: 'nutrition.proteinShake', amount: 300, icon: 'blender', color: '#AF52DE' },
+  { type: 'bcaa', labelKey: 'nutrition.bcaa', amount: 300, icon: 'science', color: '#FF9500' },
 ];
 
-const MEAL_CONFIG: Record<MealType, { label: string; icon: keyof typeof MaterialIcons.glyphMap; color: string }> = {
-  breakfast: { label: 'Breakfast', icon: 'free-breakfast', color: '#FF9500' },
-  lunch: { label: 'Lunch', icon: 'lunch-dining', color: '#00B894' },
-  dinner: { label: 'Dinner', icon: 'dinner-dining', color: '#5B8DEF' },
-  snack: { label: 'Snack', icon: 'cookie', color: '#AF52DE' },
+const MEAL_CONFIG: Record<MealType, { labelKey: string; icon: keyof typeof MaterialIcons.glyphMap; color: string }> = {
+  breakfast: { labelKey: 'nutrition.breakfast', icon: 'free-breakfast', color: '#FF9500' },
+  lunch: { labelKey: 'nutrition.lunch', icon: 'lunch-dining', color: '#00B894' },
+  dinner: { labelKey: 'nutrition.dinner', icon: 'dinner-dining', color: '#5B8DEF' },
+  snack: { labelKey: 'nutrition.snack', icon: 'cookie', color: '#AF52DE' },
 };
 
 function ProgressBar({ progress, color, label, value }: { progress: number; color: string; label: string; value: string }) {
@@ -34,7 +35,8 @@ function ProgressBar({ progress, color, label, value }: { progress: number; colo
 }
 
 function MealRow({ meal, onDelete }: { meal: MealEntry; onDelete: () => void }) {
-  const time = new Date(meal.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const { t } = useTranslation();
+  const time = new Date(meal.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const cfg = MEAL_CONFIG[meal.mealType];
   return (
     <View style={styles.entryRow}>
@@ -43,10 +45,10 @@ function MealRow({ meal, onDelete }: { meal: MealEntry; onDelete: () => void }) 
       </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.entryType}>{meal.name}</Text>
-        <Text style={styles.entryTime}>{cfg.label} · {time}</Text>
+        <Text style={styles.entryTime}>{t(cfg.labelKey)} · {time}</Text>
       </View>
       <View style={styles.macroCol}>
-        <Text style={styles.mealCalories}>{meal.calories} kcal</Text>
+        <Text style={styles.mealCalories}>{meal.calories} {t('nutrition.kcal')}</Text>
         <Text style={styles.mealMacros}>{meal.protein}P · {meal.carbs}C · {meal.fat}F</Text>
       </View>
       <Pressable onPress={onDelete} hitSlop={8} accessibilityRole="button" accessibilityLabel="Remove meal">
@@ -57,16 +59,18 @@ function MealRow({ meal, onDelete }: { meal: MealEntry; onDelete: () => void }) 
 }
 
 function HydrationRow({ entry, onDelete }: { entry: HydrationEntry; onDelete: () => void }) {
-  const time = new Date(entry.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const { t } = useTranslation();
+  const time = new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const config = { water: { icon: 'water-drop' as const, color: '#5B8DEF' }, shake: { icon: 'blender' as const, color: '#AF52DE' }, bcaa: { icon: 'science' as const, color: '#FF9500' } };
   const c = config[entry.type];
+  const labelMap: Record<string, string> = { water: t('nutrition.water'), shake: t('nutrition.proteinShake'), bcaa: t('nutrition.bcaa') };
   return (
     <View style={styles.entryRow}>
       <View style={[styles.entryIcon, { backgroundColor: c.color + '15' }]}>
         <MaterialIcons name={c.icon} size={16} color={c.color} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={styles.entryType}>{entry.type === 'water' ? 'Water' : entry.type === 'shake' ? 'Protein Shake' : 'BCAA'}</Text>
+        <Text style={styles.entryType}>{labelMap[entry.type]}</Text>
         <Text style={styles.entryTime}>{time}</Text>
       </View>
       <Text style={styles.entryAmount}>{entry.amount} ml</Text>
@@ -78,6 +82,7 @@ function HydrationRow({ entry, onDelete }: { entry: HydrationEntry; onDelete: ()
 }
 
 function AddMealModal({ visible, onClose, onAdd }: { visible: boolean; onClose: () => void; onAdd: (meal: Omit<MealEntry, 'id' | 'time'>) => void }) {
+  const { t } = useTranslation();
   const [mealType, setMealType] = useState<MealType>('lunch');
   const [name, setName] = useState('');
   const [calories, setCalories] = useState('');
@@ -103,10 +108,13 @@ function AddMealModal({ visible, onClose, onAdd }: { visible: boolean; onClose: 
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.modalOverlay}>
+      <KeyboardAvoidingView
+        style={styles.modalOverlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
         <View style={styles.modalCard}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Add Meal</Text>
+            <Text style={styles.modalTitle}>{t('nutrition.addMeal')}</Text>
             <Pressable onPress={onClose} hitSlop={8}>
               <MaterialIcons name="close" size={22} color="#8E8E93" />
             </Pressable>
@@ -114,17 +122,17 @@ function AddMealModal({ visible, onClose, onAdd }: { visible: boolean; onClose: 
 
           {/* Meal type selector */}
           <View style={styles.mealTypeRow}>
-            {(Object.keys(MEAL_CONFIG) as MealType[]).map((t) => {
-              const cfg = MEAL_CONFIG[t];
-              const active = mealType === t;
+            {(Object.keys(MEAL_CONFIG) as MealType[]).map((mt) => {
+              const cfg = MEAL_CONFIG[mt];
+              const active = mealType === mt;
               return (
                 <Pressable
-                  key={t}
+                  key={mt}
                   style={[styles.mealTypeBtn, active && { backgroundColor: cfg.color + '20', borderColor: cfg.color }]}
-                  onPress={() => setMealType(t)}
+                  onPress={() => setMealType(mt)}
                 >
                   <MaterialIcons name={cfg.icon} size={16} color={active ? cfg.color : '#8E8E93'} />
-                  <Text style={[styles.mealTypeBtnText, active && { color: cfg.color }]}>{cfg.label}</Text>
+                  <Text style={[styles.mealTypeBtnText, active && { color: cfg.color }]}>{t(cfg.labelKey)}</Text>
                 </Pressable>
               );
             })}
@@ -133,7 +141,7 @@ function AddMealModal({ visible, onClose, onAdd }: { visible: boolean; onClose: 
           {/* Name */}
           <TextInput
             style={styles.modalInput}
-            placeholder="Meal name (e.g. Chicken Rice)"
+            placeholder={t('nutrition.mealPlaceholder')}
             placeholderTextColor="#AEAEB2"
             value={name}
             onChangeText={setName}
@@ -143,19 +151,19 @@ function AddMealModal({ visible, onClose, onAdd }: { visible: boolean; onClose: 
           {/* Macros row */}
           <View style={styles.macroInputRow}>
             <View style={styles.macroInputGroup}>
-              <Text style={styles.macroInputLabel}>kcal</Text>
+              <Text style={styles.macroInputLabel}>{t('nutrition.kcal')}</Text>
               <TextInput style={styles.macroInput} placeholder="0" placeholderTextColor="#AEAEB2" value={calories} onChangeText={setCalories} keyboardType="numeric" accessibilityLabel="Calories" />
             </View>
             <View style={styles.macroInputGroup}>
-              <Text style={styles.macroInputLabel}>Protein</Text>
+              <Text style={styles.macroInputLabel}>{t('nutrition.protein')}</Text>
               <TextInput style={styles.macroInput} placeholder="0" placeholderTextColor="#AEAEB2" value={protein} onChangeText={setProtein} keyboardType="numeric" accessibilityLabel="Protein grams" />
             </View>
             <View style={styles.macroInputGroup}>
-              <Text style={styles.macroInputLabel}>Carbs</Text>
+              <Text style={styles.macroInputLabel}>{t('nutrition.carbs')}</Text>
               <TextInput style={styles.macroInput} placeholder="0" placeholderTextColor="#AEAEB2" value={carbs} onChangeText={setCarbs} keyboardType="numeric" accessibilityLabel="Carbs grams" />
             </View>
             <View style={styles.macroInputGroup}>
-              <Text style={styles.macroInputLabel}>Fat</Text>
+              <Text style={styles.macroInputLabel}>{t('nutrition.fat')}</Text>
               <TextInput style={styles.macroInput} placeholder="0" placeholderTextColor="#AEAEB2" value={fat} onChangeText={setFat} keyboardType="numeric" accessibilityLabel="Fat grams" />
             </View>
           </View>
@@ -166,15 +174,16 @@ function AddMealModal({ visible, onClose, onAdd }: { visible: boolean; onClose: 
             disabled={!name.trim()}
             accessibilityRole="button"
           >
-            <Text style={styles.modalAddBtnText}>Add Meal</Text>
+            <Text style={styles.modalAddBtnText}>{t('nutrition.addMeal')}</Text>
           </Pressable>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 export default function NutritionScreen() {
+  const { t } = useTranslation();
   const { entries, meals, goals, addEntry, removeEntry, addMeal, removeMeal, setGoal, loadNutrition, clearToday } = useNutritionStore();
   const [editingGoal, setEditingGoal] = useState<'water' | 'protein' | 'calories' | null>(null);
   const [goalInput, setGoalInput] = useState('');
@@ -212,8 +221,8 @@ export default function NutritionScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.title} accessibilityRole="header">Nutrition</Text>
-          <Text style={styles.subtitle}>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</Text>
+          <Text style={styles.title} accessibilityRole="header">{t('nutrition.title')}</Text>
+          <Text style={styles.subtitle}>{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</Text>
         </View>
         <Pressable onPress={() => setShowMealForm(true)} style={styles.addMealHeaderBtn} accessibilityRole="button" accessibilityLabel="Add meal">
           <MaterialIcons name="add" size={20} color="#00B894" />
@@ -226,15 +235,15 @@ export default function NutritionScreen() {
           <View style={styles.overviewTopRow}>
             <View style={styles.calorieCircle}>
               <Text style={styles.calorieValue}>{mealCalories}</Text>
-              <Text style={styles.calorieUnit}>/ {goals.calories} kcal</Text>
+              <Text style={styles.calorieUnit}>/ {goals.calories} {t('nutrition.kcal')}</Text>
             </View>
           </View>
 
           <View style={styles.macrosRow}>
-            <ProgressBar progress={totalProtein / goals.protein} color="#AF52DE" label="Protein" value={`${totalProtein}/${goals.protein}g`} />
-            <ProgressBar progress={mealCarbs / 300} color="#FF9500" label="Carbs" value={`${mealCarbs}g`} />
-            <ProgressBar progress={mealFat / 80} color="#FF6B6B" label="Fat" value={`${mealFat}g`} />
-            <ProgressBar progress={todayHydration / goals.water} color="#5B8DEF" label="Water" value={`${(todayHydration / 1000).toFixed(1)}/${(goals.water / 1000).toFixed(1)}L`} />
+            <ProgressBar progress={totalProtein / goals.protein} color="#AF52DE" label={t('nutrition.protein')} value={`${totalProtein}/${goals.protein}g`} />
+            <ProgressBar progress={mealCarbs / 300} color="#FF9500" label={t('nutrition.carbs')} value={`${mealCarbs}g`} />
+            <ProgressBar progress={mealFat / 80} color="#FF6B6B" label={t('nutrition.fat')} value={`${mealFat}g`} />
+            <ProgressBar progress={todayHydration / goals.water} color="#5B8DEF" label={t('nutrition.water')} value={`${(todayHydration / 1000).toFixed(1)}/${(goals.water / 1000).toFixed(1)}L`} />
           </View>
 
           {/* Edit goals links */}
@@ -242,22 +251,22 @@ export default function NutritionScreen() {
             {editingGoal ? (
               <View style={styles.goalEditInput}>
                 <Text style={styles.goalEditLabel}>
-                  {editingGoal === 'water' ? 'Water (ml):' : editingGoal === 'protein' ? 'Protein (g):' : 'Calories:'}
+                  {editingGoal === 'water' ? t('nutrition.waterMl') : editingGoal === 'protein' ? t('nutrition.proteinG') : t('nutrition.caloriesLabel')}
                 </Text>
                 <TextInput style={styles.goalInput} value={goalInput} onChangeText={setGoalInput} keyboardType="numeric" onBlur={commitGoal} onSubmitEditing={commitGoal} autoFocus accessibilityLabel={`${editingGoal} goal`} />
               </View>
             ) : (
               <View style={styles.goalLinksRow}>
                 <Pressable onPress={() => { setEditingGoal('calories'); setGoalInput(String(goals.calories)); }} hitSlop={6}>
-                  <Text style={styles.goalLink}>Calories</Text>
+                  <Text style={styles.goalLink}>{t('nutrition.calories')}</Text>
                 </Pressable>
                 <Text style={styles.goalDot}> · </Text>
                 <Pressable onPress={() => { setEditingGoal('protein'); setGoalInput(String(goals.protein)); }} hitSlop={6}>
-                  <Text style={styles.goalLink}>Protein</Text>
+                  <Text style={styles.goalLink}>{t('nutrition.protein')}</Text>
                 </Pressable>
                 <Text style={styles.goalDot}> · </Text>
                 <Pressable onPress={() => { setEditingGoal('water'); setGoalInput(String(goals.water)); }} hitSlop={6}>
-                  <Text style={styles.goalLink}>Water</Text>
+                  <Text style={styles.goalLink}>{t('nutrition.water')}</Text>
                 </Pressable>
               </View>
             )}
@@ -271,11 +280,11 @@ export default function NutritionScreen() {
           accessibilityRole="button"
         >
           <MaterialIcons name="restaurant" size={18} color="#FFFFFF" />
-          <Text style={styles.addMealBtnText}>Add Meal</Text>
+          <Text style={styles.addMealBtnText}>{t('nutrition.addMeal')}</Text>
         </Pressable>
 
         {/* Quick Add Hydration */}
-        <Text style={styles.sectionTitle}>Quick Add Hydration</Text>
+        <Text style={styles.sectionTitle}>{t('nutrition.quickAdd')}</Text>
         <View style={styles.quickGrid}>
           {QUICK_ADDS.map((qa, i) => (
             <Pressable
@@ -283,10 +292,10 @@ export default function NutritionScreen() {
               style={({ pressed }) => [styles.quickBtn, { borderColor: qa.color }, pressed && { opacity: 0.7 }]}
               onPress={() => addEntry(qa.type, qa.amount)}
               accessibilityRole="button"
-              accessibilityLabel={`Add ${qa.label} ${qa.amount}ml`}
+              accessibilityLabel={`${t(qa.labelKey)} ${qa.amount}ml`}
             >
               <MaterialIcons name={qa.icon} size={18} color={qa.color} />
-              <Text style={[styles.quickLabel, { color: qa.color }]}>{qa.label}</Text>
+              <Text style={[styles.quickLabel, { color: qa.color }]}>{t(qa.labelKey)}</Text>
               <Text style={styles.quickAmount}>{qa.amount} ml</Text>
             </Pressable>
           ))}
@@ -295,7 +304,7 @@ export default function NutritionScreen() {
         {/* Today's Meals */}
         {todayMeals.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>Meals</Text>
+            <Text style={styles.sectionTitle}>{t('nutrition.meals')}</Text>
             {[...todayMeals].reverse().map((m) => (
               <MealRow key={m.id} meal={m} onDelete={() => removeMeal(m.id)} />
             ))}
@@ -306,9 +315,9 @@ export default function NutritionScreen() {
         {todayEntries.length > 0 && (
           <>
             <View style={styles.logHeader}>
-              <Text style={styles.sectionTitle}>Hydration Log</Text>
+              <Text style={styles.sectionTitle}>{t('nutrition.hydrationLog')}</Text>
               <Pressable onPress={clearToday} hitSlop={8} accessibilityRole="button" accessibilityLabel="Clear today">
-                <Text style={styles.clearBtn}>Clear All</Text>
+                <Text style={styles.clearBtn}>{t('nutrition.clearAll')}</Text>
               </Pressable>
             </View>
             {[...todayEntries].reverse().map((e) => (

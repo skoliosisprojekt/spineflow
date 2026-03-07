@@ -1,23 +1,22 @@
 import { useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, Dimensions, ViewToken } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore';
 
 const { width } = Dimensions.get('window');
-
-const slides = [
-  { id: '1', icon: 'fitness-center' as const, title: 'Safe Training with Scoliosis',
-    desc: 'SpineFlow tells you which exercises are safe for YOUR specific curve type and surgery history.' },
-  { id: '2', icon: 'verified-user' as const, title: 'Personalized Safety Ratings',
-    desc: 'Every exercise is rated Safe, Modify, or Avoid — personalized for your scoliosis profile.' },
-  { id: '3', icon: 'bar-chart' as const, title: 'Track Your Progress',
-    desc: 'Log workouts, track volume, hit personal records — all while staying safe.' },
-];
 
 export default function WelcomeScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const { setWelcomeSeen } = useAuthStore();
+  const { t } = useTranslation();
+
+  const slides = [
+    { id: '1', icon: 'fitness-center' as const, title: t('welcome.slide1Title'), desc: t('welcome.slide1Desc') },
+    { id: '2', icon: 'verified-user' as const, title: t('welcome.slide2Title'), desc: t('welcome.slide2Desc') },
+    { id: '3', icon: 'bar-chart' as const, title: t('welcome.slide3Title'), desc: t('welcome.slide3Desc') },
+  ];
 
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     if (viewableItems.length > 0 && viewableItems[0].index !== null) {
@@ -34,7 +33,7 @@ export default function WelcomeScreen() {
   return (
     <View style={s.container}>
       <TouchableOpacity style={s.skip} onPress={setWelcomeSeen} accessibilityLabel="Skip introduction">
-        <Text style={s.skipText}>Skip</Text>
+        <Text style={s.skipText}>{t('common.skip')}</Text>
       </TouchableOpacity>
 
       <FlatList
@@ -68,12 +67,12 @@ export default function WelcomeScreen() {
       <View style={s.footer}>
         {currentIndex === slides.length - 1 ? (
           <TouchableOpacity style={s.btn} onPress={setWelcomeSeen} accessibilityLabel="Get started">
-            <Text style={s.btnText}>Get Started</Text>
+            <Text style={s.btnText}>{t('welcome.getStarted')}</Text>
             <MaterialIcons name="arrow-forward" size={20} color="#FFF" />
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={s.btn} onPress={handleNext} accessibilityLabel="Next slide">
-            <Text style={s.btnText}>Next</Text>
+            <Text style={s.btnText}>{t('common.next')}</Text>
             <MaterialIcons name="arrow-forward" size={20} color="#FFF" />
           </TouchableOpacity>
         )}

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, StatusBar } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
 import { useSettingsStore, useProfileStore } from '../stores/settingsStore';
 import { Session } from '@supabase/supabase-js';
+import '../i18n';
+import { loadSavedLanguage } from '../i18n';
 
 export default function RootLayout() {
   const [isLoading, setIsLoading] = useState(true);
@@ -17,6 +19,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     const init = async () => {
+      await loadSavedLanguage();
       await loadPersistedState();
       await loadSettings();
       await loadProfile();
@@ -65,14 +68,17 @@ export default function RootLayout() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="welcome" />
-      <Stack.Screen name="auth" />
-      <Stack.Screen name="consent" />
-      <Stack.Screen name="onboarding" />
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="exercise/[id]" options={{ presentation: 'card' }} />
-      <Stack.Screen name="settings" options={{ presentation: 'card' }} />
-    </Stack>
+    <>
+      <StatusBar barStyle="dark-content" backgroundColor="#F2F2F7" translucent={false} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="welcome" />
+        <Stack.Screen name="auth" />
+        <Stack.Screen name="consent" />
+        <Stack.Screen name="onboarding" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="exercise/[id]" options={{ presentation: 'card' }} />
+        <Stack.Screen name="settings" options={{ presentation: 'card' }} />
+      </Stack>
+    </>
   );
 }

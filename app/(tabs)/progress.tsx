@@ -1,12 +1,14 @@
 import { useEffect, useState, useMemo } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useHistoryStore, WorkoutRecord } from '../../stores/historyStore';
+import { shareWorkout } from '../../lib/exportWorkout';
 import { useProfileStore } from '../../stores/settingsStore';
 import { exercises as allExercises, exerciseNames } from '../../data/exercises';
 import type { CurveType, GoalType } from '../../types';
 
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const WEEKDAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
 function StatCard({ icon, value, label, color }: { icon: keyof typeof MaterialIcons.glyphMap; value: string; label: string; color: string }) {
   return (
@@ -14,6 +16,100 @@ function StatCard({ icon, value, label, color }: { icon: keyof typeof MaterialIc
       <MaterialIcons name={icon} size={22} color={color} />
       <Text style={[styles.statValue, { color }]}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function VolumeTrendChart({ workouts }: { workouts: WorkoutRecord[] }) {
+  const { t } = useTranslation();
+
+  const data = useMemo(() => {
+    const days: { label: string; volume: number; dateKey: string }[] = [];
+    const now = new Date();
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const key = toDateKey(d);
+      const dayLabel = d.toLocaleDateString(undefined, { weekday: 'narrow' });
+      const dayVolume = workouts
+        .filter((w) => toDateKey(new Date(w.date)) === key)
+        .reduce((s, w) => s + w.totalVolume, 0);
+      days.push({ label: dayLabel, volume: dayVolume, dateKey: key });
+    }
+    return days;
+  }, [workouts]);
+
+  const maxVolume = Math.max(...data.map((d) => d.volume), 1);
+  const hasData = data.some((d) => d.volume > 0);
+  const totalPeriod = data.reduce((s, d) => s + d.volume, 0);
+  const activeDays = data.filter((d) => d.volume > 0).length;
+  const avgVolume = activeDays > 0 ? Math.round(totalPeriod / activeDays) : 0;
+
+  return (
+    <View style={styles.trendCard}>
+      <View style={styles.trendHeader}>
+        <View style={styles.trendTitleRow}>
+          <MaterialIcons name="show-chart" size={20} color="#5B8DEF" />
+          <Text style={styles.trendTitle}>{t('progress.volumeTrend')}</Text>
+        </View>
+        <Text style={styles.trendPeriod}>{t('progress.last14Days')}</Text>
+      </View>
+
+      {!hasData ? (
+        <View style={styles.trendEmpty}>
+          <MaterialIcons name="bar-chart" size={36} color="#E5E5EA" />
+          <Text style={styles.trendEmptyText}>{t('progress.noDataYet')}</Text>
+        </View>
+      ) : (
+        <>
+          {/* Summary row */}
+          <View style={styles.trendSummaryRow}>
+            <View style={styles.trendSummaryItem}>
+              <Text style={styles.trendSummaryValue}>{totalPeriod >= 1000 ? `${(totalPeriod / 1000).toFixed(1)}k` : totalPeriod}</Text>
+              <Text style={styles.trendSummaryLabel}>{t('progress.totalVolume')}</Text>
+            </View>
+            <View style={styles.trendSummaryDivider} />
+            <View style={styles.trendSummaryItem}>
+              <Text style={styles.trendSummaryValue}>{avgVolume >= 1000 ? `${(avgVolume / 1000).toFixed(1)}k` : avgVolume}</Text>
+              <Text style={styles.trendSummaryLabel}>{t('progress.avgVolume')}</Text>
+            </View>
+            <View style={styles.trendSummaryDivider} />
+            <View style={styles.trendSummaryItem}>
+              <Text style={styles.trendSummaryValue}>{activeDays}</Text>
+              <Text style={styles.trendSummaryLabel}>{t('progress.workoutsLabel')}</Text>
+            </View>
+          </View>
+
+          {/* Bar chart */}
+          <View style={styles.trendChartArea}>
+            {data.map((d, i) => {
+              const pct = d.volume / maxVolume;
+              const barHeight = Math.max(pct * 100, d.volume > 0 ? 4 : 0);
+              return (
+                <View key={i} style={styles.trendBarCol}>
+                  <View style={styles.trendBarWrapper}>
+                    {d.volume > 0 && (
+                      <Text style={styles.trendBarValue}>
+                        {d.volume >= 1000 ? `${(d.volume / 1000).toFixed(1)}k` : d.volume}
+                      </Text>
+                    )}
+                    <View
+                      style={[
+                        styles.trendBar,
+                        {
+                          height: barHeight,
+                          backgroundColor: d.volume > 0 ? (pct >= 0.7 ? '#00B894' : pct >= 0.4 ? '#5B8DEF' : '#AEAEB2') : 'transparent',
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={[styles.trendBarLabel, i % 2 !== 0 && styles.trendBarLabelHidden]}>{d.label}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </>
+      )}
     </View>
   );
 }
@@ -38,13 +134,14 @@ interface CalendarProps {
 }
 
 function TrainingCalendar({ workoutDays, selectedDate, onSelectDate }: CalendarProps) {
+  const { t } = useTranslation();
   const [viewDate, setViewDate] = useState(() => new Date());
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfWeek(year, month);
   const todayKey = toDateKey(new Date());
-  const monthLabel = viewDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const monthLabel = viewDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 
   const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
   const nextMonth = () => {
@@ -75,8 +172,8 @@ function TrainingCalendar({ workoutDays, selectedDate, onSelectDate }: CalendarP
 
       {/* Weekday Headers */}
       <View style={styles.calWeekRow}>
-        {WEEKDAYS.map((d) => (
-          <Text key={d} style={styles.calWeekday}>{d}</Text>
+        {WEEKDAY_KEYS.map((d) => (
+          <Text key={d} style={styles.calWeekday}>{t(`progress.weekdays.${d}`)}</Text>
         ))}
       </View>
 
@@ -125,9 +222,10 @@ function TrainingCalendar({ workoutDays, selectedDate, onSelectDate }: CalendarP
 }
 
 function DayDetail({ records, dateKey, onDelete }: { records: WorkoutRecord[]; dateKey: string; onDelete: (id: string) => void }) {
+  const { t } = useTranslation();
   const parts = dateKey.split('-');
   const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-  const label = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const label = d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
   if (records.length === 0) {
     return (
@@ -135,7 +233,7 @@ function DayDetail({ records, dateKey, onDelete }: { records: WorkoutRecord[]; d
         <Text style={styles.dayDetailDate}>{label}</Text>
         <View style={styles.dayDetailEmpty}>
           <MaterialIcons name="event-busy" size={28} color="#CFCFD2" />
-          <Text style={styles.dayDetailEmptyText}>Rest day</Text>
+          <Text style={styles.dayDetailEmptyText}>{t('progress.restDay')}</Text>
         </View>
       </View>
     );
@@ -144,17 +242,22 @@ function DayDetail({ records, dateKey, onDelete }: { records: WorkoutRecord[]; d
   return (
     <View style={styles.dayDetailCard}>
       <Text style={styles.dayDetailDate}>{label}</Text>
-      <Text style={styles.dayDetailCount}>{records.length} workout{records.length > 1 ? 's' : ''}</Text>
+      <Text style={styles.dayDetailCount}>{records.length} {records.length > 1 ? t('progress.workouts') : t('progress.workout')}</Text>
 
       {records.map((rec) => {
-        const time = new Date(rec.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        const time = new Date(rec.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         return (
           <View key={rec.id} style={styles.dayWorkout}>
             <View style={styles.dayWorkoutHeader}>
               <Text style={styles.dayWorkoutTime}>{time}</Text>
-              <Pressable onPress={() => onDelete(rec.id)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Delete workout">
-                <MaterialIcons name="delete-outline" size={16} color="#AEAEB2" />
-              </Pressable>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <Pressable onPress={() => shareWorkout(rec)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Export workout">
+                  <MaterialIcons name="share" size={16} color="#00B894" />
+                </Pressable>
+                <Pressable onPress={() => onDelete(rec.id)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Delete workout">
+                  <MaterialIcons name="delete-outline" size={16} color="#AEAEB2" />
+                </Pressable>
+              </View>
             </View>
 
             {rec.exercises.map((ex, i) => {
@@ -174,9 +277,9 @@ function DayDetail({ records, dateKey, onDelete }: { records: WorkoutRecord[]; d
             })}
 
             <View style={styles.dayWorkoutStats}>
-              <Text style={styles.dayWorkoutStat}>{rec.completedSets}/{rec.totalSets} sets</Text>
+              <Text style={styles.dayWorkoutStat}>{rec.completedSets}/{rec.totalSets} {t('progress.sets')}</Text>
               <Text style={styles.dayWorkoutStatDot}>·</Text>
-              <Text style={styles.dayWorkoutStat}>{rec.totalReps} reps</Text>
+              <Text style={styles.dayWorkoutStat}>{rec.totalReps} {t('progress.reps')}</Text>
               {rec.totalVolume > 0 && (
                 <>
                   <Text style={styles.dayWorkoutStatDot}>·</Text>
@@ -193,8 +296,8 @@ function DayDetail({ records, dateKey, onDelete }: { records: WorkoutRecord[]; d
 
 type MuscleGroup = 'back' | 'core' | 'legs' | 'chest' | 'shoulders' | 'arms';
 
-const MUSCLE_LABELS: Record<MuscleGroup, string> = {
-  back: 'Back', core: 'Core', legs: 'Legs', chest: 'Chest', shoulders: 'Shoulders', arms: 'Arms',
+const MUSCLE_LABEL_KEYS: Record<MuscleGroup, string> = {
+  back: 'muscles.back', core: 'muscles.core', legs: 'muscles.legs', chest: 'muscles.chest', shoulders: 'muscles.shoulders', arms: 'muscles.arms',
 };
 
 const MUSCLE_ICONS: Record<MuscleGroup, keyof typeof MaterialIcons.glyphMap> = {
@@ -258,6 +361,7 @@ for (const ex of allExercises) {
 }
 
 function MuscleBalance({ workouts, curveType, goal }: { workouts: WorkoutRecord[]; curveType: CurveType; goal: GoalType }) {
+  const { t } = useTranslation();
   const recommendations = getRecommendedSets(curveType, goal);
 
   // Count sets per muscle from last 7 days
@@ -292,8 +396,8 @@ function MuscleBalance({ workouts, curveType, goal }: { workouts: WorkoutRecord[
     <View style={styles.balanceCard}>
       <View style={styles.balanceHeader}>
         <MaterialIcons name="analytics" size={20} color="#5B8DEF" />
-        <Text style={styles.balanceTitle}>Muscle Balance</Text>
-        <Text style={styles.balancePeriod}>Last 7 days</Text>
+        <Text style={styles.balanceTitle}>{t('progress.muscleBalance')}</Text>
+        <Text style={styles.balancePeriod}>{t('progress.last7Days')}</Text>
       </View>
 
       {muscles.map((muscle) => {
@@ -308,23 +412,23 @@ function MuscleBalance({ workouts, curveType, goal }: { workouts: WorkoutRecord[
             <View style={styles.balanceRowTop}>
               <View style={styles.balanceMuscleInfo}>
                 <MaterialIcons name={MUSCLE_ICONS[muscle]} size={16} color="#3C3C43" />
-                <Text style={styles.balanceMuscleName}>{MUSCLE_LABELS[muscle]}</Text>
+                <Text style={styles.balanceMuscleName}>{t(MUSCLE_LABEL_KEYS[muscle])}</Text>
                 {rec.priority !== 'normal' && (
                   <View style={[styles.balancePriorityBadge, { backgroundColor: priorityColor + '18' }]}>
                     <Text style={[styles.balancePriorityText, { color: priorityColor }]}>
-                      {rec.priority === 'critical' ? 'Key' : 'Important'}
+                      {rec.priority === 'critical' ? t('progress.key') : t('progress.important')}
                     </Text>
                   </View>
                 )}
               </View>
-              <Text style={styles.balanceSetsText}>{actual}/{rec.sets} sets</Text>
+              <Text style={styles.balanceSetsText}>{actual}/{rec.sets} {t('progress.sets')}</Text>
             </View>
             <View style={styles.balanceBarTrack}>
               <View style={[styles.balanceBarFill, { width: `${pct}%`, backgroundColor: barColor }]} />
             </View>
             {rec.priority === 'critical' && pct < 50 && (
               <Text style={[styles.balanceHint, { color: priorityColor }]}>
-                Critical for your scoliosis — needs more training
+                {t('progress.criticalHint')}
               </Text>
             )}
           </View>
@@ -393,18 +497,19 @@ function computePRs(workouts: WorkoutRecord[]): PR[] {
 function formatPRDate(iso: string): string {
   if (!iso) return '-';
   const d = new Date(iso);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 function PersonalRecords({ workouts }: { workouts: WorkoutRecord[] }) {
+  const { t } = useTranslation();
   const prs = useMemo(() => computePRs(workouts), [workouts]);
 
   if (prs.length === 0) {
     return (
       <View style={styles.prEmpty}>
         <MaterialIcons name="emoji-events" size={48} color="#E5E5EA" />
-        <Text style={styles.prEmptyTitle}>No records yet</Text>
-        <Text style={styles.prEmptyText}>Complete workouts to see your personal records here</Text>
+        <Text style={styles.prEmptyTitle}>{t('progress.noRecordsYet')}</Text>
+        <Text style={styles.prEmptyText}>{t('progress.noRecordsDesc')}</Text>
       </View>
     );
   }
@@ -418,7 +523,7 @@ function PersonalRecords({ workouts }: { workouts: WorkoutRecord[] }) {
             <View style={styles.prCardHeader}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.prName} numberOfLines={1}>{pr.name}</Text>
-                <Text style={styles.prMuscle}>{muscleLabel} · {pr.totalSets} total sets</Text>
+                <Text style={styles.prMuscle}>{muscleLabel} · {t('progress.totalSets', { count: pr.totalSets })}</Text>
               </View>
               <MaterialIcons name="emoji-events" size={18} color="#FF9500" />
             </View>
@@ -428,7 +533,7 @@ function PersonalRecords({ workouts }: { workouts: WorkoutRecord[] }) {
                 <View style={styles.prStatBox}>
                   <View style={styles.prStatIconRow}>
                     <MaterialIcons name="fitness-center" size={14} color="#FF3B30" />
-                    <Text style={styles.prStatLabel}>Max Weight</Text>
+                    <Text style={styles.prStatLabel}>{t('progress.maxWeight')}</Text>
                   </View>
                   <Text style={styles.prStatValue}>{pr.maxWeight} kg</Text>
                   <Text style={styles.prStatDate}>{formatPRDate(pr.maxWeightDate)}</Text>
@@ -438,7 +543,7 @@ function PersonalRecords({ workouts }: { workouts: WorkoutRecord[] }) {
                 <View style={styles.prStatBox}>
                   <View style={styles.prStatIconRow}>
                     <MaterialIcons name="bolt" size={14} color="#AF52DE" />
-                    <Text style={styles.prStatLabel}>Max Reps</Text>
+                    <Text style={styles.prStatLabel}>{t('progress.maxReps')}</Text>
                   </View>
                   <Text style={styles.prStatValue}>{pr.maxReps}</Text>
                   <Text style={styles.prStatDate}>{formatPRDate(pr.maxRepsDate)}</Text>
@@ -448,7 +553,7 @@ function PersonalRecords({ workouts }: { workouts: WorkoutRecord[] }) {
                 <View style={styles.prStatBox}>
                   <View style={styles.prStatIconRow}>
                     <MaterialIcons name="show-chart" size={14} color="#00B894" />
-                    <Text style={styles.prStatLabel}>Best Set</Text>
+                    <Text style={styles.prStatLabel}>{t('progress.bestSet')}</Text>
                   </View>
                   <Text style={styles.prStatValue}>{pr.maxVolume} kg</Text>
                   <Text style={styles.prStatDate}>{formatPRDate(pr.maxVolumeDate)}</Text>
@@ -465,6 +570,7 @@ function PersonalRecords({ workouts }: { workouts: WorkoutRecord[] }) {
 type ProgressTab = 'overview' | 'records';
 
 export default function ProgressScreen() {
+  const { t } = useTranslation();
   const { workouts, loadHistory, deleteWorkout } = useHistoryStore();
   const { curveType, goal } = useProfileStore();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -513,7 +619,7 @@ export default function ProgressScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title} accessibilityRole="header">Progress</Text>
+        <Text style={styles.title} accessibilityRole="header">{t('progress.title')}</Text>
       </View>
 
       {/* Tab Switcher */}
@@ -524,7 +630,7 @@ export default function ProgressScreen() {
           accessibilityRole="button"
           accessibilityState={{ selected: tab === 'overview' }}
         >
-          <Text style={[styles.tabBtnText, tab === 'overview' && styles.tabBtnTextActive]}>Overview</Text>
+          <Text style={[styles.tabBtnText, tab === 'overview' && styles.tabBtnTextActive]}>{t('progress.overview')}</Text>
         </Pressable>
         <Pressable
           style={[styles.tabBtn, tab === 'records' && styles.tabBtnActive]}
@@ -532,7 +638,7 @@ export default function ProgressScreen() {
           accessibilityRole="button"
           accessibilityState={{ selected: tab === 'records' }}
         >
-          <Text style={[styles.tabBtnText, tab === 'records' && styles.tabBtnTextActive]}>Personal Records</Text>
+          <Text style={[styles.tabBtnText, tab === 'records' && styles.tabBtnTextActive]}>{t('progress.personalRecords')}</Text>
         </Pressable>
       </View>
 
@@ -543,19 +649,23 @@ export default function ProgressScreen() {
           <>
         {/* Stats Overview */}
         <View style={styles.statsRow}>
-          <StatCard icon="emoji-events" value={String(totalWorkouts)} label="Workouts" color="#FF9500" />
-          <StatCard icon="local-fire-department" value={String(streak)} label="Day Streak" color="#FF3B30" />
-          <StatCard icon="date-range" value={String(thisWeek)} label="This Week" color="#5B8DEF" />
+          <StatCard icon="emoji-events" value={String(totalWorkouts)} label={t('progress.workoutsLabel')} color="#FF9500" />
+          <StatCard icon="local-fire-department" value={String(streak)} label={t('progress.dayStreak')} color="#FF3B30" />
+          <StatCard icon="date-range" value={String(thisWeek)} label={t('progress.thisWeek')} color="#5B8DEF" />
         </View>
 
         <View style={styles.statsRow}>
-          <StatCard icon="fitness-center" value={totalVolume >= 1000 ? `${(totalVolume / 1000).toFixed(1)}k` : String(totalVolume)} label="Total kg" color="#00B894" />
-          <StatCard icon="bolt" value={totalReps >= 1000 ? `${(totalReps / 1000).toFixed(1)}k` : String(totalReps)} label="Total Reps" color="#AF52DE" />
-          <StatCard icon="repeat" value={(totalWorkouts > 0 ? Math.round(totalReps / totalWorkouts) : 0).toString()} label="Avg Reps" color="#FF6B6B" />
+          <StatCard icon="fitness-center" value={totalVolume >= 1000 ? `${(totalVolume / 1000).toFixed(1)}k` : String(totalVolume)} label={t('progress.totalKg')} color="#00B894" />
+          <StatCard icon="bolt" value={totalReps >= 1000 ? `${(totalReps / 1000).toFixed(1)}k` : String(totalReps)} label={t('progress.totalReps')} color="#AF52DE" />
+          <StatCard icon="repeat" value={(totalWorkouts > 0 ? Math.round(totalReps / totalWorkouts) : 0).toString()} label={t('progress.avgReps')} color="#FF6B6B" />
         </View>
 
+        {/* Volume Trend */}
+        <Text style={styles.sectionTitle}>{t('progress.volumeTrend')}</Text>
+        <VolumeTrendChart workouts={workouts} />
+
         {/* Training Calendar */}
-        <Text style={styles.sectionTitle}>Training Calendar</Text>
+        <Text style={styles.sectionTitle}>{t('progress.trainingCalendar')}</Text>
         <TrainingCalendar
           workoutDays={workoutDays}
           selectedDate={selectedDate}
@@ -570,7 +680,7 @@ export default function ProgressScreen() {
         {/* Muscle Balance */}
         {workouts.length > 0 && !selectedDate && (
           <>
-            <Text style={styles.sectionTitle}>Muscle Balance</Text>
+            <Text style={styles.sectionTitle}>{t('progress.muscleBalance')}</Text>
             <MuscleBalance workouts={workouts} curveType={curveType} goal={goal} />
           </>
         )}
@@ -578,10 +688,10 @@ export default function ProgressScreen() {
         {/* Full History (collapsed if a date is selected) */}
         {!selectedDate && workouts.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>Recent Workouts</Text>
+            <Text style={styles.sectionTitle}>{t('progress.recentWorkouts')}</Text>
             {workouts.slice(0, 10).map((w) => {
               const d = new Date(w.date);
-              const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+              const dateStr = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
               const exerciseList = w.exercises.map((e) => exerciseNames[e.exerciseId] || `Exercise ${e.exerciseId}`).join(', ');
               return (
                 <Pressable
@@ -592,13 +702,18 @@ export default function ProgressScreen() {
                 >
                   <View style={styles.historyHeader}>
                     <Text style={styles.historyDate}>{dateStr}</Text>
-                    <Pressable onPress={() => deleteWorkout(w.id)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Delete workout">
-                      <MaterialIcons name="delete-outline" size={18} color="#AEAEB2" />
-                    </Pressable>
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                      <Pressable onPress={() => shareWorkout(w)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Export workout">
+                        <MaterialIcons name="share" size={16} color="#00B894" />
+                      </Pressable>
+                      <Pressable onPress={() => deleteWorkout(w.id)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Delete workout">
+                        <MaterialIcons name="delete-outline" size={18} color="#AEAEB2" />
+                      </Pressable>
+                    </View>
                   </View>
                   <Text style={styles.historyExercises} numberOfLines={1}>{exerciseList}</Text>
                   <View style={styles.historyStats}>
-                    <Text style={styles.historyMiniStat}>{w.exercises.length} exercises · {w.completedSets} sets · {w.totalReps} reps</Text>
+                    <Text style={styles.historyMiniStat}>{w.exercises.length} {t('progress.exercises')} · {w.completedSets} {t('progress.sets')} · {w.totalReps} {t('progress.reps')}</Text>
                   </View>
                 </Pressable>
               );
@@ -712,4 +827,25 @@ const styles = StyleSheet.create({
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   emptyTitle: { fontSize: 18, fontWeight: '600', color: '#1C1C1E', marginTop: 16 },
   emptyText: { fontSize: 14, color: '#8E8E93', textAlign: 'center', marginTop: 8, lineHeight: 20, maxWidth: 260 },
+
+  // Volume Trend Chart
+  trendCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12 },
+  trendHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  trendTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  trendTitle: { fontSize: 15, fontWeight: '700', color: '#1C1C1E' },
+  trendPeriod: { fontSize: 11, fontWeight: '600', color: '#8E8E93' },
+  trendEmpty: { alignItems: 'center', paddingVertical: 24, gap: 8 },
+  trendEmptyText: { fontSize: 13, color: '#AEAEB2', textAlign: 'center' },
+  trendSummaryRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, backgroundColor: '#F2F2F7', borderRadius: 10, padding: 12 },
+  trendSummaryItem: { flex: 1, alignItems: 'center' },
+  trendSummaryValue: { fontSize: 16, fontWeight: '800', color: '#1C1C1E' },
+  trendSummaryLabel: { fontSize: 10, fontWeight: '600', color: '#8E8E93', textTransform: 'uppercase', marginTop: 2 },
+  trendSummaryDivider: { width: 1, height: 28, backgroundColor: '#E5E5EA' },
+  trendChartArea: { flexDirection: 'row', alignItems: 'flex-end', height: 130, gap: 2 },
+  trendBarCol: { flex: 1, alignItems: 'center' },
+  trendBarWrapper: { alignItems: 'center', justifyContent: 'flex-end', height: 110 },
+  trendBar: { width: '70%', minWidth: 6, borderRadius: 3 },
+  trendBarValue: { fontSize: 8, fontWeight: '600', color: '#8E8E93', marginBottom: 2 },
+  trendBarLabel: { fontSize: 9, fontWeight: '600', color: '#8E8E93', marginTop: 4 },
+  trendBarLabelHidden: { opacity: 0 },
 });
