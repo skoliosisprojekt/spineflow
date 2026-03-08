@@ -1,0 +1,51 @@
+{
+  "offline": {
+    "banner": "Offline — Dati salvati localmente",
+    "aiUnavailable": "Sei offline. L'analisi IA sarà disponibile quando tornerai online. Il tuo allenamento è stato salvato.",
+    "aiWorkoutUnavailable": "L'allenamento IA richiede internet. Puoi usare il generatore locale — funziona anche offline.",
+    "loginRequired": "Connessione internet necessaria per l'accesso.",
+    "connectionError": "Problema di connessione. Riprova più tardi."
+  },
+  "ai": {
+    "analyzeButton": "Avvia analisi",
+    "analyzing": "Analisi in corso...",
+    "alreadyAnalyzed": "Già analizzato",
+    "needMoreWorkouts": "Servono almeno 2 allenamenti.",
+    "recommendationsApplied": "Raccomandazioni applicate ✓"
+  },
+  "adjustments": {
+    "new": "NUOVO",
+    "adjust": "REGOLARE",
+    "replace": "SOSTITUIRE",
+    "addToWorkout": "Aggiungi all'allenamento",
+    "added": "Aggiunto ✓",
+    "apply": "Applica",
+    "keep": "Mantieni",
+    "replaceButton": "Sostituisci",
+    "keepAnyway": "Mantieni comunque"
+  },
+  "planner": {
+    "title": "Pianifica allenamento",
+    "duration": "Durata",
+    "minutes": "min",
+    "exercises": "esercizi",
+    "generate": "Genera allenamento",
+    "regenerate": "Rigenera",
+    "startWorkout": "Inizia",
+    "optimizedOrder": "Ordine ottimizzato per la sicurezza della scoliosi",
+    "aiGenerate": "Allenamento IA: Ancora più personalizzato",
+    "aiGenerateButton": "Genera allenamento IA",
+    "aiGenerated": "Generato da IA",
+    "activation": "Attivazione",
+    "compound": "Composto",
+    "isolation": "Isolamento",
+    "core": "Core"
+  },
+  "workout": {
+    "share": "Condividi",
+    "copy": "Copia",
+    "copied": "Copiato!",
+    "finished": "Allenamento completato",
+    "done": "Fatto"
+  }
+}

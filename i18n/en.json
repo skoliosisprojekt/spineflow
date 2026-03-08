@@ -370,7 +370,12 @@
     "highlightTotalReps": "{{count}} total reps completed",
     "highlightFullWorkout": "{{count}} exercises — full workout!",
     "highlightExercisesCompleted": "{{count}} exercises completed",
-    "highlightShowedUp": "You showed up and put in the work!"
+    "highlightShowedUp": "You showed up and put in the work!",
+    "share": "Share",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "finished": "Workout completed",
+    "done": "Done"
   },
   "exercises": {
     "title": "Exercises",
@@ -549,6 +554,48 @@
     "36": { "s1": "Stand sideways to low cable", "s2": "Raise arm out to shoulder height", "s3": "Pause at the top briefly", "s4": "Lower slowly with control" },
     "stepLabels": { "setup": "Setup", "move": "Movement", "hold": "Hold", "return": "Return" },
     "tapToPlay": "Tap to play"
+  },
+  "offline": {
+    "banner": "Offline — Data is saved locally",
+    "aiUnavailable": "You are offline. AI analysis is available once you are back online. Your workout has been saved locally.",
+    "aiWorkoutUnavailable": "AI workout needs internet. You can use the local workout generator — it works offline.",
+    "loginRequired": "Internet connection required for login.",
+    "connectionError": "Connection problem. Try again later."
+  },
+  "ai": {
+    "analyzeButton": "Start Analysis",
+    "analyzing": "Analyzing your workout...",
+    "alreadyAnalyzed": "Already analyzed",
+    "needMoreWorkouts": "At least 2 workouts needed for analysis.",
+    "recommendationsApplied": "Recommendations applied to next workout ✓"
+  },
+  "adjustments": {
+    "new": "NEW",
+    "adjust": "ADJUST",
+    "replace": "REPLACE",
+    "addToWorkout": "Add to workout",
+    "added": "Added ✓",
+    "apply": "Apply",
+    "keep": "Keep as is",
+    "replaceButton": "Replace",
+    "keepAnyway": "Keep anyway"
+  },
+  "planner": {
+    "title": "Plan Workout",
+    "duration": "Duration",
+    "minutes": "min",
+    "exercises": "exercises",
+    "generate": "Generate Workout",
+    "regenerate": "Regenerate",
+    "startWorkout": "Start Workout",
+    "optimizedOrder": "Order optimized for scoliosis safety",
+    "aiGenerate": "AI Workout: Even more personalized",
+    "aiGenerateButton": "Generate AI Workout",
+    "aiGenerated": "AI generated",
+    "activation": "Activation",
+    "compound": "Compound",
+    "isolation": "Isolation",
+    "core": "Core"
   },
   "premium": {
     "title": "SpineFlow Premium",

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { trackEvent } from '../../lib/posthog';
+import { useNetwork } from '../../lib/network';
 import {
   View,
   Text,
@@ -24,9 +25,14 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { t } = useTranslation();
+  const { isOnline } = useNetwork();
 
   const handleLogin = async () => {
     setError('');
+    if (!isOnline) {
+      setError(t('offline.loginRequired'));
+      return;
+    }
     if (!email.trim() || !password) {
       setError(t('auth.enterEmailPassword'));
       return;

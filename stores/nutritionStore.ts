@@ -40,6 +40,7 @@ interface NutritionState {
   setGoal: (field: keyof DailyGoals, value: number) => void;
   loadNutrition: () => Promise<void>;
   clearToday: () => void;
+  resetNutrition: () => void;
 }
 
 const ENTRIES_KEY = 'spineflow_nutrition_entries';
@@ -107,6 +108,11 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
       if (goalsRaw) state.goals = { ...DEFAULT_GOALS, ...JSON.parse(goalsRaw) };
       set(state as any);
     } catch {}
+  },
+
+  resetNutrition: () => {
+    set({ entries: [], meals: [], goals: { ...DEFAULT_GOALS } });
+    AsyncStorage.multiRemove([ENTRIES_KEY, MEALS_KEY, GOALS_KEY]).catch(() => {});
   },
 
   clearToday: () => {

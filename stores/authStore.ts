@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { saveProfileToCloud } from '../lib/cloudSync';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -16,7 +17,7 @@ interface AuthState {
   loadPersistedState: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   userId: null,
   email: null,
@@ -27,6 +28,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   setAuth: (userId, email) => set({ isAuthenticated: true, userId, email }),
   clearAuth: () => {
     set({ isAuthenticated: false, userId: null, email: null, consentGiven: false, profileComplete: false });
+    AsyncStorage.removeItem('profileComplete').catch(() => {});
   },
 
   setConsentGiven: async (given) => {
@@ -37,6 +39,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   setProfileComplete: async (complete) => {
     set({ profileComplete: complete });
     await AsyncStorage.setItem('profileComplete', complete ? 'true' : 'false');
+    const userId = get().userId;
+    if (userId && complete) saveProfileToCloud(userId, { profile_complete: true }).catch(() => {});
   },
 
   setWelcomeSeen: async () => {

@@ -370,7 +370,12 @@
     "highlightTotalReps": "{{count}} Wiederholungen insgesamt",
     "highlightFullWorkout": "{{count}} Übungen — volles Workout!",
     "highlightExercisesCompleted": "{{count}} Übungen absolviert",
-    "highlightShowedUp": "Du warst da und hast trainiert!"
+    "highlightShowedUp": "Du warst da und hast trainiert!",
+    "share": "Teilen",
+    "copy": "Kopieren",
+    "copied": "Kopiert!",
+    "finished": "Training abgeschlossen",
+    "done": "Fertig"
   },
   "exercises": {
     "title": "Übungen",
@@ -549,6 +554,48 @@
     "36": { "s1": "Seitlich zum unteren Kabel stehen", "s2": "Arm auf Schulterhöhe heben", "s3": "Kurz oben pausieren", "s4": "Langsam und kontrolliert senken" },
     "stepLabels": { "setup": "Vorbereitung", "move": "Bewegung", "hold": "Halten", "return": "Zurück" },
     "tapToPlay": "Tippen zum Abspielen"
+  },
+  "offline": {
+    "banner": "Offline \u2014 Daten werden lokal gespeichert",
+    "aiUnavailable": "Du bist offline. Die KI-Analyse ist verf\u00fcgbar sobald du wieder online bist. Dein Workout wurde lokal gespeichert.",
+    "aiWorkoutUnavailable": "KI-Workout ben\u00f6tigt Internet. Du kannst das lokale Workout nutzen \u2014 es funktioniert auch offline.",
+    "loginRequired": "Internet ben\u00f6tigt f\u00fcr Anmeldung.",
+    "connectionError": "Verbindungsproblem. Versuche es sp\u00e4ter nochmal."
+  },
+  "ai": {
+    "analyzeButton": "Analyse starten",
+    "analyzing": "Analysiere dein Workout...",
+    "alreadyAnalyzed": "Bereits analysiert",
+    "needMoreWorkouts": "Mindestens 2 Workouts n\u00f6tig f\u00fcr eine Analyse.",
+    "recommendationsApplied": "Empfehlungen werden im n\u00e4chsten Workout angezeigt \u2713"
+  },
+  "adjustments": {
+    "new": "NEU",
+    "adjust": "ANPASSEN",
+    "replace": "ERSETZEN",
+    "addToWorkout": "Zum Training hinzuf\u00fcgen",
+    "added": "Hinzugef\u00fcgt \u2713",
+    "apply": "\u00dcbernehmen",
+    "keep": "Beibehalten",
+    "replaceButton": "Ersetzen",
+    "keepAnyway": "Trotzdem behalten"
+  },
+  "planner": {
+    "title": "Workout planen",
+    "duration": "Dauer",
+    "minutes": "Min",
+    "exercises": "\u00dcbungen",
+    "generate": "Workout generieren",
+    "regenerate": "Neu generieren",
+    "startWorkout": "Workout starten",
+    "optimizedOrder": "Reihenfolge optimiert f\u00fcr Skoliose-Sicherheit",
+    "aiGenerate": "KI-Workout: Noch personalisierter",
+    "aiGenerateButton": "KI-Workout generieren",
+    "aiGenerated": "KI-generiert",
+    "activation": "Aktivierung",
+    "compound": "Compound",
+    "isolation": "Isolation",
+    "core": "Core"
   },
   "premium": {
     "title": "SpineFlow Premium",

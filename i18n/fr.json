@@ -1,0 +1,51 @@
+{
+  "offline": {
+    "banner": "Hors ligne — Données sauvegardées localement",
+    "aiUnavailable": "Vous êtes hors ligne. L'analyse IA sera disponible une fois reconnecté. Votre entraînement a été sauvegardé.",
+    "aiWorkoutUnavailable": "L'entraînement IA nécessite internet. Vous pouvez utiliser le générateur local — il fonctionne hors ligne.",
+    "loginRequired": "Connexion internet requise pour la connexion.",
+    "connectionError": "Problème de connexion. Réessayez plus tard."
+  },
+  "ai": {
+    "analyzeButton": "Lancer l'analyse",
+    "analyzing": "Analyse en cours...",
+    "alreadyAnalyzed": "Déjà analysé",
+    "needMoreWorkouts": "Au moins 2 entraînements nécessaires.",
+    "recommendationsApplied": "Recommandations appliquées ✓"
+  },
+  "adjustments": {
+    "new": "NOUVEAU",
+    "adjust": "AJUSTER",
+    "replace": "REMPLACER",
+    "addToWorkout": "Ajouter à l'entraînement",
+    "added": "Ajouté ✓",
+    "apply": "Appliquer",
+    "keep": "Garder",
+    "replaceButton": "Remplacer",
+    "keepAnyway": "Garder quand même"
+  },
+  "planner": {
+    "title": "Planifier l'entraînement",
+    "duration": "Durée",
+    "minutes": "min",
+    "exercises": "exercices",
+    "generate": "Générer l'entraînement",
+    "regenerate": "Regénérer",
+    "startWorkout": "Démarrer",
+    "optimizedOrder": "Ordre optimisé pour la sécurité scoliotique",
+    "aiGenerate": "Entraînement IA: Encore plus personnalisé",
+    "aiGenerateButton": "Générer entraînement IA",
+    "aiGenerated": "Généré par IA",
+    "activation": "Activation",
+    "compound": "Composé",
+    "isolation": "Isolation",
+    "core": "Gainage"
+  },
+  "workout": {
+    "share": "Partager",
+    "copy": "Copier",
+    "copied": "Copié!",
+    "finished": "Entraînement terminé",
+    "done": "Terminé"
+  }
+}

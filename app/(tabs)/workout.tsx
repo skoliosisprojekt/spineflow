@@ -12,10 +12,12 @@ import { useProfileStore, useSettingsStore } from '../../stores/settingsStore';
 import { useNutritionStore } from '../../stores/nutritionStore';
 import { usePremiumStore } from '../../stores/premiumStore';
 import { runAIAnalysis, type AIAnalysisResult } from '../../lib/aiAnalysis';
+import { useNetwork } from '../../lib/network';
 import { saveAdjustments, saveAnalysis, getAnalysis, getPendingAdjustments, updateAdjustmentStatus } from '../../db/queries';
 import { useAuthStore } from '../../stores/authStore';
 import type { WorkoutAdjustment } from '../../db/schema';
 import { getSafety } from '../../lib/safety';
+import { isExerciseAllowed, getExerciseSafetyLevel } from '../../lib/workoutGenerator';
 import { exercises as allExercises, exerciseNames, exerciseMods, exerciseFusionMods, exerciseTips } from '../../data/exercises';
 import { playTimerEndSound } from '../../lib/sounds';
 import { exerciseSteps } from '../../data/exerciseAnimations';
@@ -408,8 +410,10 @@ function WorkoutScreen() {
   const [summary, setSummary] = useState<WorkoutSummary | null>(null);
   const [lastRecord, setLastRecord] = useState<WorkoutRecord | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [aiState, setAiState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [aiState, setAiState] = useState<'idle' | 'loading' | 'done' | 'error' | 'offline'>('idle');
+  const { isOnline } = useNetwork();
   const [aiResult, setAiResult] = useState<AIAnalysisResult | null>(null);
+  const [actionedAdjIdx, setActionedAdjIdx] = useState<Set<number>>(new Set());
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const workoutStartRef = useRef<string | null>(null);
@@ -449,7 +453,7 @@ function WorkoutScreen() {
   const handleCopyText = () => {
     const text = buildShareText();
     copyWorkoutText(text);
-    showToast(t('workout.copiedToClipboard'));
+    showToast(t('workout.copied'));
   };
 
   const previousWorkoutCount = workoutHistory.filter((w) => w.id !== lastRecord?.id).length;
@@ -458,9 +462,15 @@ function WorkoutScreen() {
   const handleAIAnalysis = async () => {
     if (!lastRecord) return;
 
+    if (!isOnline) {
+      setAiState('offline');
+      return;
+    }
+
     // Check if already analyzed (rate limit: 1 per workout)
     const existing = await getAnalysis(lastRecord.id);
     if (existing) {
+      setActionedAdjIdx(new Set());
       setAiResult(JSON.parse(existing.analysis));
       setAiState('done');
       return;
@@ -484,6 +494,7 @@ function WorkoutScreen() {
         startTime: workoutStartRef.current || undefined,
         language,
       });
+      setActionedAdjIdx(new Set());
       setAiResult(result);
       setAiState('done');
       trackEvent('ai_analysis_completed', { adjustmentCount: result.adjustments.length });
@@ -706,7 +717,7 @@ function WorkoutScreen() {
             </View>
             <Pressable
               style={({ pressed }) => [styles.startPlanBtn, pressed && { opacity: 0.85 }]}
-              onPress={loadPlanExercises}
+              onPress={() => router.push('/planner' as any)}
               accessibilityRole="button"
               accessibilityLabel="Start planned workout"
             >
@@ -924,7 +935,7 @@ function WorkoutScreen() {
       {adjBanner && (
         <Animated.View style={[styles.adjBannerContainer, { opacity: adjBannerOpacity }]}>
           <MaterialIcons name="check-circle" size={16} color="#00B894" />
-          <Text style={styles.adjBannerText}>{t('workout.adjProcessed')}</Text>
+          <Text style={styles.adjBannerText}>{t('ai.recommendationsApplied')}</Text>
         </Animated.View>
       )}
 
@@ -993,19 +1004,19 @@ function WorkoutScreen() {
                 style={({ pressed }) => [styles.shareBtn, pressed && { opacity: 0.7 }]}
                 onPress={handleShareText}
                 accessibilityRole="button"
-                accessibilityLabel={t('workout.shareWorkout')}
+                accessibilityLabel={t('workout.share')}
               >
                 <MaterialIcons name="share" size={18} color="#FFFFFF" />
-                <Text style={styles.shareBtnText}>{t('workout.shareWorkout')}</Text>
+                <Text style={styles.shareBtnText}>{t('workout.share')}</Text>
               </Pressable>
               <Pressable
                 style={({ pressed }) => [styles.copyBtn, pressed && { opacity: 0.7 }]}
                 onPress={handleCopyText}
                 accessibilityRole="button"
-                accessibilityLabel={t('workout.copyWorkout')}
+                accessibilityLabel={t('workout.copy')}
               >
                 <MaterialIcons name="content-copy" size={18} color="#00B894" />
-                <Text style={styles.copyBtnText}>{t('workout.copyWorkout')}</Text>
+                <Text style={styles.copyBtnText}>{t('workout.copy')}</Text>
               </Pressable>
             </View>
 
@@ -1034,7 +1045,22 @@ function WorkoutScreen() {
                     <MaterialIcons name="auto-awesome" size={20} color="#FF9500" />
                     <Text style={styles.aiCardTitle}>{t('workout.aiAnalysisTitle')}</Text>
                   </View>
-                  <Text style={styles.aiCardDesc}>{t('workout.aiMinWorkouts')}</Text>
+                  <Text style={styles.aiCardDesc}>{t('ai.needMoreWorkouts')}</Text>
+                </>
+              ) : aiState === 'offline' ? (
+                <>
+                  <View style={styles.aiCardHeader}>
+                    <MaterialIcons name="cloud-off" size={20} color="#8E8E93" />
+                    <Text style={[styles.aiCardTitle, { color: '#8E8E93' }]}>{t('offline.banner')}</Text>
+                  </View>
+                  <Text style={styles.aiCardDesc}>{t('offline.aiUnavailable')}</Text>
+                  <Pressable
+                    style={[styles.aiStartBtn, { backgroundColor: '#C7C7CC', opacity: 0.7 }]}
+                    disabled
+                    accessibilityRole="button"
+                  >
+                    <MaterialIcons name="cloud-off" size={18} color="#FFFFFF" />
+                  </Pressable>
                 </>
               ) : aiState === 'idle' ? (
                 <>
@@ -1049,13 +1075,13 @@ function WorkoutScreen() {
                     accessibilityRole="button"
                   >
                     <MaterialIcons name="smart-toy" size={18} color="#FFFFFF" />
-                    <Text style={styles.aiStartBtnText}>{t('workout.aiAnalysisStart')}</Text>
+                    <Text style={styles.aiStartBtnText}>{t('ai.analyzeButton')}</Text>
                   </Pressable>
                 </>
               ) : aiState === 'loading' ? (
                 <View style={styles.aiLoadingContainer}>
                   <LoadingSpinner size={80} />
-                  <Text style={styles.aiLoadingText}>{t('workout.aiAnalysisLoading')}</Text>
+                  <Text style={styles.aiLoadingText}>{t('ai.analyzing')}</Text>
                 </View>
               ) : aiState === 'error' ? (
                 <>
@@ -1069,14 +1095,14 @@ function WorkoutScreen() {
                     accessibilityRole="button"
                   >
                     <MaterialIcons name="refresh" size={18} color="#FFFFFF" />
-                    <Text style={styles.aiStartBtnText}>{t('workout.aiAnalysisStart')}</Text>
+                    <Text style={styles.aiStartBtnText}>{t('ai.analyzeButton')}</Text>
                   </Pressable>
                 </>
               ) : aiResult ? (
                 <>
                   <View style={styles.aiCardHeader}>
                     <MaterialIcons name="auto-awesome" size={20} color="#FF9500" />
-                    <Text style={styles.aiCardTitle}>{t('workout.aiAlreadyAnalyzed')}</Text>
+                    <Text style={styles.aiCardTitle}>{t('ai.alreadyAnalyzed')}</Text>
                   </View>
                   {aiResult.analysisText.split('\n').map((line: string, i: number) => {
                     const trimmed = line.trim();
@@ -1089,9 +1115,152 @@ function WorkoutScreen() {
                     return <Text key={i} style={[styles.aiLineText, { color }]}>{trimmed}</Text>;
                   })}
                   {aiResult.adjustments.length > 0 && (
-                    <View style={styles.aiRecommendationNotice}>
-                      <MaterialIcons name="check-circle" size={14} color="#00B894" />
-                      <Text style={styles.aiRecommendationText}>{t('workout.aiRecommendationsSaved')}</Text>
+                    <View style={styles.adjCardsContainer}>
+                      {aiResult.adjustments.map((adj, idx) => {
+                        const isActioned = actionedAdjIdx.has(idx);
+                        const exName = exerciseNames[adj.exercise_id] || `Übung #${adj.exercise_id}`;
+                        const replName = adj.replace_with_id != null
+                          ? (exerciseNames[adj.replace_with_id] || `Übung #${adj.replace_with_id}`)
+                          : null;
+                        const numSets = (() => {
+                          if (!adj.suggested_sets) return 3;
+                          const n = parseInt(adj.suggested_sets.split('x')[0], 10);
+                          return isNaN(n) ? 3 : n;
+                        })();
+
+                        // SAFETY: Hard filter — never show 'avoid' exercises regardless of AI output
+                        if (adj.type === 'add' && !isExerciseAllowed(adj.exercise_id, curveType, surgery)) {
+                          return null;
+                        }
+                        if (adj.type === 'remove' && adj.replace_with_id != null && !isExerciseAllowed(adj.replace_with_id, curveType, surgery)) {
+                          return null;
+                        }
+
+                        const addSafetyLevel = adj.type === 'add'
+                          ? getExerciseSafetyLevel(adj.exercise_id, curveType, surgery)
+                          : null;
+                        const addModNote = addSafetyLevel === 'modify' ? (exerciseMods[adj.exercise_id] || 'Modifizierte Form erforderlich — Übungsdetails beachten.') : null;
+
+                        if (adj.type === 'add') {
+                          return (
+                            <View key={idx} style={[styles.adjCard, styles.adjCardAdd]}>
+                              <View style={styles.adjBadgeRow}>
+                                <View style={[styles.adjBadge, styles.adjBadgeGreen]}>
+                                  <Text style={styles.adjBadgeText}>{t('adjustments.new')}</Text>
+                                </View>
+                                <Text style={styles.adjCardExName} numberOfLines={1}>{exName}</Text>
+                              </View>
+                              {addModNote && (
+                                <View style={styles.adjModWarning}>
+                                  <MaterialIcons name="warning" size={13} color="#FF9500" />
+                                  <Text style={styles.adjModWarningText}>{addModNote}</Text>
+                                </View>
+                              )}
+                              <Text style={styles.adjCardReason}>{adj.reason}</Text>
+                              {(adj.suggested_sets || adj.suggested_weight) && (
+                                <Text style={styles.adjCardMeta}>
+                                  {adj.suggested_sets ? `Sets: ${adj.suggested_sets}` : ''}
+                                  {adj.suggested_sets && adj.suggested_weight ? '  ·  ' : ''}
+                                  {adj.suggested_weight ? `Gewicht: ${adj.suggested_weight}kg` : ''}
+                                </Text>
+                              )}
+                              <Pressable
+                                style={[styles.adjBtn, isActioned ? styles.adjBtnApplied : styles.adjBtnGreen]}
+                                disabled={isActioned}
+                                accessibilityLabel={t('adjustments.addToWorkout')}
+                                accessibilityRole="button"
+                                onPress={() => {
+                                  addExercise(adj.exercise_id, numSets);
+                                  if (adj.suggested_weight) {
+                                    for (let i = 0; i < numSets; i++) {
+                                      updateSet(adj.exercise_id, i, 'weight', adj.suggested_weight);
+                                    }
+                                  }
+                                  setActionedAdjIdx(prev => new Set([...prev, idx]));
+                                  showToast(t('adjustments.added'));
+                                }}
+                              >
+                                <Text style={[styles.adjBtnText, isActioned && styles.adjBtnAppliedText]}>
+                                  {isActioned ? t('adjustments.added') : t('adjustments.addToWorkout')}
+                                </Text>
+                              </Pressable>
+                            </View>
+                          );
+                        }
+
+                        if (adj.type === 'adjust') {
+                          return (
+                            <View key={idx} style={[styles.adjCard, styles.adjCardAdjust]}>
+                              <View style={styles.adjBadgeRow}>
+                                <View style={[styles.adjBadge, styles.adjBadgeOrange]}>
+                                  <Text style={styles.adjBadgeText}>{t('adjustments.adjust')}</Text>
+                                </View>
+                                <Text style={styles.adjCardExName} numberOfLines={1}>{exName}</Text>
+                              </View>
+                              {adj.suggested_weight && (
+                                <Text style={styles.adjCardChange}>Gewicht → {adj.suggested_weight}kg</Text>
+                              )}
+                              <Text style={styles.adjCardReason}>{adj.reason}</Text>
+                              <Pressable
+                                style={[styles.adjBtn, isActioned ? styles.adjBtnApplied : styles.adjBtnOrange]}
+                                disabled={isActioned}
+                                accessibilityLabel={t('adjustments.apply')}
+                                accessibilityRole="button"
+                                onPress={() => {
+                                  const exInWorkout = exercises.find(e => e.exerciseId === adj.exercise_id);
+                                  if (exInWorkout && adj.suggested_weight) {
+                                    exInWorkout.sets.forEach((_, i) => {
+                                      updateSet(adj.exercise_id, i, 'weight', adj.suggested_weight!);
+                                    });
+                                  }
+                                  setActionedAdjIdx(prev => new Set([...prev, idx]));
+                                  showToast(t('adjustments.added'));
+                                }}
+                              >
+                                <Text style={[styles.adjBtnText, isActioned && styles.adjBtnAppliedText]}>
+                                  {isActioned ? t('adjustments.added') : t('adjustments.apply')}
+                                </Text>
+                              </Pressable>
+                            </View>
+                          );
+                        }
+
+                        if (adj.type === 'remove') {
+                          return (
+                            <View key={idx} style={[styles.adjCard, styles.adjCardRemove]}>
+                              <View style={styles.adjBadgeRow}>
+                                <View style={[styles.adjBadge, styles.adjBadgeRed]}>
+                                  <Text style={styles.adjBadgeText}>{t('adjustments.replace')}</Text>
+                                </View>
+                                <Text style={styles.adjCardExName} numberOfLines={1}>
+                                  {exName}{replName ? ` → ${replName}` : ''}
+                                </Text>
+                              </View>
+                              <Text style={styles.adjCardReason}>{adj.reason}</Text>
+                              <Pressable
+                                style={[styles.adjBtn, isActioned ? styles.adjBtnApplied : styles.adjBtnRedOutline]}
+                                disabled={isActioned}
+                                accessibilityLabel={t('adjustments.replaceButton')}
+                                accessibilityRole="button"
+                                onPress={() => {
+                                  removeExercise(adj.exercise_id);
+                                  if (adj.replace_with_id != null) {
+                                    addExercise(adj.replace_with_id, 3);
+                                  }
+                                  setActionedAdjIdx(prev => new Set([...prev, idx]));
+                                  showToast(t('adjustments.added'));
+                                }}
+                              >
+                                <Text style={[styles.adjBtnRedText, isActioned && styles.adjBtnAppliedText]}>
+                                  {isActioned ? t('adjustments.added') : t('adjustments.replaceButton')}
+                                </Text>
+                              </Pressable>
+                            </View>
+                          );
+                        }
+
+                        return null;
+                      })}
                     </View>
                   )}
                   <Text style={styles.aiDisclaimer}>{t('workout.aiDisclaimer')}</Text>
@@ -1898,5 +2067,82 @@ const styles = StyleSheet.create({
     right: 0,
     height: 36,
     backgroundColor: 'rgba(255,255,255,0.88)',
+  },
+  adjCardsContainer: {
+    width: '100%',
+    marginTop: 12,
+    gap: 10,
+  },
+  adjBadgeGreen: { backgroundColor: '#00B894' },
+  adjBadgeOrange: { backgroundColor: '#FF9500' },
+  adjBadgeRed: { backgroundColor: '#FF3B30' },
+  adjCardExName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1C1C1E',
+    flex: 1,
+  },
+  adjCardReason: {
+    fontSize: 12,
+    color: '#636366',
+    lineHeight: 17,
+    marginBottom: 6,
+  },
+  adjCardChange: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FF9500',
+    marginBottom: 4,
+  },
+  adjCardMeta: {
+    fontSize: 12,
+    color: '#8E8E93',
+    marginBottom: 6,
+  },
+  adjBtn: {
+    borderRadius: 10,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  adjBtnGreen: { backgroundColor: '#00B894' },
+  adjBtnOrange: { backgroundColor: '#FF9500' },
+  adjBtnRedOutline: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: '#FF3B30',
+  },
+  adjBtnApplied: {
+    backgroundColor: '#F2F2F7',
+  },
+  adjBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  adjBtnRedText: {
+    color: '#FF3B30',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  adjBtnAppliedText: {
+    color: '#8E8E93',
+  },
+  adjModWarning: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 5,
+    backgroundColor: '#FFF3E0',
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 6,
+  },
+  adjModWarningText: {
+    fontSize: 11,
+    color: '#E65100',
+    lineHeight: 16,
+    flex: 1,
+    fontWeight: '600',
   },
 });

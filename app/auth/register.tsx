@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { trackEvent } from '../../lib/posthog';
+import { useNetwork } from '../../lib/network';
 import {
   View,
   Text,
@@ -26,6 +27,7 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; confirm?: string; age?: string; form?: string }>({});
   const { t } = useTranslation();
+  const { isOnline } = useNetwork();
 
   const validate = (): boolean => {
     const newErrors: typeof errors = {};
@@ -51,6 +53,10 @@ export default function RegisterScreen() {
   };
 
   const handleRegister = async () => {
+    if (!isOnline) {
+      setErrors({ form: t('offline.loginRequired') });
+      return;
+    }
     const valid = validate();
     if (!ageConfirmed) {
       setErrors((prev) => ({ ...prev, age: t('auth.ageRequired') }));

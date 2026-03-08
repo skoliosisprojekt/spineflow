@@ -1,3 +1,6 @@
+// SAFETY: Every exercise MUST pass getSafety() !== 'avoid' before being shown.
+// This is a HARD requirement. AI suggestions are validated client-side.
+// Never trust AI output alone — always verify with getSafety().
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { exercises as allExercises, exerciseMods, exerciseFusionMods } from '../data/exercises';

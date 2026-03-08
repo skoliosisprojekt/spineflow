@@ -4,152 +4,188 @@ export const exercises: Exercise[] = [
   // ═══ CHEST (5) ═══
   { id: 1, muscle: 'chest', sets: '4x8-10', rest: '90s',
     targets: ['chest', 'frontDelt', 'triceps'], equip: ['dumbbells', 'bench'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'modify', scurve: 'modify' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'modify', scurve: 'modify' },
+    timePerSet: 90, category: 'compound', priority: 3 },
 
   { id: 11, muscle: 'chest', sets: '3x10-12', rest: '90s',
     targets: ['chest', 'frontDelt', 'triceps'], equip: ['chestpress'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'modify' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'modify' },
+    timePerSet: 75, category: 'compound', priority: 3 },
 
   { id: 13, muscle: 'chest', sets: '4x8-10', rest: '90s',
     targets: ['upperChest', 'frontDelt', 'triceps'], equip: ['dumbbells', 'bench'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'modify' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'modify' },
+    timePerSet: 90, category: 'compound', priority: 3 },
 
   { id: 14, muscle: 'chest', sets: '3x12-15', rest: '60s',
     targets: ['chest', 'frontDelt'], equip: ['cables'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 60, category: 'isolation', priority: 2 },
 
   { id: 15, muscle: 'chest', sets: '3xmax', rest: '60s',
     targets: ['chest', 'triceps', 'core', 'frontDelt'], equip: [],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'modify', scurve: 'modify' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'modify', scurve: 'modify' },
+    timePerSet: 60, category: 'compound', priority: 2 },
 
   // ═══ BACK (8) ═══
   { id: 2, muscle: 'back', sets: '4x10-12', rest: '90s',
     targets: ['lats', 'biceps', 'rhomboids'], equip: ['latpull'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 90, category: 'compound', priority: 5 },
 
   { id: 4, muscle: 'back', sets: '4x10-12', rest: '90s',
     targets: ['rhomboids', 'midTraps', 'lats'], equip: ['cables'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 90, category: 'compound', priority: 5 },
 
   { id: 8, muscle: 'back', sets: '3x6-8', rest: '180s',
     targets: ['lowerBack', 'hamstrings', 'glutes', 'traps'], equip: ['trapbar'],
-    safety: { thoracic: 'modify', lumbar: 'avoid', thoracolumbar: 'avoid', scurve: 'avoid' } },
+    safety: { thoracic: 'modify', lumbar: 'avoid', thoracolumbar: 'avoid', scurve: 'avoid' },
+    timePerSet: 120, category: 'compound', priority: 1 },
 
   { id: 10, muscle: 'back', sets: '3x10 each', rest: '60s',
     targets: ['lats', 'rhomboids', 'core'], equip: ['cables'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 90, category: 'compound', priority: 4 },
 
   { id: 12, muscle: 'back', sets: '3x15', rest: '45s',
     targets: ['rearDelts', 'rhomboids', 'upperBack'], equip: ['bands'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 50, category: 'activation', priority: 4 },
 
   { id: 22, muscle: 'back', sets: '4x10 each', rest: '60s',
     targets: ['lats', 'rhomboids', 'biceps'], equip: ['dumbbells', 'bench'],
-    safety: { thoracic: 'safe', lumbar: 'modify', thoracolumbar: 'modify', scurve: 'modify' } },
+    safety: { thoracic: 'safe', lumbar: 'modify', thoracolumbar: 'modify', scurve: 'modify' },
+    timePerSet: 90, category: 'compound', priority: 4 },
 
   { id: 23, muscle: 'back', sets: '3x12-15', rest: '60s',
     targets: ['rearDelts', 'rhomboids', 'midTraps'], equip: ['chestpress'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 75, category: 'isolation', priority: 3 },
 
   { id: 35, muscle: 'back', sets: '3x12', rest: '60s',
     targets: ['lats', 'serratus', 'tricepsLongHead'], equip: ['cables'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'modify', scurve: 'modify' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'modify', scurve: 'modify' },
+    timePerSet: 60, category: 'isolation', priority: 3 },
 
   // ═══ LEGS (8) ═══
   { id: 3, muscle: 'legs', sets: '4x10', rest: '120s',
     targets: ['quads', 'glutes', 'core'], equip: ['dumbbells'],
-    safety: { thoracic: 'safe', lumbar: 'modify', thoracolumbar: 'modify', scurve: 'modify' } },
+    safety: { thoracic: 'safe', lumbar: 'modify', thoracolumbar: 'modify', scurve: 'modify' },
+    timePerSet: 90, category: 'compound', priority: 3 },
 
   { id: 5, muscle: 'legs', sets: '4x10-12', rest: '120s',
     targets: ['quads', 'glutes', 'hamstrings'], equip: ['legpress'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 75, category: 'compound', priority: 4 },
 
   { id: 16, muscle: 'legs', sets: '3x12-15', rest: '60s',
     targets: ['quads'], equip: ['legpress'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 75, category: 'isolation', priority: 2 },
 
   { id: 17, muscle: 'legs', sets: '3x10-12', rest: '60s',
     targets: ['hamstrings'], equip: ['legpress'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 75, category: 'isolation', priority: 2 },
 
   { id: 18, muscle: 'legs', sets: '3x10', rest: '90s',
     targets: ['hamstrings', 'glutes', 'lowerBack'], equip: ['dumbbells'],
-    safety: { thoracic: 'modify', lumbar: 'avoid', thoracolumbar: 'avoid', scurve: 'avoid' } },
+    safety: { thoracic: 'modify', lumbar: 'avoid', thoracolumbar: 'avoid', scurve: 'avoid' },
+    timePerSet: 90, category: 'compound', priority: 1 },
 
   { id: 19, muscle: 'legs', sets: '4x10-12', rest: '90s',
     targets: ['glutes', 'hamstrings', 'core'], equip: ['barbell', 'bench'],
-    safety: { thoracic: 'safe', lumbar: 'modify', thoracolumbar: 'modify', scurve: 'modify' } },
+    safety: { thoracic: 'safe', lumbar: 'modify', thoracolumbar: 'modify', scurve: 'modify' },
+    timePerSet: 90, category: 'compound', priority: 3 },
 
   { id: 30, muscle: 'legs', sets: '4x15-20', rest: '45s',
     targets: ['calves'], equip: ['dumbbells'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 60, category: 'isolation', priority: 1 },
 
   { id: 31, muscle: 'legs', sets: '3x10 each', rest: '90s',
     targets: ['quads', 'glutes', 'core'], equip: ['dumbbells', 'bench'],
-    safety: { thoracic: 'safe', lumbar: 'modify', thoracolumbar: 'modify', scurve: 'avoid' } },
+    safety: { thoracic: 'safe', lumbar: 'modify', thoracolumbar: 'modify', scurve: 'avoid' },
+    timePerSet: 90, category: 'compound', priority: 2 },
 
   // ═══ SHOULDERS (5) ═══
   { id: 6, muscle: 'shoulders', sets: '4x8-10', rest: '90s',
     targets: ['deltoids', 'triceps'], equip: ['dumbbells', 'bench'],
-    safety: { thoracic: 'modify', lumbar: 'safe', thoracolumbar: 'modify', scurve: 'modify' } },
+    safety: { thoracic: 'modify', lumbar: 'safe', thoracolumbar: 'modify', scurve: 'modify' },
+    timePerSet: 90, category: 'compound', priority: 3 },
 
   { id: 9, muscle: 'shoulders', sets: '3x15', rest: '60s',
     targets: ['rearDelts', 'rotatorCuff', 'upperBack'], equip: ['cables'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 50, category: 'activation', priority: 5 },
 
   { id: 20, muscle: 'shoulders', sets: '3x12-15', rest: '60s',
     targets: ['sideDelts'], equip: ['dumbbells', 'bench'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 60, category: 'isolation', priority: 3 },
 
   { id: 21, muscle: 'shoulders', sets: '3x12-15', rest: '60s',
     targets: ['rearDelts', 'rhomboids'], equip: ['chestpress'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 75, category: 'isolation', priority: 3 },
 
   { id: 36, muscle: 'shoulders', sets: '3x12 each', rest: '60s',
     targets: ['sideDelts'], equip: ['cables'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 60, category: 'isolation', priority: 2 },
 
   // ═══ ARMS (5) ═══
   { id: 7, muscle: 'arms', sets: '3x10-12', rest: '60s',
     targets: ['biceps'], equip: ['dumbbells'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 60, category: 'isolation', priority: 2 },
 
   { id: 24, muscle: 'arms', sets: '3x10-12', rest: '60s',
     targets: ['biceps', 'brachialis', 'forearms'], equip: ['dumbbells'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 60, category: 'isolation', priority: 2 },
 
   { id: 25, muscle: 'arms', sets: '3x10-12', rest: '60s',
     targets: ['triceps'], equip: ['cables'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 60, category: 'isolation', priority: 2 },
 
   { id: 26, muscle: 'arms', sets: '3x10-12', rest: '60s',
     targets: ['tricepsLongHead'], equip: ['cables'],
-    safety: { thoracic: 'modify', lumbar: 'safe', thoracolumbar: 'modify', scurve: 'modify' } },
+    safety: { thoracic: 'modify', lumbar: 'safe', thoracolumbar: 'modify', scurve: 'modify' },
+    timePerSet: 60, category: 'isolation', priority: 1 },
 
   { id: 27, muscle: 'arms', sets: '3x12', rest: '60s',
     targets: ['biceps'], equip: ['cables'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 60, category: 'isolation', priority: 2 },
 
   // ═══ CORE (5) ═══
   { id: 28, muscle: 'core', sets: '3x10 each', rest: '60s',
     targets: ['core', 'obliques', 'transverseAbdominis'], equip: ['cables', 'bands'],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 50, category: 'core', priority: 5 },
 
   { id: 29, muscle: 'core', sets: '3x12 each', rest: '60s',
     targets: ['obliques', 'core', 'shoulders'], equip: ['cables'],
-    safety: { thoracic: 'modify', lumbar: 'modify', thoracolumbar: 'modify', scurve: 'avoid' } },
+    safety: { thoracic: 'modify', lumbar: 'modify', thoracolumbar: 'modify', scurve: 'avoid' },
+    timePerSet: 50, category: 'core', priority: 1 },
 
   { id: 32, muscle: 'core', sets: '3x8 each', rest: '45s',
     targets: ['core', 'transverseAbdominis', 'hipFlexors'], equip: [],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 50, category: 'activation', priority: 5 },
 
   { id: 33, muscle: 'core', sets: '3x8 each', rest: '45s',
     targets: ['core', 'lowerBack', 'glutes'], equip: [],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'safe' },
+    timePerSet: 50, category: 'core', priority: 4 },
 
   { id: 34, muscle: 'core', sets: '3x30-60s', rest: '60s',
     targets: ['core', 'shoulders', 'glutes'], equip: [],
-    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'modify' } },
+    safety: { thoracic: 'safe', lumbar: 'safe', thoracolumbar: 'safe', scurve: 'modify' },
+    timePerSet: 50, category: 'core', priority: 3 },
 ];
 
 // Exercise names (English — in full i18n these come from translation files)

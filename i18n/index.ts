@@ -4,15 +4,24 @@ import { getLocales } from 'expo-localization';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import en from './en.json';
 import de from './de.json';
+import fr from './fr.json';
+import it from './it.json';
+import es from './es.json';
 
 const resources = {
   en: { translation: en },
   de: { translation: de },
+  fr: { translation: fr },
+  it: { translation: it },
+  es: { translation: es },
 };
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'en', label: 'English' },
   { code: 'de', label: 'Deutsch' },
+  { code: 'fr', label: 'Français' },
+  { code: 'it', label: 'Italiano' },
+  { code: 'es', label: 'Español' },
 ];
 
 // Get device locale, fallback to 'en'

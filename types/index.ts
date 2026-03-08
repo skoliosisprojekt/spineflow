@@ -4,6 +4,7 @@ export type GoalType = 'muscle' | 'strength' | 'posture' | 'pain';
 export type ExperienceType = 'beginner' | 'intermediate' | 'advanced';
 export type BodyType = 'hardgainer' | 'normal' | 'softgainer';
 export type SafetyLevel = 'safe' | 'modify' | 'avoid';
+export type ExerciseCategory = 'activation' | 'compound' | 'isolation' | 'core';
 export type ThemeMode = 'system' | 'light' | 'dark';
 export type WeightUnit = 'kg' | 'lbs';
 export type HydrationType = 'water' | 'shake' | 'bcaa';
@@ -29,6 +30,9 @@ export interface Exercise {
   targets: string[];
   equip: string[];
   safety: Record<string, SafetyLevel>;
+  timePerSet: number;        // seconds per set including rest
+  category: ExerciseCategory;
+  priority: 1 | 2 | 3 | 4 | 5; // higher = more important for scoliosis
 }
 
 export interface WorkoutSet {

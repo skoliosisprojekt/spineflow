@@ -1,0 +1,51 @@
+{
+  "offline": {
+    "banner": "Sin conexión — Datos guardados localmente",
+    "aiUnavailable": "Estás sin conexión. El análisis IA estará disponible cuando vuelvas a estar en línea. Tu entrenamiento se ha guardado.",
+    "aiWorkoutUnavailable": "El entrenamiento IA necesita internet. Puedes usar el generador local — funciona sin conexión.",
+    "loginRequired": "Se necesita conexión a internet para iniciar sesión.",
+    "connectionError": "Problema de conexión. Inténtalo más tarde."
+  },
+  "ai": {
+    "analyzeButton": "Iniciar análisis",
+    "analyzing": "Analizando tu entrenamiento...",
+    "alreadyAnalyzed": "Ya analizado",
+    "needMoreWorkouts": "Se necesitan al menos 2 entrenamientos.",
+    "recommendationsApplied": "Recomendaciones aplicadas ✓"
+  },
+  "adjustments": {
+    "new": "NUEVO",
+    "adjust": "AJUSTAR",
+    "replace": "REEMPLAZAR",
+    "addToWorkout": "Añadir al entrenamiento",
+    "added": "Añadido ✓",
+    "apply": "Aplicar",
+    "keep": "Mantener",
+    "replaceButton": "Reemplazar",
+    "keepAnyway": "Mantener de todos modos"
+  },
+  "planner": {
+    "title": "Planificar entrenamiento",
+    "duration": "Duración",
+    "minutes": "min",
+    "exercises": "ejercicios",
+    "generate": "Generar entrenamiento",
+    "regenerate": "Regenerar",
+    "startWorkout": "Empezar",
+    "optimizedOrder": "Orden optimizado para seguridad escoliótica",
+    "aiGenerate": "Entrenamiento IA: Aún más personalizado",
+    "aiGenerateButton": "Generar entrenamiento IA",
+    "aiGenerated": "Generado por IA",
+    "activation": "Activación",
+    "compound": "Compuesto",
+    "isolation": "Aislamiento",
+    "core": "Core"
+  },
+  "workout": {
+    "share": "Compartir",
+    "copy": "Copiar",
+    "copied": "¡Copiado!",
+    "finished": "Entrenamiento completado",
+    "done": "Hecho"
+  }
+}
