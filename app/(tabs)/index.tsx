@@ -16,7 +16,7 @@ export default function HomeScreenWrapper() {
 
 function HomeScreen() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { surgery, curveType, goal } = useProfileStore();
   const workoutExercises = useWorkoutStore((s) => s.exercises);
   const { workouts, loadHistory } = useHistoryStore();
@@ -24,7 +24,7 @@ function HomeScreen() {
 
   useEffect(() => { loadHistory(); loadNutrition(); }, []);
 
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const today = new Date().toLocaleDateString(i18n.language, { weekday: 'long', month: 'long', day: 'numeric' });
 
   // Stats
   const totalWorkouts = workouts.length;

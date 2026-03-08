@@ -47,5 +47,8 @@
     "copied": "Copié!",
     "finished": "Entraînement terminé",
     "done": "Terminé"
+  },
+  "progress": {
+    "noWorkoutsYet": "Aucun entraînement pour le moment"
   }
 }

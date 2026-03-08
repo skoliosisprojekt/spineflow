@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import OnboardingStep from '../../components/OnboardingStep';
 import { useProfileStore } from '../../stores/settingsStore';
+import { trackOnboardingStepCompleted } from '../../lib/analytics';
 import type { SurgeryType } from '../../types';
 
 export default function SurgeryScreen() {
@@ -26,7 +27,7 @@ export default function SurgeryScreen() {
       options={options}
       selected={surgery}
       onSelect={(id) => setSurgery(id as SurgeryType)}
-      onNext={() => router.push('/onboarding/curve-type' as any)}
+      onNext={() => { trackOnboardingStepCompleted('surgery'); router.push('/onboarding/curve-type' as any); }}
     />
   );
 }

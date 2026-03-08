@@ -8,12 +8,17 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
 import { useSettingsStore, useProfileStore } from '../stores/settingsStore';
 import { Session } from '@supabase/supabase-js';
-import { identifyUser, resetUser, trackScreen } from '../lib/posthog';
+import { resetUser, trackScreen } from '../lib/posthog';
+import { identifyUserProfile } from '../lib/analytics';
 import ErrorBoundary from '../components/ErrorBoundary';
 import OfflineBanner from '../components/OfflineBanner';
 import { resetUserData } from '../lib/resetUserData';
 import { loadProfileFromCloud, loadHistoryFromCloud } from '../lib/cloudSync';
+import { pullNutritionFromCloud, pushNutritionToCloud } from '../lib/nutritionSync';
+import { onDbInit } from '../lib/db';
+import { SQLiteProvider } from 'expo-sqlite';
 import { useHistoryStore } from '../stores/historyStore';
+import { usePremiumStore } from '../stores/premiumStore';
 import '../i18n';
 import { loadSavedLanguage } from '../i18n';
 
@@ -28,9 +33,11 @@ function RootLayout() {
   const { loadSettings, setLanguage, setTheme, setUnits } = useSettingsStore();
   const { loadProfile, setSurgery, setCurveType, setGoal, setExperience, setBodyType, setEquipment } = useProfileStore();
   const { setWorkouts } = useHistoryStore();
+  const { checkPremiumStatus } = usePremiumStore();
 
   useEffect(() => {
     const init = async () => {
+      try {
       await loadSavedLanguage();
       await loadPersistedState();
       await loadSettings();
@@ -70,6 +77,20 @@ function RootLayout() {
             if (cloudProfile.theme) await setTheme(cloudProfile.theme as any);
             if (cloudProfile.units) await setUnits(cloudProfile.units as any);
             if (cloudProfile.profile_complete) await setProfileComplete(true);
+            await checkPremiumStatus(cloudProfile.is_beta_tester ?? false);
+          identifyUserProfile(session.user.id, {
+            email: session.user.email ?? undefined,
+            curve_type: cloudProfile.curve_type,
+            surgery: cloudProfile.surgery,
+            goal: cloudProfile.goal,
+            experience: cloudProfile.experience,
+            body_type: cloudProfile.body_type,
+          });
+          } else {
+            // No profile row yet (new user still in onboarding) —
+            // checkPremiumStatus(false) will restore BETA_KEY from AsyncStorage cache
+            identifyUserProfile(session.user.id, { email: session.user.email ?? undefined });
+            await checkPremiumStatus(false);
           }
         } catch {}
 
@@ -78,12 +99,19 @@ function RootLayout() {
           .then((cloudHistory) => { if (cloudHistory.length > 0) setWorkouts(cloudHistory); })
           .catch(() => {});
 
+        // Restore & sync nutrition data from cloud (non-blocking)
+        pullNutritionFromCloud(session.user.id).catch(() => {});
+        pushNutritionToCloud(session.user.id).catch(() => {});
+
         setAuth(session.user.id, session.user.email || '');
-        identifyUser(session.user.id, { email: session.user.email });
       } else {
         await loadProfile();
       }
-      setIsLoading(false);
+      } catch (e) {
+        console.warn('[layout] init error:', e);
+      } finally {
+        setIsLoading(false);
+      }
     };
     init();
 
@@ -91,8 +119,10 @@ function RootLayout() {
       (_event: string, session: Session | null) => {
         if (session?.user) {
           setAuth(session.user.id, session.user.email || '');
-          identifyUser(session.user.id, { email: session.user.email });
+          identifyUserProfile(session.user.id, { email: session.user.email ?? undefined });
           AsyncStorage.setItem(LAST_USER_KEY, session.user.id).catch(() => {});
+          // Push any locally queued changes when a new session is established
+          pushNutritionToCloud(session.user.id).catch(() => {});
         } else {
           resetUserData();
           clearAuth();
@@ -132,30 +162,36 @@ function RootLayout() {
     }
   }, [isAuthenticated, consentGiven, profileComplete, welcomeSeen, isLoading, segments]);
 
-  if (isLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F2F2F7' }}>
-        <LoadingSpinner size={80} />
-      </View>
-    );
-  }
-
   return (
+    <SQLiteProvider
+      databaseName="spineflow_nutrition.db"
+      onInit={onDbInit}
+      onError={(e) => console.warn('[SQLiteProvider]', e)}
+    >
     <ErrorBoundary>
-      <StatusBar barStyle="dark-content" backgroundColor="#F2F2F7" translucent={false} />
-      <OfflineBanner />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="welcome" />
-        <Stack.Screen name="auth" />
-        <Stack.Screen name="consent" />
-        <Stack.Screen name="onboarding" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="exercise/[id]" options={{ presentation: 'card' }} />
-        <Stack.Screen name="settings" options={{ presentation: 'card' }} />
-        <Stack.Screen name="premium" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="planner" options={{ presentation: 'card' }} />
-      </Stack>
+      {isLoading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F2F2F7' }}>
+          <LoadingSpinner size={80} />
+        </View>
+      ) : (
+        <>
+          <StatusBar barStyle="dark-content" backgroundColor="#F2F2F7" translucent={false} />
+          <OfflineBanner />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="welcome" />
+            <Stack.Screen name="auth" />
+            <Stack.Screen name="consent" />
+            <Stack.Screen name="onboarding" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="exercise/[id]" options={{ presentation: 'card' }} />
+            <Stack.Screen name="settings" options={{ presentation: 'card' }} />
+            <Stack.Screen name="premium" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="planner" options={{ presentation: 'card' }} />
+          </Stack>
+        </>
+      )}
     </ErrorBoundary>
+    </SQLiteProvider>
   );
 }
 

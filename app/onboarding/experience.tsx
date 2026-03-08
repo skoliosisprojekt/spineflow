@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import OnboardingStep from '../../components/OnboardingStep';
 import { useProfileStore } from '../../stores/settingsStore';
+import { trackOnboardingStepCompleted } from '../../lib/analytics';
 import type { ExperienceType } from '../../types';
 
 export default function ExperienceScreen() {
@@ -24,7 +25,7 @@ export default function ExperienceScreen() {
       options={options}
       selected={experience}
       onSelect={(id) => setExperience(id as ExperienceType)}
-      onNext={() => router.push('/onboarding/body-type' as any)}
+      onNext={() => { trackOnboardingStepCompleted('experience'); router.push('/onboarding/body-type' as any); }}
       onBack={() => router.back()}
     />
   );

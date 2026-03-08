@@ -2,8 +2,9 @@ import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   View, Text, ScrollView, Pressable, StyleSheet,
-  SafeAreaView, ActivityIndicator, Alert,
+  ActivityIndicator, Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useProfileStore } from '../stores/settingsStore';
@@ -19,6 +20,7 @@ import {
 import { runAIWorkoutGeneration } from '../lib/aiAnalysis';
 import { useNetwork } from '../lib/network';
 import { lightTheme as C } from '../lib/theme';
+import { exercises as allExercises } from '../data/exercises';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -160,10 +162,12 @@ export default function PlannerScreen() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaView style={s.safe}>
+    <View style={s.safe}>
       {/* Header */}
-      <View style={s.header}>
+      <View style={[s.header, { paddingTop: insets.top + 12 }]}>
         <Pressable
           style={s.backBtn}
           onPress={() => router.back()}
@@ -204,7 +208,7 @@ export default function PlannerScreen() {
         <Text style={s.durationHint}>~{DURATION_COUNTS[duration]} {t('planner.exercises')}</Text>
 
         {/* Muscle Group Filter */}
-        <Text style={s.sectionLabel}>Muskelgruppen</Text>
+        <Text style={s.sectionLabel}>{t('planner.muscleGroups')}</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -357,7 +361,7 @@ export default function PlannerScreen() {
 
         <View style={{ height: 32 }} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -383,7 +387,7 @@ function ExerciseCard({
         </View>
         <View style={{ flex: 1 }}>
           <Text style={s.exCardName} numberOfLines={2}>{ex.name}</Text>
-          <Text style={s.exCardMuscle}>{ex.muscle}</Text>
+          <Text style={s.exCardMuscle}>{t(`muscles.${ex.muscle}`, { defaultValue: ex.muscle })}</Text>
         </View>
         <Pressable
           style={s.removeBtn}
@@ -414,13 +418,31 @@ function ExerciseCard({
       <View style={s.exCardMeta}>
         <View style={s.exCardMetaItem}>
           <MaterialIcons name="repeat" size={13} color={C.text3} />
-          <Text style={s.exCardMetaText}>{ex.sets} Sets</Text>
+          <Text style={s.exCardMetaText}>{ex.sets} {t('workout.setsLabel')}</Text>
         </View>
         <View style={s.exCardMetaItem}>
           <MaterialIcons name="schedule" size={13} color={C.text3} />
           <Text style={s.exCardMetaText}>~{ex.estimatedMinutes} {t('planner.minutes')}</Text>
         </View>
       </View>
+
+      {/* Equipment row */}
+      {(() => {
+        const exData = allExercises.find((e) => e.id === ex.exerciseId);
+        const equip = exData?.equip ?? [];
+        return (
+          <View style={s.equipRow}>
+            <MaterialIcons name="fitness-center" size={12} color={C.text3} />
+            {equip.length === 0 ? (
+              <Text style={s.equipText}>{t('exercises.noEquipment')}</Text>
+            ) : (
+              equip.map((e) => (
+                <Text key={e} style={s.equipChip}>{t(`onboarding.equipment.${e}`, { defaultValue: e })}</Text>
+              ))
+            )}
+          </View>
+        );
+      })()}
 
       {/* KI Begründung */}
       {ex.reason && (
@@ -433,7 +455,7 @@ function ExerciseCard({
       {ex.modification && (
         <View style={s.modificationRow}>
           <MaterialIcons name="warning" size={13} color={C.orange} />
-          <Text style={s.modificationText}>{ex.modification}</Text>
+          <Text style={s.modificationText}>{t(ex.modification ?? 'workout.modifyForm')}</Text>
         </View>
       )}
     </View>
@@ -452,7 +474,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
     backgroundColor: C.card,
     borderBottomWidth: 0.5,
     borderBottomColor: C.sep,
@@ -827,5 +849,27 @@ const s = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '700',
+  },
+
+  equipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 6,
+  },
+  equipText: {
+    fontSize: 11,
+    color: C.text3,
+    fontStyle: 'italic',
+  },
+  equipChip: {
+    fontSize: 11,
+    color: C.text3,
+    backgroundColor: C.sepLight,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    overflow: 'hidden',
   },
 });

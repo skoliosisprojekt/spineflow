@@ -22,7 +22,9 @@ import { exercises as allExercises, exerciseNames, exerciseMods, exerciseFusionM
 import { playTimerEndSound } from '../../lib/sounds';
 import { exerciseSteps } from '../../data/exerciseAnimations';
 import { SuccessCheck, Confetti, EmptyWorkout, LoadingSpinner, Crown } from '../../components/animations';
+import { trackWorkoutStarted, trackWorkoutCompleted, trackWorkoutCancelled, trackAIAdjustmentHandled } from '../../lib/analytics';
 import { trackEvent } from '../../lib/posthog';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import ErrorBoundary from '../../components/ErrorBoundary';
 
 function RestBar({ onSkip }: { onSkip?: () => void }) {
@@ -567,6 +569,7 @@ function WorkoutScreen() {
   };
 
   const handleAcceptAdd = async (adj: WorkoutAdjustment) => {
+    trackAIAdjustmentHandled('accepted', exerciseNames[adj.exercise_id] ?? `Exercise ${adj.exercise_id}`);
     // Parse suggested sets like "3×12" → 3 sets
     let numSets = 3;
     if (adj.suggested_sets) {
@@ -589,6 +592,7 @@ function WorkoutScreen() {
   };
 
   const handleAcceptAdjust = async (adj: WorkoutAdjustment) => {
+    trackAIAdjustmentHandled('accepted', exerciseNames[adj.exercise_id] ?? `Exercise ${adj.exercise_id}`);
     // Pre-fill the new suggested weight into all sets of the exercise
     if (adj.suggested_weight) {
       const ex = exercises.find((e) => e.exerciseId === adj.exercise_id);
@@ -603,6 +607,7 @@ function WorkoutScreen() {
   };
 
   const handleAcceptRemove = async (adj: WorkoutAdjustment) => {
+    trackAIAdjustmentHandled('accepted', exerciseNames[adj.exercise_id] ?? `Exercise ${adj.exercise_id}`);
     // Swap exercise: remove old, add replacement
     removeExercise(adj.exercise_id);
     if (adj.replace_with_id) {
@@ -613,9 +618,22 @@ function WorkoutScreen() {
   };
 
   const handleDismissAdj = async (adj: WorkoutAdjustment) => {
+    trackAIAdjustmentHandled('rejected', exerciseNames[adj.exercise_id] ?? `Exercise ${adj.exercise_id}`);
     await updateAdjustmentStatus(adj.id, 'dismissed');
     removeAdj(adj.id);
   };
+
+  // Keep screen awake only during an active workout session
+  useEffect(() => {
+    if (exercises.length > 0) {
+      activateKeepAwakeAsync();
+    } else {
+      deactivateKeepAwake();
+    }
+    return () => {
+      deactivateKeepAwake();
+    };
+  }, [exercises.length]);
 
   // Track workout start time
   useEffect(() => {
@@ -631,7 +649,15 @@ function WorkoutScreen() {
     for (const pe of plan.exercises) {
       addExercise(pe.exerciseId, pe.sets);
     }
-    trackEvent('workout_started', { source: 'plan', exerciseCount: plan.exercises.length });
+    trackWorkoutStarted({ source: 'plan', exercise_count: plan.exercises.length });
+  };
+
+  const handleCancelWorkout = () => {
+    const minutesSpent = workoutStartRef.current
+      ? Math.round((Date.now() - new Date(workoutStartRef.current).getTime()) / 60_000)
+      : 0;
+    trackWorkoutCancelled(minutesSpent);
+    clearWorkout();
   };
 
   const totalSets = exercises.reduce((sum, e) => sum + e.sets.length, 0);
@@ -664,11 +690,14 @@ function WorkoutScreen() {
     };
     saveWorkout(record);
     setLastRecord(record);
-    trackEvent('workout_completed', {
-      exerciseCount: performed.length,
-      totalSets: base.totalSets,
-      completedSets: base.completedSets,
-      totalVolume: base.totalVolume,
+    const durationMinutes = workoutStartRef.current
+      ? Math.round((Date.now() - new Date(workoutStartRef.current).getTime()) / 60_000)
+      : 0;
+    trackWorkoutCompleted({
+      total_volume: base.totalVolume,
+      duration_minutes: durationMinutes,
+      exercise_count: performed.length,
+      completed_sets: base.completedSets,
     });
 
     setShowConfetti(true);
@@ -709,7 +738,7 @@ function WorkoutScreen() {
                   <Text style={styles.planExNum}>{i + 1}</Text>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.planExName}>{exerciseNames[pe.exerciseId] || `Exercise ${pe.exerciseId}`}</Text>
-                    <Text style={styles.planExSets}>{t('workout.planSets', { count: pe.sets })}{pe.note ? ` · ${pe.note}` : ''}</Text>
+                    <Text style={styles.planExSets}>{t('workout.planSets', { count: pe.sets })}{pe.note ? ` · ${t(pe.note)}` : ''}</Text>
                   </View>
                   {pe.note && <MaterialIcons name="info-outline" size={14} color="#FF9500" />}
                 </View>
@@ -717,7 +746,7 @@ function WorkoutScreen() {
             </View>
             <Pressable
               style={({ pressed }) => [styles.startPlanBtn, pressed && { opacity: 0.85 }]}
-              onPress={() => router.push('/planner' as any)}
+              onPress={loadPlanExercises}
               accessibilityRole="button"
               accessibilityLabel="Start planned workout"
             >
@@ -735,7 +764,7 @@ function WorkoutScreen() {
         ) : (
           <View style={styles.empty}>
             <EmptyWorkout size={150} />
-            <Text style={styles.emptyTitle}>Start your first workout</Text>
+            <Text style={styles.emptyTitle}>{t('workout.noExercises')}</Text>
             <Text style={styles.emptyText}>{t('workout.noExercisesDesc')}</Text>
             <Pressable
               style={styles.browseBtn}
@@ -923,7 +952,7 @@ function WorkoutScreen() {
 
         <Pressable
           style={styles.cancelBtn}
-          onPress={clearWorkout}
+          onPress={handleCancelWorkout}
           accessibilityRole="button"
           accessibilityLabel="Cancel workout"
         >

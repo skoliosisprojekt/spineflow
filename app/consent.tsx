@@ -66,11 +66,11 @@ export default function ConsentScreen() {
             <MaterialIcons name="description" size={24} color="#007AFF" />
             <Text style={styles.cardTitle}>{t('consent.tosTitle')}</Text>
           </View>
-          <ScrollView style={styles.legalText} nestedScrollEnabled>
+          <View style={styles.legalText}>
             <Text style={styles.legalContent}>
               {t('consent.tosContent')}
             </Text>
-          </ScrollView>
+          </View>
           <TouchableOpacity
             style={styles.checkboxRow}
             onPress={() => setTosAccepted(!tosAccepted)}
@@ -93,11 +93,11 @@ export default function ConsentScreen() {
             <MaterialIcons name="privacy-tip" size={24} color="#AF52DE" />
             <Text style={styles.cardTitle}>{t('consent.privacyTitle')}</Text>
           </View>
-          <ScrollView style={styles.legalText} nestedScrollEnabled>
+          <View style={styles.legalText}>
             <Text style={styles.legalContent}>
               {t('consent.privacyContent')}
             </Text>
-          </ScrollView>
+          </View>
           <TouchableOpacity
             style={styles.checkboxRow}
             onPress={() => setPrivacyAccepted(!privacyAccepted)}
@@ -120,11 +120,11 @@ export default function ConsentScreen() {
             <MaterialIcons name="health-and-safety" size={24} color="#FF3B30" />
             <Text style={styles.cardTitle}>{t('consent.disclaimerTitle')}</Text>
           </View>
-          <ScrollView style={styles.legalText} nestedScrollEnabled>
+          <View style={styles.legalText}>
             <Text style={styles.legalContent}>
               {t('consent.disclaimerContent')}
             </Text>
-          </ScrollView>
+          </View>
           <TouchableOpacity
             style={styles.checkboxRow}
             onPress={() => setDisclaimerAccepted(!disclaimerAccepted)}
@@ -212,7 +212,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   legalText: {
-    maxHeight: 120,
     backgroundColor: '#F9F9FB',
     borderRadius: 8,
     padding: 12,

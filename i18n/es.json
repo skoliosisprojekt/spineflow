@@ -1,6 +1,6 @@
 {
   "offline": {
-    "banner": "Sin conexión — Datos guardados localmente",
+    "banner": "Sin conexión — Datos guardados",
     "aiUnavailable": "Estás sin conexión. El análisis IA estará disponible cuando vuelvas a estar en línea. Tu entrenamiento se ha guardado.",
     "aiWorkoutUnavailable": "El entrenamiento IA necesita internet. Puedes usar el generador local — funciona sin conexión.",
     "loginRequired": "Se necesita conexión a internet para iniciar sesión.",
@@ -47,5 +47,8 @@
     "copied": "¡Copiado!",
     "finished": "Entrenamiento completado",
     "done": "Hecho"
+  },
+  "progress": {
+    "noWorkoutsYet": "Aún no hay entrenamientos"
   }
 }

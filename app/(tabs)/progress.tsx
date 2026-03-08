@@ -60,7 +60,7 @@ function VolumeTrendChart({ workouts }: { workouts: WorkoutRecord[] }) {
       {!hasData ? (
         <View style={styles.trendEmpty}>
           <EmptyChart size={150} />
-          <Text style={styles.trendEmptyText}>No workouts yet</Text>
+          <Text style={styles.trendEmptyText}>{t('progress.noWorkoutsYet')}</Text>
         </View>
       ) : (
         <>

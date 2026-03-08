@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { trackEvent } from '../../lib/posthog';
 import ErrorBoundary from '../../components/ErrorBoundary';
 import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, Modal, KeyboardAvoidingView, Platform, Animated as RNAnimated } from 'react-native';
@@ -7,6 +7,9 @@ import { useTranslation } from 'react-i18next';
 import { useNutritionStore, HydrationEntry, MealEntry, MealType } from '../../stores/nutritionStore';
 import type { HydrationType } from '../../types';
 import { WaterDrop } from '../../components/animations';
+import { useProfileStore } from '../../stores/settingsStore';
+import { calculateTDEE, calculateMacros } from '../../lib/nutrition';
+import type { Gender } from '../../types';
 
 const QUICK_ADDS: { type: HydrationType; labelKey: string; amount: number; icon: keyof typeof MaterialIcons.glyphMap; color: string }[] = [
   { type: 'water', labelKey: 'nutrition.water', amount: 250, icon: 'water-drop', color: '#5B8DEF' },
@@ -185,6 +188,92 @@ function AddMealModal({ visible, onClose, onAdd }: { visible: boolean; onClose: 
   );
 }
 
+function BodyDataCard() {
+  const { t } = useTranslation();
+  const { setHeight, setWeight, setAge, setGender, saveBodyData } = useProfileStore();
+  const [h, setH] = useState('');
+  const [w, setW] = useState('');
+  const [a, setA] = useState('');
+  const [g, setG] = useState<Gender>('male');
+  const [saving, setSaving] = useState(false);
+
+  const valid = Number(h) > 0 && Number(w) > 0 && Number(a) > 0;
+
+  const handleSave = async () => {
+    if (!valid) return;
+    setSaving(true);
+    setHeight(Number(h));
+    setWeight(Number(w));
+    setAge(Number(a));
+    setGender(g);
+    await saveBodyData();
+    setSaving(false);
+  };
+
+  return (
+    <View style={bdStyles.card}>
+      <MaterialIcons name="person" size={36} color="#00B894" style={{ alignSelf: 'center', marginBottom: 8 }} />
+      <Text style={bdStyles.title}>{t('nutrition.bodyDataTitle')}</Text>
+      <Text style={bdStyles.subtitle}>{t('nutrition.bodyDataSubtitle')}</Text>
+
+      <Text style={bdStyles.label}>{t('nutrition.gender')}</Text>
+      <View style={bdStyles.genderRow}>
+        <Pressable style={[bdStyles.genderBtn, g === 'male' && bdStyles.genderActive]} onPress={() => setG('male')} accessibilityRole="radio">
+          <Text style={[bdStyles.genderText, g === 'male' && bdStyles.genderTextActive]}>♂ {t('nutrition.male')}</Text>
+        </Pressable>
+        <Pressable style={[bdStyles.genderBtn, g === 'female' && bdStyles.genderActive]} onPress={() => setG('female')} accessibilityRole="radio">
+          <Text style={[bdStyles.genderText, g === 'female' && bdStyles.genderTextActive]}>♀ {t('nutrition.female')}</Text>
+        </Pressable>
+      </View>
+
+      <View style={bdStyles.inputRow}>
+        <View style={bdStyles.inputGroup}>
+          <Text style={bdStyles.label}>{t('nutrition.height')}</Text>
+          <TextInput style={bdStyles.input} value={h} onChangeText={setH} placeholder="175" placeholderTextColor="#AEAEB2" inputMode="numeric" keyboardType="number-pad" accessibilityLabel="Height cm" />
+        </View>
+        <View style={bdStyles.inputGroup}>
+          <Text style={bdStyles.label}>{t('nutrition.weight')}</Text>
+          <TextInput style={bdStyles.input} value={w} onChangeText={setW} placeholder="75" placeholderTextColor="#AEAEB2" inputMode="decimal" keyboardType="decimal-pad" accessibilityLabel="Weight kg" />
+        </View>
+        <View style={bdStyles.inputGroup}>
+          <Text style={bdStyles.label}>{t('nutrition.age')}</Text>
+          <TextInput style={bdStyles.input} value={a} onChangeText={setA} placeholder="30" placeholderTextColor="#AEAEB2" inputMode="numeric" keyboardType="number-pad" accessibilityLabel="Age" />
+        </View>
+      </View>
+
+      <Pressable
+        style={({ pressed }) => [bdStyles.btn, (!valid || saving) && { opacity: 0.4 }, pressed && { opacity: 0.82 }]}
+        onPress={handleSave}
+        disabled={!valid || saving}
+        accessibilityRole="button"
+      >
+        <MaterialIcons name="calculate" size={18} color="#FFFFFF" />
+        <Text style={bdStyles.btnText}>{saving ? t('common.loading') : t('nutrition.calculate')}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+const bdStyles = StyleSheet.create({
+  card: {
+    backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24, margin: 16,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+  },
+  title: { fontSize: 20, fontWeight: '700', color: '#1C1C1E', textAlign: 'center', marginBottom: 6 },
+  subtitle: { fontSize: 13, color: '#8E8E93', textAlign: 'center', lineHeight: 19, marginBottom: 16 },
+  label: { fontSize: 11, fontWeight: '600', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, marginTop: 12 },
+  genderRow: { flexDirection: 'row', gap: 10 },
+  genderBtn: { flex: 1, paddingVertical: 11, borderRadius: 10, borderWidth: 1.5, borderColor: '#E5E5EA', alignItems: 'center', backgroundColor: '#F2F2F7' },
+  genderActive: { borderColor: '#00B894', backgroundColor: '#E8FAF5' },
+  genderText: { fontSize: 14, fontWeight: '600', color: '#8E8E93' },
+  genderTextActive: { color: '#00B894' },
+  inputRow: { flexDirection: 'row', gap: 10, marginTop: 4, marginBottom: 20 },
+  inputGroup: { flex: 1 },
+  input: { backgroundColor: '#F2F2F7', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 13, fontSize: 20, fontWeight: '700', color: '#1C1C1E', textAlign: 'center' },
+  btn: { flexDirection: 'row', backgroundColor: '#00B894', borderRadius: 14, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 52 },
+  btnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+});
+
 export default function NutritionScreenWrapper() {
   return <ErrorBoundary><NutritionScreen /></ErrorBoundary>;
 }
@@ -192,6 +281,13 @@ export default function NutritionScreenWrapper() {
 function NutritionScreen() {
   const { t } = useTranslation();
   const { entries, meals, goals, addEntry, removeEntry, addMeal, removeMeal, setGoal, loadNutrition, clearToday } = useNutritionStore();
+  const { height, weight, age, gender, goal: fitnessGoal, bodyType } = useProfileStore();
+  const hasBodyData = height > 0 && weight > 0 && age > 0;
+  const targets = useMemo(() => {
+    if (!hasBodyData) return null;
+    const tdee = calculateTDEE(weight, height, age, gender);
+    return calculateMacros(tdee, fitnessGoal, bodyType, weight);
+  }, [hasBodyData, weight, height, age, gender, fitnessGoal, bodyType]);
   const [editingGoal, setEditingGoal] = useState<'water' | 'protein' | 'calories' | null>(null);
   const [goalInput, setGoalInput] = useState('');
   const [showMealForm, setShowMealForm] = useState(false);
@@ -237,11 +333,38 @@ function NutritionScreen() {
     }
   };
 
+  if (!hasBodyData) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.titleRow}>
+            <Text style={styles.title} accessibilityRole="header">{t('nutrition.title')}</Text>
+            <View style={styles.premiumBadge}>
+              <Text style={styles.premiumBadgeText}>👑 {t('nutrition.premiumBadge')}</Text>
+            </View>
+          </View>
+        </View>
+        <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: 8 }]} showsVerticalScrollIndicator={false}>
+          <BodyDataCard />
+          <View style={styles.premiumBanner}>
+            <MaterialIcons name="workspace-premium" size={15} color="#FF9500" />
+            <Text style={styles.premiumBannerText}>{t('nutrition.premiumBanner')}</Text>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.title} accessibilityRole="header">{t('nutrition.title')}</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.title} accessibilityRole="header">{t('nutrition.title')}</Text>
+            <View style={styles.premiumBadge}>
+              <Text style={styles.premiumBadgeText}>👑 {t('nutrition.premiumBadge')}</Text>
+            </View>
+          </View>
           <Text style={styles.subtitle}>{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</Text>
         </View>
         <Pressable onPress={() => setShowMealForm(true)} style={styles.addMealHeaderBtn} accessibilityRole="button" accessibilityLabel="Add meal">
@@ -255,16 +378,32 @@ function NutritionScreen() {
           <View style={styles.overviewTopRow}>
             <View style={styles.calorieCircle}>
               <Text style={styles.calorieValue}>{mealCalories}</Text>
-              <Text style={styles.calorieUnit}>/ {goals.calories} {t('nutrition.kcal')}</Text>
+              <Text style={styles.calorieUnit}>/ {targets?.calories ?? goals.calories} {t('nutrition.kcal')}</Text>
             </View>
           </View>
 
           <View style={styles.macrosRow}>
-            <ProgressBar progress={totalProtein / goals.protein} color="#AF52DE" label={t('nutrition.protein')} value={`${totalProtein}/${goals.protein}g`} />
-            <ProgressBar progress={mealCarbs / 300} color="#FF9500" label={t('nutrition.carbs')} value={`${mealCarbs}g`} />
-            <ProgressBar progress={mealFat / 80} color="#FF6B6B" label={t('nutrition.fat')} value={`${mealFat}g`} />
+            <ProgressBar progress={totalProtein / (targets?.protein ?? goals.protein)} color="#AF52DE" label={t('nutrition.protein')} value={`${totalProtein}/${targets?.protein ?? goals.protein}g`} />
+            <ProgressBar progress={mealCarbs / (targets?.carbs ?? 300)} color="#FF9500" label={t('nutrition.carbs')} value={`${mealCarbs}/${targets?.carbs ?? 300}g`} />
+            <ProgressBar progress={mealFat / (targets?.fat ?? 80)} color="#FF6B6B" label={t('nutrition.fat')} value={`${mealFat}/${targets?.fat ?? 80}g`} />
             <ProgressBar progress={todayHydration / goals.water} color="#5B8DEF" label={t('nutrition.water')} value={`${(todayHydration / 1000).toFixed(1)}/${(goals.water / 1000).toFixed(1)}L`} />
           </View>
+
+          {/* Remaining calories */}
+          {targets && (
+            <View style={styles.remainingRow}>
+              <MaterialIcons
+                name={mealCalories >= targets.calories ? 'check-circle' : 'timer'}
+                size={14}
+                color={mealCalories >= targets.calories ? '#00B894' : '#8E8E93'}
+              />
+              <Text style={[styles.remainingText, mealCalories >= targets.calories && { color: '#00B894' }]}>
+                {mealCalories >= targets.calories
+                  ? t('nutrition.goalReached')
+                  : `${targets.calories - mealCalories} ${t('nutrition.kcal')} ${t('nutrition.remaining')}`}
+              </Text>
+            </View>
+          )}
 
           {/* Edit goals links */}
           <View style={styles.goalEditRow}>
@@ -345,6 +484,12 @@ function NutritionScreen() {
             ))}
           </>
         )}
+
+        {/* Premium banner */}
+        <View style={styles.premiumBanner}>
+          <MaterialIcons name="workspace-premium" size={15} color="#FF9500" />
+          <Text style={styles.premiumBannerText}>{t('nutrition.premiumBanner')}</Text>
+        </View>
       </ScrollView>
 
       <AddMealModal visible={showMealForm} onClose={() => setShowMealForm(false)} onAdd={addMeal} />
@@ -497,4 +642,22 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     zIndex: 50,
   },
+
+  // Premium badge + banner
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  premiumBadge: {
+    backgroundColor: '#FFF3E0', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3,
+    borderWidth: 1, borderColor: '#FF950040',
+  },
+  premiumBadgeText: { fontSize: 11, fontWeight: '700', color: '#FF9500' },
+  premiumBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: '#FFF8EC', borderRadius: 12, padding: 12, marginTop: 16, marginBottom: 8,
+    borderWidth: 1, borderColor: '#FF950030',
+  },
+  premiumBannerText: { fontSize: 12, color: '#8E8E93', flex: 1, lineHeight: 16 },
+
+  // Remaining calories row
+  remainingRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 10 },
+  remainingText: { fontSize: 13, fontWeight: '600', color: '#8E8E93' },
 });

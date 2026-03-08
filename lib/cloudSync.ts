@@ -12,6 +12,7 @@ export interface CloudProfile {
   theme: string;
   units: string;
   profile_complete: boolean;
+  is_beta_tester: boolean;
 }
 
 /** Upserts user profile fields. Call fire-and-forget (.catch(() => {})). */
@@ -32,7 +33,7 @@ export async function loadProfileFromCloud(userId: string): Promise<CloudProfile
   const { data } = await supabase
     .from('user_profiles')
     .select(
-      'surgery, curve_type, goal, experience, body_type, equipment, language, theme, units, profile_complete',
+      'surgery, curve_type, goal, experience, body_type, equipment, language, theme, units, profile_complete, is_beta_tester',
     )
     .eq('user_id', userId)
     .maybeSingle();

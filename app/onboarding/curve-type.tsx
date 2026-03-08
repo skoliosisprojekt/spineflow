@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import OnboardingStep from '../../components/OnboardingStep';
 import { useProfileStore } from '../../stores/settingsStore';
+import { trackOnboardingStepCompleted } from '../../lib/analytics';
 import type { CurveType } from '../../types';
 
 export default function CurveTypeScreen() {
@@ -26,7 +27,7 @@ export default function CurveTypeScreen() {
       options={options}
       selected={curveType}
       onSelect={(id) => setCurveType(id as CurveType)}
-      onNext={() => router.push('/onboarding/goal' as any)}
+      onNext={() => { trackOnboardingStepCompleted('curve_type'); router.push('/onboarding/goal' as any); }}
       onBack={() => router.back()}
     />
   );

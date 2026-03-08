@@ -115,13 +115,19 @@ function parseWorkoutResponse(
     const safetyLevel = getSafety(id, ex.safety, curveType, surgery);
     if (safetyLevel === 'avoid') continue;
 
+    // EQUIPMENT HARD GATE — never show exercises requiring unavailable equipment
+    const hasEquip = ex.equip.length === 0 || ex.equip.every((e) => profile.equipment.includes(e));
+    if (!hasEquip) continue;
+
     const sets = Math.max(1, Math.min(6, Number(item.sets) || 3));
     const estimatedMinutes = parseFloat(((ex.timePerSet * sets) / 60).toFixed(1));
 
     let modification: string | undefined;
     if (safetyLevel === 'modify') {
-      modification = (isPostSurgery ? exerciseFusionMods[id] : exerciseMods[id])
-        ?? 'Modified form required — see exercise details.';
+      const modKey = isPostSurgery
+        ? (exerciseFusionMods[id] ? `exerciseFusionMods.${id}` : 'workout.modifyForm')
+        : (exerciseMods[id]       ? `exerciseMods.${id}`       : 'workout.modifyForm');
+      modification = modKey;
     }
 
     result.push({

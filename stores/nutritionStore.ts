@@ -1,6 +1,19 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { HydrationType } from '../types';
+import {
+  dbAddMeal, dbSoftDeleteMeal, dbGetMealsForDate,
+  dbDeleteMealsForDate, dbDeleteAllMeals,
+  dbAddHydration, dbSoftDeleteHydration, dbGetHydrationForDate,
+  dbDeleteHydrationForDate, dbDeleteAllHydration,
+  todayDateString,
+} from '../lib/db';
+import type { MealRow, HydrationRow } from '../lib/db';
+import { pushNutritionToCloud } from '../lib/nutritionSync';
+import { useAuthStore } from './authStore';
+import { trackMealLogged, trackHydrationLogged } from '../lib/analytics';
+
+const getAuthUserId = () => useAuthStore.getState().userId;
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
@@ -43,50 +56,121 @@ interface NutritionState {
   resetNutrition: () => void;
 }
 
-const ENTRIES_KEY = 'spineflow_nutrition_entries';
-const MEALS_KEY = 'spineflow_nutrition_meals';
+// Goals remain in AsyncStorage — simple single key-value, no query needs
 const GOALS_KEY = 'spineflow_nutrition_goals';
 
 const DEFAULT_GOALS: DailyGoals = { water: 3000, protein: 120, calories: 2500 };
 
+// ── Row → domain mappers ──────────────────────────────────────────────────────
+function rowToMeal(row: MealRow): MealEntry {
+  return {
+    id: row.id.toString(),
+    mealType: row.meal_type as MealType,
+    name: row.name,
+    calories: row.calories,
+    protein: row.protein,
+    carbs: row.carbs,
+    fat: row.fat,
+    time: new Date(row.timestamp).toISOString(),
+  };
+}
+
+function rowToEntry(row: HydrationRow): HydrationEntry {
+  return {
+    id: row.id.toString(),
+    type: row.beverage_type as HydrationType,
+    amount: row.amount_ml,
+    time: new Date(row.timestamp).toISOString(),
+  };
+}
+
+// ── Store ─────────────────────────────────────────────────────────────────────
 export const useNutritionStore = create<NutritionState>((set, get) => ({
   entries: [],
   meals: [],
   goals: { ...DEFAULT_GOALS },
 
   addEntry: (type, amount) => {
-    const entry: HydrationEntry = {
-      id: Date.now().toString(),
+    const now = Date.now();
+    const date = todayDateString();
+    // Optimistic update with a temporary id, replaced by SQLite row id on success
+    const tempId = `tmp_${now}`;
+    const optimistic: HydrationEntry = {
+      id: tempId,
       type,
       amount,
-      time: new Date().toISOString(),
+      time: new Date(now).toISOString(),
     };
-    const updated = [...get().entries, entry];
-    set({ entries: updated });
-    AsyncStorage.setItem(ENTRIES_KEY, JSON.stringify(updated)).catch(() => {});
+    set((s) => ({ entries: [...s.entries, optimistic] }));
+    dbAddHydration({ amountMl: amount, beverageType: type, date, timestamp: now })
+      .then((rowId) => {
+        set((s) => ({
+          entries: s.entries.map((e) =>
+            e.id === tempId ? { ...e, id: rowId.toString() } : e,
+          ),
+        }));
+        trackHydrationLogged(amount);
+        const userId = getAuthUserId();
+        if (userId) pushNutritionToCloud(userId).catch(() => {});
+      })
+      .catch(() => {
+        set((s) => ({ entries: s.entries.filter((e) => e.id !== tempId) }));
+      });
   },
 
   removeEntry: (id) => {
-    const updated = get().entries.filter((e) => e.id !== id);
-    set({ entries: updated });
-    AsyncStorage.setItem(ENTRIES_KEY, JSON.stringify(updated)).catch(() => {});
+    set((s) => ({ entries: s.entries.filter((e) => e.id !== id) }));
+    dbSoftDeleteHydration(Number(id))
+      .then(() => {
+        const userId = getAuthUserId();
+        if (userId) pushNutritionToCloud(userId).catch(() => {});
+      })
+      .catch(() => {});
   },
 
   addMeal: (meal) => {
-    const entry: MealEntry = {
+    const now = Date.now();
+    const date = todayDateString();
+    const tempId = `tmp_${now}`;
+    const optimistic: MealEntry = {
       ...meal,
-      id: Date.now().toString(),
-      time: new Date().toISOString(),
+      id: tempId,
+      time: new Date(now).toISOString(),
     };
-    const updated = [...get().meals, entry];
-    set({ meals: updated });
-    AsyncStorage.setItem(MEALS_KEY, JSON.stringify(updated)).catch(() => {});
+    set((s) => ({ meals: [...s.meals, optimistic] }));
+    dbAddMeal({
+      name: meal.name,
+      calories: meal.calories,
+      protein: meal.protein,
+      carbs: meal.carbs,
+      fat: meal.fat,
+      mealType: meal.mealType,
+      date,
+      timestamp: now,
+    })
+      .then((rowId) => {
+        set((s) => ({
+          meals: s.meals.map((m) =>
+            m.id === tempId ? { ...m, id: rowId.toString() } : m,
+          ),
+        }));
+        trackMealLogged(meal.mealType);
+        const userId = getAuthUserId();
+        if (userId) pushNutritionToCloud(userId).catch(() => {});
+      })
+      .catch(() => {
+        set((s) => ({ meals: s.meals.filter((m) => m.id !== tempId) }));
+      });
   },
 
   removeMeal: (id) => {
-    const updated = get().meals.filter((m) => m.id !== id);
-    set({ meals: updated });
-    AsyncStorage.setItem(MEALS_KEY, JSON.stringify(updated)).catch(() => {});
+    set((s) => ({ meals: s.meals.filter((m) => m.id !== id) }));
+    dbSoftDeleteMeal(Number(id))
+      .then(() => {
+        const userId = getAuthUserId();
+        if (userId) pushNutritionToCloud(userId).catch(() => {});
+      })
+      .catch(() => {});
   },
 
   setGoal: (field, value) => {
@@ -97,30 +181,37 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
 
   loadNutrition: async () => {
     try {
-      const [entriesRaw, mealsRaw, goalsRaw] = await Promise.all([
-        AsyncStorage.getItem(ENTRIES_KEY),
-        AsyncStorage.getItem(MEALS_KEY),
+      const date = todayDateString();
+      const [mealRows, hydrationRows, goalsRaw] = await Promise.all([
+        dbGetMealsForDate(date),
+        dbGetHydrationForDate(date),
         AsyncStorage.getItem(GOALS_KEY),
       ]);
-      const state: Partial<NutritionState> = {};
-      if (entriesRaw) state.entries = JSON.parse(entriesRaw);
-      if (mealsRaw) state.meals = JSON.parse(mealsRaw);
-      if (goalsRaw) state.goals = { ...DEFAULT_GOALS, ...JSON.parse(goalsRaw) };
-      set(state as any);
+      set({
+        meals: mealRows.map(rowToMeal),
+        entries: hydrationRows.map(rowToEntry),
+        goals: goalsRaw
+          ? { ...DEFAULT_GOALS, ...JSON.parse(goalsRaw) }
+          : { ...DEFAULT_GOALS },
+      });
     } catch {}
+  },
+
+  clearToday: () => {
+    const date = todayDateString();
+    set({ entries: [], meals: [] });
+    Promise.all([
+      dbDeleteMealsForDate(date),
+      dbDeleteHydrationForDate(date),
+    ]).catch(() => {});
   },
 
   resetNutrition: () => {
     set({ entries: [], meals: [], goals: { ...DEFAULT_GOALS } });
-    AsyncStorage.multiRemove([ENTRIES_KEY, MEALS_KEY, GOALS_KEY]).catch(() => {});
-  },
-
-  clearToday: () => {
-    const today = new Date().toDateString();
-    const updatedEntries = get().entries.filter((e) => new Date(e.time).toDateString() !== today);
-    const updatedMeals = get().meals.filter((m) => new Date(m.time).toDateString() !== today);
-    set({ entries: updatedEntries, meals: updatedMeals });
-    AsyncStorage.setItem(ENTRIES_KEY, JSON.stringify(updatedEntries)).catch(() => {});
-    AsyncStorage.setItem(MEALS_KEY, JSON.stringify(updatedMeals)).catch(() => {});
+    Promise.all([
+      dbDeleteAllMeals(),
+      dbDeleteAllHydration(),
+      AsyncStorage.removeItem(GOALS_KEY),
+    ]).catch(() => {});
   },
 }));

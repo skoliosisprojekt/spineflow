@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 interface Option {
   id: string;
@@ -36,6 +37,8 @@ export default function OnboardingStep({
   multiSelect = false,
   extraContent,
 }: OnboardingStepProps) {
+  const { t } = useTranslation();
+
   const isSelected = (id: string) =>
     multiSelect ? (selected as string[]).includes(id) : selected === id;
 
@@ -74,7 +77,7 @@ export default function OnboardingStep({
           ))}
         </View>
 
-        <Text style={styles.stepLabel}>Step {step + 1} of {totalSteps}</Text>
+        <Text style={styles.stepLabel}>{t('common.stepOf', { step: step + 1, total: totalSteps })}</Text>
       </View>
 
       {/* Content */}
@@ -125,7 +128,7 @@ export default function OnboardingStep({
           accessibilityRole="button"
           accessibilityLabel="Continue to next step"
         >
-          <Text style={styles.nextButtonText}>Continue</Text>
+          <Text style={styles.nextButtonText}>{t('common.next')}</Text>
           <MaterialIcons name="arrow-forward" size={20} color="#FFFFFF" />
         </TouchableOpacity>
       </View>

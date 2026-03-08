@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
-import { trackEvent } from '../../lib/posthog';
+import { trackOnboardingStepCompleted, trackOnboardingFinished, identifyUserProfile } from '../../lib/analytics';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -18,18 +18,19 @@ export default function EquipmentScreen() {
   const [customInput, setCustomInput] = useState('');
 
   const options = [
-    { id: 'dumbbells', label: t('onboarding.equipment.dumbbells'), icon: 'fitness-center' as const },
-    { id: 'barbell', label: t('onboarding.equipment.barbell'), icon: 'fitness-center' as const },
-    { id: 'trapbar', label: t('onboarding.equipment.trapbar'), icon: 'fitness-center' as const },
-    { id: 'cables', label: t('onboarding.equipment.cables'), icon: 'settings-ethernet' as const },
-    { id: 'latpull', label: t('onboarding.equipment.latpull'), icon: 'download' as const },
-    { id: 'legpress', label: t('onboarding.equipment.legpress'), icon: 'airline-seat-legroom-extra' as const },
-    { id: 'chestpress', label: t('onboarding.equipment.chestpress'), icon: 'weekend' as const },
-    { id: 'smithm', label: t('onboarding.equipment.smithm'), icon: 'view-column' as const },
-    { id: 'bench', label: t('onboarding.equipment.bench'), icon: 'event-seat' as const },
-    { id: 'bands', label: t('onboarding.equipment.bands'), icon: 'gesture' as const },
-    { id: 'pullupbar', label: t('onboarding.equipment.pullupbar'), icon: 'maximize' as const },
-    { id: 'foam', label: t('onboarding.equipment.foam'), icon: 'radio-button-unchecked' as const },
+    { id: 'dumbbells', label: t('onboarding.equipment.dumbbells'), description: t('onboarding.equipment.dumbbellsDesc'), icon: 'fitness-center' as const },
+    { id: 'barbell',   label: t('onboarding.equipment.barbell'),   description: t('onboarding.equipment.barbellDesc'),   icon: 'fitness-center' as const },
+    { id: 'trapbar',   label: t('onboarding.equipment.trapbar'),   description: t('onboarding.equipment.trapbarDesc'),   icon: 'fitness-center' as const },
+    { id: 'cables',    label: t('onboarding.equipment.cables'),    description: t('onboarding.equipment.cablesDesc'),    icon: 'settings-ethernet' as const },
+    { id: 'latpull',   label: t('onboarding.equipment.latpull'),   description: t('onboarding.equipment.latpullDesc'),   icon: 'download' as const },
+    { id: 'legpress',  label: t('onboarding.equipment.legpress'),  description: t('onboarding.equipment.legpressDesc'),  icon: 'airline-seat-legroom-extra' as const },
+    { id: 'chestpress',label: t('onboarding.equipment.chestpress'),description: t('onboarding.equipment.chestpressDesc'),icon: 'weekend' as const },
+    { id: 'smithm',    label: t('onboarding.equipment.smithm'),    description: t('onboarding.equipment.smithmDesc'),    icon: 'view-column' as const },
+    { id: 'bench',     label: t('onboarding.equipment.bench'),     description: t('onboarding.equipment.benchDesc'),     icon: 'event-seat' as const },
+    { id: 'bands',     label: t('onboarding.equipment.bands'),     description: t('onboarding.equipment.bandsDesc'),     icon: 'gesture' as const },
+    { id: 'pullupbar', label: t('onboarding.equipment.pullupbar'), description: t('onboarding.equipment.pullupbarDesc'), icon: 'maximize' as const },
+    { id: 'foam',      label: t('onboarding.equipment.foam'),      description: t('onboarding.equipment.foamDesc'),      icon: 'radio-button-unchecked' as const },
+    { id: 'mat',       label: t('onboarding.equipment.mat'),       description: t('onboarding.equipment.matDesc'),       icon: 'crop-landscape' as const },
   ];
 
   const customItems = equipment.filter((e) => e.startsWith('custom:'));
@@ -58,8 +59,19 @@ export default function EquipmentScreen() {
 
   const handleFinish = async () => {
     await saveProfile();
-    generatePlan({ surgery, curveType, goal, experience, bodyType });
-    trackEvent('onboarding_completed', { surgery, curveType, goal, experience, bodyType, equipment });
+    generatePlan({ surgery, curveType, goal, experience, bodyType, equipment });
+    trackOnboardingStepCompleted('equipment');
+    trackOnboardingFinished({ surgery, curve_type: curveType, goal, experience, body_type: bodyType });
+    const { userId } = useAuthStore.getState();
+    if (userId) {
+      identifyUserProfile(userId, {
+        curve_type: curveType,
+        surgery,
+        goal,
+        experience,
+        body_type: bodyType,
+      });
+    }
     await setProfileComplete(true);
   };
 

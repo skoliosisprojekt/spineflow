@@ -8,6 +8,7 @@ export type ExerciseCategory = 'activation' | 'compound' | 'isolation' | 'core';
 export type ThemeMode = 'system' | 'light' | 'dark';
 export type WeightUnit = 'kg' | 'lbs';
 export type HydrationType = 'water' | 'shake' | 'bcaa';
+export type Gender = 'male' | 'female';
 
 export interface UserProfile {
   id: string;

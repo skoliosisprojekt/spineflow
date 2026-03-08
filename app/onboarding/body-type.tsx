@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import OnboardingStep from '../../components/OnboardingStep';
 import { useProfileStore } from '../../stores/settingsStore';
+import { trackOnboardingStepCompleted } from '../../lib/analytics';
 import type { BodyType } from '../../types';
 
 export default function BodyTypeScreen() {
@@ -24,7 +25,7 @@ export default function BodyTypeScreen() {
       options={options}
       selected={bodyType}
       onSelect={(id) => setBodyType(id as BodyType)}
-      onNext={() => router.push('/onboarding/equipment' as any)}
+      onNext={() => { trackOnboardingStepCompleted('body_type'); router.push('/onboarding/equipment' as any); }}
       onBack={() => router.back()}
     />
   );

@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import OnboardingStep from '../../components/OnboardingStep';
 import { useProfileStore } from '../../stores/settingsStore';
+import { trackOnboardingStepCompleted } from '../../lib/analytics';
 import type { GoalType } from '../../types';
 
 export default function GoalScreen() {
@@ -25,7 +26,7 @@ export default function GoalScreen() {
       options={options}
       selected={goal}
       onSelect={(id) => setGoal(id as GoalType)}
-      onNext={() => router.push('/onboarding/experience' as any)}
+      onNext={() => { trackOnboardingStepCompleted('goal'); router.push('/onboarding/experience' as any); }}
       onBack={() => router.back()}
     />
   );

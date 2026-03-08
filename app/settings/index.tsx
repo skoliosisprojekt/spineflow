@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react';
 import { trackEvent } from '../../lib/posthog';
+import { trackAccountDeleted } from '../../lib/analytics';
 import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SUPPORTED_LANGUAGES, setAppLanguage } from '../../i18n';
 import { useSettingsStore, useProfileStore } from '../../stores/settingsStore';
 import { useAuthStore } from '../../stores/authStore';
 import { usePlanStore } from '../../stores/planStore';
 import { supabase } from '../../lib/supabase';
 import { isSoundEnabled, setSoundEnabled } from '../../lib/sounds';
+import { resetUserData } from '../../lib/resetUserData';
+import { dbDeleteAllNutritionData } from '../../lib/db';
 import type { ThemeMode, WeightUnit, SurgeryType, CurveType, GoalType, ExperienceType, BodyType } from '../../types';
 
 type OptionItem<T extends string> = { value: T; label: string };
@@ -62,6 +66,7 @@ export default function SettingsScreen() {
   const [customInput, setCustomInput] = useState('');
   const [soundOn, setSoundOn] = useState(true);
   const [reassessing, setReassessing] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   useEffect(() => {
     loadSettings(); loadProfile();
@@ -121,7 +126,7 @@ export default function SettingsScreen() {
 
   const handleRegeneratePlan = async () => {
     await saveProfile();
-    generatePlan({ surgery, curveType, goal, experience, bodyType });
+    generatePlan({ surgery, curveType, goal, experience, bodyType, equipment });
     setDirty(false);
     setPlanRegenerated(true);
     setTimeout(() => setPlanRegenerated(false), 2000);
@@ -130,6 +135,61 @@ export default function SettingsScreen() {
   const handleLogout = async () => {
     trackEvent('logout');
     await supabase.auth.signOut();
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      t('settings.deleteAccountTitle'),
+      t('settings.deleteAccountWarning'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('settings.deleteAccountConfirm'),
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              t('settings.deleteAccountTitle'),
+              t('settings.deleteAccountWarning'),
+              [
+                { text: t('common.cancel'), style: 'cancel' },
+                {
+                  text: t('settings.deleteAccountConfirm'),
+                  style: 'destructive',
+                  onPress: confirmDeleteAccount,
+                },
+              ],
+            );
+          },
+        },
+      ],
+    );
+  };
+
+  const confirmDeleteAccount = async () => {
+    setDeletingAccount(true);
+    try {
+      trackAccountDeleted();
+
+      // 1. Delete auth.users record via secure RPC — cascades all cloud data
+      const { error } = await supabase.rpc('delete_user_account');
+      if (error) throw error;
+
+      // 2. Wipe local SQLite nutrition data
+      try { await dbDeleteAllNutritionData(); } catch { /* ignore if DB not ready */ }
+
+      // 3. Wipe all AsyncStorage
+      await AsyncStorage.clear();
+
+      // 4. Clear all Zustand stores
+      resetUserData();
+
+      // 5. Sign out (clears Supabase session tokens) and navigate to welcome
+      await supabase.auth.signOut();
+      router.replace('/welcome');
+    } catch {
+      setDeletingAccount(false);
+      Alert.alert(t('settings.deleteAccountTitle'), t('settings.deleteAccountError'));
+    }
   };
 
   const handleReassess = () => {
@@ -376,6 +436,24 @@ export default function SettingsScreen() {
           <Text style={styles.logoutBtnText}>{t('settings.logOut')}</Text>
         </Pressable>
 
+        {/* Delete Account */}
+        <Pressable
+          style={({ pressed }) => [styles.deleteAccountBtn, pressed && { opacity: 0.75 }, deletingAccount && { opacity: 0.6 }]}
+          onPress={handleDeleteAccount}
+          disabled={deletingAccount}
+          accessibilityRole="button"
+          accessibilityLabel={t('settings.deleteAccount')}
+        >
+          {deletingAccount ? (
+            <ActivityIndicator size="small" color="#FF3B30" />
+          ) : (
+            <MaterialIcons name="delete-forever" size={18} color="#FF3B30" />
+          )}
+          <Text style={styles.deleteAccountBtnText}>
+            {deletingAccount ? t('settings.deleteAccountDeleting') : t('settings.deleteAccount')}
+          </Text>
+        </Pressable>
+
         {/* App Info */}
         <View style={styles.appInfo}>
           <Text style={styles.appName}>SpineFlow</Text>
@@ -505,6 +583,21 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   logoutBtnText: { fontSize: 15, fontWeight: '600', color: '#FF3B30' },
+
+  deleteAccountBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF0EF',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#FF3B30',
+    paddingVertical: 14,
+    gap: 8,
+    marginTop: 10,
+    minHeight: 48,
+  },
+  deleteAccountBtnText: { fontSize: 15, fontWeight: '700', color: '#FF3B30' },
 
   reassessBtn: {
     flexDirection: 'row',

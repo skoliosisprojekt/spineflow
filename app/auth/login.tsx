@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { trackEvent } from '../../lib/posthog';
 import { useNetwork } from '../../lib/network';
 import {
@@ -26,6 +26,8 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const { t } = useTranslation();
   const { isOnline } = useNetwork();
+  const isMounted = useRef(true);
+  useEffect(() => () => { isMounted.current = false; }, []);
 
   const handleLogin = async () => {
     setError('');
@@ -52,9 +54,9 @@ export default function LoginScreen() {
         trackEvent('login_success');
       }
     } catch (e) {
-      setError(t('common.somethingWrong'));
+      if (isMounted.current) setError(t('common.somethingWrong'));
     } finally {
-      setLoading(false);
+      if (isMounted.current) setLoading(false);
     }
   };
 

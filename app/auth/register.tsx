@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { trackEvent } from '../../lib/posthog';
 import { useNetwork } from '../../lib/network';
 import {
@@ -16,6 +16,9 @@ import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
+import { usePremiumStore } from '../../stores/premiumStore';
+import { SUPPORTED_LANGUAGES, setAppLanguage } from '../../i18n';
+import i18n from '../../i18n';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -26,8 +29,16 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; confirm?: string; age?: string; form?: string }>({});
+  const [selectedLang, setSelectedLang] = useState(i18n.language || 'de');
   const { t } = useTranslation();
   const { isOnline } = useNetwork();
+  const isMounted = useRef(true);
+  useEffect(() => () => { isMounted.current = false; }, []);
+
+  const handleLangSelect = (code: string) => {
+    setSelectedLang(code);
+    void setAppLanguage(code);
+  };
 
   const validate = (): boolean => {
     const newErrors: typeof errors = {};
@@ -76,11 +87,13 @@ export default function RegisterScreen() {
         trackEvent('register_failed', { reason: error.message });
       } else if (data.user) {
         trackEvent('register_success');
+        // Beta phase: every new registration gets immediate premium access
+        await usePremiumStore.getState().checkPremiumStatus(true);
       }
     } catch (e) {
-      setErrors({ form: t('common.somethingWrong') });
+      if (isMounted.current) setErrors({ form: t('common.somethingWrong') });
     } finally {
-      setLoading(false);
+      if (isMounted.current) setLoading(false);
     }
   };
 
@@ -99,6 +112,25 @@ export default function RegisterScreen() {
           <MaterialIcons name="fitness-center" size={48} color="#00B894" />
           <Text style={styles.logoText}>SpineFlow</Text>
           <Text style={styles.subtitle}>{t('auth.tagline')}</Text>
+        </View>
+
+        {/* Language Selector */}
+        <View style={styles.langRow}>
+          <MaterialIcons name="language" size={14} color="#8E8E93" />
+          <Text style={styles.langLabel}>{t('settings.language')}:</Text>
+          {SUPPORTED_LANGUAGES.map((lang) => (
+            <TouchableOpacity
+              key={lang.code}
+              onPress={() => handleLangSelect(lang.code)}
+              style={[styles.langPill, selectedLang === lang.code && styles.langPillActive]}
+              accessibilityRole="button"
+              accessibilityLabel={lang.label}
+            >
+              <Text style={[styles.langPillText, selectedLang === lang.code && styles.langPillTextActive]}>
+                {lang.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* Form */}
@@ -341,5 +373,40 @@ const styles = StyleSheet.create({
     color: '#FF3B30',
     fontSize: 13,
     lineHeight: 18,
+  },
+
+  langRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 6,
+    marginBottom: 16,
+  },
+  langLabel: {
+    fontSize: 13,
+    color: '#8E8E93',
+    marginRight: 2,
+  },
+  langPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+  },
+  langPillActive: {
+    backgroundColor: '#00B894',
+    borderColor: '#00B894',
+  },
+  langPillText: {
+    fontSize: 13,
+    color: '#3C3C43',
+    fontWeight: '500',
+  },
+  langPillTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
 });

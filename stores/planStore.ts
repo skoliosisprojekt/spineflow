@@ -24,12 +24,13 @@ export interface WorkoutPlan {
     goal: GoalType;
     experience: ExperienceType;
     bodyType: BodyType;
+    equipment: string[];
   };
 }
 
 interface PlanState {
   plan: WorkoutPlan | null;
-  generatePlan: (profile: WorkoutPlan['profile']) => void;
+  generatePlan: (profile: WorkoutPlan['profile']) => void;  // equipment must be included in profile
   clearPlan: () => void;
   loadPlan: () => Promise<void>;
 }
@@ -48,12 +49,17 @@ function scoreSafety(level: SafetyLevel): number {
 }
 
 function generateExercisePlan(profile: WorkoutPlan['profile']): PlanExercise[] {
-  const { surgery, curveType, goal, experience, bodyType } = profile;
+  const { surgery, curveType, goal, experience, bodyType, equipment } = profile;
   const isPostSurgery = surgery !== 'none';
 
   // SAFETY FIRST: use full safety system (includes surgery downgrades)
   // Strictly filter out all 'avoid' exercises — these must NEVER appear
   let candidates = allExercises.filter((e) => getFullSafety(e, curveType, surgery) !== 'avoid');
+
+  // EQUIPMENT HARD GATE — only show exercises the user can actually perform
+  candidates = candidates.filter(
+    (e) => e.equip.length === 0 || e.equip.every((eq) => equipment.includes(eq)),
+  );
 
   // Post-surgery: ONLY 'safe' exercises — never risk 'modify' exercises on fused spines
   if (isPostSurgery) {
@@ -148,14 +154,14 @@ function generateExercisePlan(profile: WorkoutPlan['profile']): PlanExercise[] {
       if (bodyType === 'softgainer') sets = Math.min(sets + 1, 5);
 
       const safety = getFullSafety(ex, curveType, surgery);
-      // Attach specific safety instructions
+      // Attach specific safety instructions (store i18n key so UI can translate)
       let note: string | undefined;
       if (isPostSurgery && exerciseFusionMods[ex.id]) {
-        note = exerciseFusionMods[ex.id];
+        note = `exerciseFusionMods.${ex.id}`;
       } else if (safety === 'modify' && exerciseMods[ex.id]) {
-        note = exerciseMods[ex.id];
+        note = `exerciseMods.${ex.id}`;
       } else if (safety === 'modify') {
-        note = 'Use modified form — see exercise details for instructions';
+        note = 'workout.modifyForm';
       }
 
       selected.push({ exerciseId: ex.id, sets, safety, note });
@@ -188,7 +194,17 @@ export const usePlanStore = create<PlanState>((set, get) => ({
   loadPlan: async () => {
     try {
       const raw = await AsyncStorage.getItem(STORAGE_KEY);
-      if (raw) set({ plan: JSON.parse(raw) as WorkoutPlan });
+      if (raw) {
+        const parsed = JSON.parse(raw) as WorkoutPlan;
+        // Invalidate plans generated before equipment filtering was added.
+        // If equipment is missing/empty-array-from-old-format, discard the plan
+        // so the user is prompted to regenerate with correct filtering.
+        if (!Array.isArray(parsed.profile?.equipment)) {
+          await AsyncStorage.removeItem(STORAGE_KEY);
+          return;
+        }
+        set({ plan: parsed });
+      }
     } catch {}
   },
 }));
