@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { View, Text, TextInput, FlatList, Pressable, StyleSheet } from 'react-native';
+import ErrorBoundary from '../../components/ErrorBoundary';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -12,7 +13,11 @@ import type { Exercise, SafetyLevel } from '../../types';
 
 type MuscleFilter = typeof muscleGroups[number]['id'];
 
-export default function ExercisesScreen() {
+export default function ExercisesScreenWrapper() {
+  return <ErrorBoundary><ExercisesScreen /></ErrorBoundary>;
+}
+
+function ExercisesScreen() {
   const [filter, setFilter] = useState<MuscleFilter>('all');
   const [search, setSearch] = useState('');
   const router = useRouter();

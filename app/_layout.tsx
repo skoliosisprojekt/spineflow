@@ -1,14 +1,18 @@
+import Sentry from '../lib/sentry';
 import { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
-import { ActivityIndicator, View, StatusBar } from 'react-native';
+import { View, StatusBar } from 'react-native';
+import { LoadingSpinner } from '../components/animations';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
 import { useSettingsStore, useProfileStore } from '../stores/settingsStore';
 import { Session } from '@supabase/supabase-js';
+import { identifyUser, resetUser, trackScreen } from '../lib/posthog';
+import ErrorBoundary from '../components/ErrorBoundary';
 import '../i18n';
 import { loadSavedLanguage } from '../i18n';
 
-export default function RootLayout() {
+function RootLayout() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const segments = useSegments();
@@ -24,19 +28,34 @@ export default function RootLayout() {
       await loadSettings();
       await loadProfile();
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) setAuth(session.user.id, session.user.email || '');
+      if (session?.user) {
+        setAuth(session.user.id, session.user.email || '');
+        identifyUser(session.user.id, { email: session.user.email });
+      }
       setIsLoading(false);
     };
     init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event: string, session: Session | null) => {
-        if (session?.user) setAuth(session.user.id, session.user.email || '');
-        else clearAuth();
+        if (session?.user) {
+          setAuth(session.user.id, session.user.email || '');
+          identifyUser(session.user.id, { email: session.user.email });
+        } else {
+          clearAuth();
+          resetUser();
+        }
       }
     );
     return () => subscription.unsubscribe();
   }, []);
+
+  // Track screen views
+  useEffect(() => {
+    if (!isLoading && segments.length > 0) {
+      trackScreen(segments.join('/'));
+    }
+  }, [segments, isLoading]);
 
   // Navigation state machine
   useEffect(() => {
@@ -62,13 +81,13 @@ export default function RootLayout() {
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F2F2F7' }}>
-        <ActivityIndicator size="large" color="#00B894" />
+        <LoadingSpinner size={80} />
       </View>
     );
   }
 
   return (
-    <>
+    <ErrorBoundary>
       <StatusBar barStyle="dark-content" backgroundColor="#F2F2F7" translucent={false} />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="welcome" />
@@ -78,7 +97,10 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="exercise/[id]" options={{ presentation: 'card' }} />
         <Stack.Screen name="settings" options={{ presentation: 'card' }} />
+        <Stack.Screen name="premium" options={{ presentation: 'modal' }} />
       </Stack>
-    </>
+    </ErrorBoundary>
   );
 }
+
+export default Sentry.wrap(RootLayout);

@@ -48,7 +48,7 @@ export default function WelcomeScreen() {
         renderItem={({ item }) => (
           <View style={[s.slide, { width }]}>  
             <View style={s.iconCircle}>
-              <MaterialIcons name={item.icon} size={64} color="#00B894" />
+              <MaterialIcons name={item.icon} size={60} color="#00B894" />
             </View>
             <Text style={s.title}>{item.title}</Text>
             <Text style={s.desc}>{item.desc}</Text>

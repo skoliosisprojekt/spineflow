@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import ErrorBoundary from '../../components/ErrorBoundary';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -7,8 +8,13 @@ import { useProfileStore } from '../../stores/settingsStore';
 import { useWorkoutStore } from '../../stores/workoutStore';
 import { useHistoryStore } from '../../stores/historyStore';
 import { useNutritionStore } from '../../stores/nutritionStore';
+import { WaterDrop } from '../../components/animations';
 
-export default function HomeScreen() {
+export default function HomeScreenWrapper() {
+  return <ErrorBoundary><HomeScreen /></ErrorBoundary>;
+}
+
+function HomeScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { surgery, curveType, goal } = useProfileStore();
@@ -109,70 +115,22 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* Quick Actions */}
-      <Text style={styles.sectionTitle}>{t('home.quickActions')}</Text>
-      <View style={styles.actionsGrid}>
-        <Pressable
-          style={({ pressed }) => [styles.actionCard, pressed && { opacity: 0.8 }]}
-          onPress={() => router.push('/(tabs)/exercises' as any)}
-          accessibilityRole="button"
-        >
-          <View style={[styles.actionIcon, { backgroundColor: '#E8FAF5' }]}>
-            <MaterialIcons name="fitness-center" size={22} color="#00B894" />
-          </View>
-          <Text style={styles.actionLabel}>{t('tabs.exercises')}</Text>
-        </Pressable>
-
-        <Pressable
-          style={({ pressed }) => [styles.actionCard, pressed && { opacity: 0.8 }]}
-          onPress={() => router.push('/(tabs)/workout' as any)}
-          accessibilityRole="button"
-        >
-          <View style={[styles.actionIcon, { backgroundColor: '#FFF3E0' }]}>
-            <MaterialIcons name="play-circle-outline" size={22} color="#FF9500" />
-          </View>
-          <Text style={styles.actionLabel}>{t('tabs.workout')}</Text>
-        </Pressable>
-
-        <Pressable
-          style={({ pressed }) => [styles.actionCard, pressed && { opacity: 0.8 }]}
-          onPress={() => router.push('/(tabs)/nutrition' as any)}
-          accessibilityRole="button"
-        >
-          <View style={[styles.actionIcon, { backgroundColor: '#EDE7F6' }]}>
-            <MaterialIcons name="water-drop" size={22} color="#AF52DE" />
-          </View>
-          <Text style={styles.actionLabel}>{t('tabs.nutrition')}</Text>
-        </Pressable>
-
-        <Pressable
-          style={({ pressed }) => [styles.actionCard, pressed && { opacity: 0.8 }]}
-          onPress={() => router.push('/(tabs)/progress' as any)}
-          accessibilityRole="button"
-        >
-          <View style={[styles.actionIcon, { backgroundColor: '#E3F2FD' }]}>
-            <MaterialIcons name="bar-chart" size={22} color="#5B8DEF" />
-          </View>
-          <Text style={styles.actionLabel}>{t('tabs.progress')}</Text>
-        </Pressable>
-      </View>
-
       {/* Profile Summary */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{t('home.yourProfile')}</Text>
         <View style={styles.profileRow}>
           <Text style={styles.profileLabel}>{t('home.scoliosisType')}</Text>
-          <View style={styles.badge}><Text style={styles.badgeText}>{curveType}</Text></View>
+          <View style={styles.badge}><Text style={styles.badgeText}>{t(`settings.${curveType}`)}</Text></View>
         </View>
         <View style={styles.separator} />
         <View style={styles.profileRow}>
           <Text style={styles.profileLabel}>{t('home.surgeryHistory')}</Text>
-          <View style={styles.badge}><Text style={styles.badgeText}>{surgery}</Text></View>
+          <View style={styles.badge}><Text style={styles.badgeText}>{t(`settings.${surgery === 'none' ? 'noSurgery' : surgery === 'partial' ? 'partialFusion' : surgery === 'full' ? 'fullFusion' : surgery}`)}</Text></View>
         </View>
         <View style={styles.separator} />
         <View style={styles.profileRow}>
           <Text style={styles.profileLabel}>{t('home.mainGoal')}</Text>
-          <View style={styles.badge}><Text style={styles.badgeText}>{goal}</Text></View>
+          <View style={styles.badge}><Text style={styles.badgeText}>{t(`settings.${goal === 'muscle' ? 'buildMuscle' : goal === 'strength' ? 'getStronger' : goal === 'posture' ? 'improvePosture' : 'reducePain'}`)}</Text></View>
         </View>
       </View>
 
@@ -236,41 +194,6 @@ const styles = StyleSheet.create({
   },
   activeTitle: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
   activeSubtitle: { fontSize: 12, color: 'rgba(255,255,255,0.8)' },
-
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1C1C1E',
-    marginBottom: 10,
-    paddingHorizontal: 4,
-  },
-
-  // Quick actions grid
-  actionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 20,
-  },
-  actionCard: {
-    width: '48%',
-    flexGrow: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 16,
-    alignItems: 'center',
-    gap: 8,
-    minHeight: 90,
-    justifyContent: 'center',
-  },
-  actionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  actionLabel: { fontSize: 13, fontWeight: '600', color: '#3C3C43' },
 
   // Cards
   card: {

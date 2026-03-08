@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import { useEffect, useState, useRef } from 'react';
+import { trackEvent } from '../../lib/posthog';
+import ErrorBoundary from '../../components/ErrorBoundary';
+import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, Modal, KeyboardAvoidingView, Platform, Animated as RNAnimated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useNutritionStore, HydrationEntry, MealEntry, MealType } from '../../stores/nutritionStore';
 import type { HydrationType } from '../../types';
+import { WaterDrop } from '../../components/animations';
 
 const QUICK_ADDS: { type: HydrationType; labelKey: string; amount: number; icon: keyof typeof MaterialIcons.glyphMap; color: string }[] = [
   { type: 'water', labelKey: 'nutrition.water', amount: 250, icon: 'water-drop', color: '#5B8DEF' },
@@ -182,14 +185,31 @@ function AddMealModal({ visible, onClose, onAdd }: { visible: boolean; onClose: 
   );
 }
 
-export default function NutritionScreen() {
+export default function NutritionScreenWrapper() {
+  return <ErrorBoundary><NutritionScreen /></ErrorBoundary>;
+}
+
+function NutritionScreen() {
   const { t } = useTranslation();
   const { entries, meals, goals, addEntry, removeEntry, addMeal, removeMeal, setGoal, loadNutrition, clearToday } = useNutritionStore();
   const [editingGoal, setEditingGoal] = useState<'water' | 'protein' | 'calories' | null>(null);
   const [goalInput, setGoalInput] = useState('');
   const [showMealForm, setShowMealForm] = useState(false);
+  const [showDropAnim, setShowDropAnim] = useState(false);
+  const dropOpacity = useRef(new RNAnimated.Value(0)).current;
 
   useEffect(() => { loadNutrition(); }, []);
+
+  const handleQuickAdd = (type: HydrationType, amount: number) => {
+    addEntry(type, amount);
+    trackEvent('hydration_logged', { type, amount });
+    setShowDropAnim(true);
+    RNAnimated.sequence([
+      RNAnimated.timing(dropOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+      RNAnimated.delay(800),
+      RNAnimated.timing(dropOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+    ]).start(() => setShowDropAnim(false));
+  };
 
   const today = new Date().toDateString();
   const todayEntries = entries.filter((e) => new Date(e.time).toDateString() === today);
@@ -290,7 +310,7 @@ export default function NutritionScreen() {
             <Pressable
               key={i}
               style={({ pressed }) => [styles.quickBtn, { borderColor: qa.color }, pressed && { opacity: 0.7 }]}
-              onPress={() => addEntry(qa.type, qa.amount)}
+              onPress={() => handleQuickAdd(qa.type, qa.amount)}
               accessibilityRole="button"
               accessibilityLabel={`${t(qa.labelKey)} ${qa.amount}ml`}
             >
@@ -328,6 +348,13 @@ export default function NutritionScreen() {
       </ScrollView>
 
       <AddMealModal visible={showMealForm} onClose={() => setShowMealForm(false)} onAdd={addMeal} />
+
+      {/* Water-drop animation feedback */}
+      {showDropAnim && (
+        <RNAnimated.View style={[styles.dropAnimOverlay, { opacity: dropOpacity }]} pointerEvents="none">
+          <WaterDrop size={40} />
+        </RNAnimated.View>
+      )}
     </View>
   );
 }
@@ -463,4 +490,11 @@ const styles = StyleSheet.create({
     alignItems: 'center', minHeight: 52,
   },
   modalAddBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+
+  dropAnimOverlay: {
+    position: 'absolute',
+    top: '45%',
+    alignSelf: 'center',
+    zIndex: 50,
+  },
 });

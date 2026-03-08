@@ -1,15 +1,27 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Animated, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Animated, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useWorkoutStore, WorkoutExercise } from '../../stores/workoutStore';
 import { useHistoryStore, WorkoutRecord } from '../../stores/historyStore';
 import { shareWorkout } from '../../lib/exportWorkout';
+import { generateShareText, shareWorkoutText, copyWorkoutText } from '../../lib/shareWorkoutText';
 import { usePlanStore } from '../../stores/planStore';
-import { useProfileStore } from '../../stores/settingsStore';
+import { useProfileStore, useSettingsStore } from '../../stores/settingsStore';
+import { useNutritionStore } from '../../stores/nutritionStore';
+import { usePremiumStore } from '../../stores/premiumStore';
+import { runAIAnalysis, type AIAnalysisResult } from '../../lib/aiAnalysis';
+import { saveAdjustments, saveAnalysis, getAnalysis, getPendingAdjustments, updateAdjustmentStatus } from '../../db/queries';
+import { useAuthStore } from '../../stores/authStore';
+import type { WorkoutAdjustment } from '../../db/schema';
 import { getSafety } from '../../lib/safety';
 import { exercises as allExercises, exerciseNames, exerciseMods, exerciseFusionMods, exerciseTips } from '../../data/exercises';
+import { playTimerEndSound } from '../../lib/sounds';
+import { exerciseSteps } from '../../data/exerciseAnimations';
+import { SuccessCheck, Confetti, EmptyWorkout, LoadingSpinner, Crown } from '../../components/animations';
+import { trackEvent } from '../../lib/posthog';
+import ErrorBoundary from '../../components/ErrorBoundary';
 
 function RestBar({ onSkip }: { onSkip?: () => void }) {
   const { t } = useTranslation();
@@ -19,6 +31,8 @@ function RestBar({ onSkip }: { onSkip?: () => void }) {
   const [editValue, setEditValue] = useState('90');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const soundPlayedRef = useRef(false);
+
   useEffect(() => {
     intervalRef.current = setInterval(() => setElapsed((s) => s + 1), 1000);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
@@ -26,6 +40,14 @@ function RestBar({ onSkip }: { onSkip?: () => void }) {
 
   const progress = Math.min(elapsed / target, 1);
   const done = elapsed >= target;
+
+  // Play sound when timer reaches 0
+  useEffect(() => {
+    if (done && !soundPlayedRef.current) {
+      soundPlayedRef.current = true;
+      playTimerEndSound();
+    }
+  }, [done]);
   const remaining = Math.max(target - elapsed, 0);
   const mins = Math.floor(remaining / 60);
   const secs = remaining % 60;
@@ -108,6 +130,18 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, fusionNote, lastSe
   const tipKey = `exerciseTips.${item.exerciseId}`;
   const tip = t(tipKey) !== tipKey ? t(tipKey) : exerciseTips[item.exerciseId];
   const [showTip, setShowTip] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+  const [successSetIdx, setSuccessSetIdx] = useState<number | null>(null);
+  const steps = exerciseSteps[item.exerciseId];
+
+  const handleToggleWithAnim = (setIndex: number) => {
+    const wasCompleted = item.sets[setIndex]?.completed;
+    onToggleSet(setIndex);
+    if (!wasCompleted) {
+      setSuccessSetIdx(setIndex);
+      setTimeout(() => setSuccessSetIdx(null), 800);
+    }
+  };
 
   // Find the index where rest bar should appear: after the last completed set, before the first uncompleted
   const restAfterIndex = (() => {
@@ -155,6 +189,16 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, fusionNote, lastSe
             {exercise?.muscle} · {t('workout.setsDone', { completed: completedSets, total: item.sets.length })}
           </Text>
         </View>
+        {steps && (
+          <Pressable
+            onPress={() => setShowGuide(!showGuide)}
+            style={styles.tipToggleBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Show exercise guide"
+          >
+            <MaterialIcons name={showGuide ? 'expand-less' : 'directions-run'} size={18} color="#00B894" />
+          </Pressable>
+        )}
         {tip && (
           <Pressable
             onPress={() => setShowTip(!showTip)}
@@ -180,6 +224,28 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, fusionNote, lastSe
         <View style={styles.tipBanner}>
           <MaterialIcons name="lightbulb" size={14} color="#FF9500" />
           <Text style={styles.tipBannerText}>{tip}</Text>
+        </View>
+      )}
+
+      {/* Exercise Execution Guide */}
+      {showGuide && steps && (
+        <View style={styles.guideBanner}>
+          <View style={styles.guideHeader}>
+            <MaterialIcons name="directions-run" size={16} color="#00B894" />
+            <Text style={styles.guideTitle}>{t('workout.howTo')}</Text>
+          </View>
+          {steps.map((s, i) => {
+            const stepKey = `exerciseAnim.${item.exerciseId}.s${i + 1}`;
+            return (
+              <View key={i} style={styles.guideStep}>
+                <View style={[styles.guideStepNum, { backgroundColor: s.color + '20' }]}>
+                  <Text style={[styles.guideStepNumText, { color: s.color }]}>{i + 1}</Text>
+                </View>
+                <MaterialIcons name={s.icon} size={16} color={s.color} style={{ marginRight: 6 }} />
+                <Text style={styles.guideStepText}>{t(stepKey)}</Text>
+              </View>
+            );
+          })}
         </View>
       )}
 
@@ -219,17 +285,21 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, fusionNote, lastSe
               accessibilityLabel={`Set ${i + 1} reps`}
             />
             <Pressable
-              onPress={() => onToggleSet(i)}
+              onPress={() => handleToggleWithAnim(i)}
               style={[styles.checkBtn, s.completed && styles.checkBtnDone]}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: s.completed }}
               accessibilityLabel={`Mark set ${i + 1} as ${s.completed ? 'incomplete' : 'complete'}`}
             >
-              <MaterialIcons
-                name={s.completed ? 'check-circle' : 'radio-button-unchecked'}
-                size={22}
-                color={s.completed ? '#00B894' : '#AEAEB2'}
-              />
+              {successSetIdx === i ? (
+                <SuccessCheck size={40} />
+              ) : (
+                <MaterialIcons
+                  name={s.completed ? 'check-circle' : 'radio-button-unchecked'}
+                  size={22}
+                  color={s.completed ? '#00B894' : '#AEAEB2'}
+                />
+              )}
             </Pressable>
           </View>
           {i === restAfterIndex && !restSkipped && (
@@ -316,17 +386,119 @@ function buildHighlights(exercises: WorkoutExercise[], stats: Omit<WorkoutSummar
   return h;
 }
 
-export default function WorkoutScreen() {
+export default function WorkoutScreenWrapper() {
+  return <ErrorBoundary><WorkoutScreen /></ErrorBoundary>;
+}
+
+function WorkoutScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { exercises, addExercise, updateSet, toggleSetComplete, addSet, removeSet, removeExercise, clearWorkout, loadWorkout } = useWorkoutStore();
   const saveWorkout = useHistoryStore((s) => s.saveWorkout);
   const workoutHistory = useHistoryStore((s) => s.workouts);
   const { plan, loadPlan } = usePlanStore();
-  const { curveType, surgery } = useProfileStore();
+  const { curveType, surgery, goal, experience } = useProfileStore();
+  const { language } = useSettingsStore();
+  const { isPremium } = usePremiumStore();
+  const userId = useAuthStore((s) => s.userId);
+  const nutritionEntries = useNutritionStore((s) => s.entries);
+  const [pendingAdj, setPendingAdj] = useState<WorkoutAdjustment[]>([]);
+  const [adjBanner, setAdjBanner] = useState(false);
+  const adjBannerOpacity = useRef(new Animated.Value(0)).current;
   const [summary, setSummary] = useState<WorkoutSummary | null>(null);
   const [lastRecord, setLastRecord] = useState<WorkoutRecord | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [aiState, setAiState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [aiResult, setAiResult] = useState<AIAnalysisResult | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+  const workoutStartRef = useRef<string | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    Animated.sequence([
+      Animated.timing(toastOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+      Animated.delay(1800),
+      Animated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+    ]).start(() => setToastMsg(null));
+  };
+
+  const buildShareText = (): string => {
+    if (!lastRecord) return '';
+    const today = new Date().toDateString();
+    const todayHydration = nutritionEntries
+      .filter((e) => new Date(e.time).toDateString() === today)
+      .reduce((s, e) => s + e.amount, 0);
+    return generateShareText({
+      record: lastRecord,
+      curveType,
+      surgery,
+      experience,
+      history: workoutHistory,
+      hydrationMl: todayHydration,
+      startTime: workoutStartRef.current || undefined,
+    });
+  };
+
+  const handleShareText = async () => {
+    const text = buildShareText();
+    await shareWorkoutText(text);
+  };
+
+  const handleCopyText = () => {
+    const text = buildShareText();
+    copyWorkoutText(text);
+    showToast(t('workout.copiedToClipboard'));
+  };
+
+  const previousWorkoutCount = workoutHistory.filter((w) => w.id !== lastRecord?.id).length;
+  const needsMoreWorkouts = previousWorkoutCount < 2;
+
+  const handleAIAnalysis = async () => {
+    if (!lastRecord) return;
+
+    // Check if already analyzed (rate limit: 1 per workout)
+    const existing = await getAnalysis(lastRecord.id);
+    if (existing) {
+      setAiResult(JSON.parse(existing.analysis));
+      setAiState('done');
+      return;
+    }
+
+    setAiState('loading');
+    setAiResult(null);
+    try {
+      const today = new Date().toDateString();
+      const todayHydration = nutritionEntries
+        .filter((e) => new Date(e.time).toDateString() === today)
+        .reduce((s, e) => s + e.amount, 0);
+      const result = await runAIAnalysis({
+        currentRecord: lastRecord,
+        curveType,
+        surgery,
+        goal,
+        experience,
+        history: workoutHistory,
+        hydrationMl: todayHydration,
+        startTime: workoutStartRef.current || undefined,
+        language,
+      });
+      setAiResult(result);
+      setAiState('done');
+      trackEvent('ai_analysis_completed', { adjustmentCount: result.adjustments.length });
+      // Persist analysis to SQLite (for rate limiting + re-view)
+      await saveAnalysis(lastRecord.id, JSON.stringify(result));
+      // Persist AI-suggested adjustments to local SQLite
+      if (result.adjustments && result.adjustments.length > 0) {
+        await saveAdjustments(lastRecord.id, result.adjustments);
+      }
+    } catch (err) {
+      console.error('[AI Analysis] failed:', err instanceof Error ? err.message : String(err));
+      setAiState('error');
+      trackEvent('ai_analysis_failed');
+    }
+  };
 
   // Build a map of exerciseId -> last completed sets from history
   const lastSetsMap = useMemo(() => {
@@ -358,13 +530,97 @@ export default function WorkoutScreen() {
   }, [curveType, surgery, t]);
 
   const loadHistory = useHistoryStore((s) => s.loadHistory);
-  useEffect(() => { loadWorkout(); loadPlan(); loadHistory(); }, []);
+  const loadNutrition = useNutritionStore((s) => s.loadNutrition);
+  useEffect(() => { loadWorkout(); loadPlan(); loadHistory(); loadNutrition(); }, []);
+
+  // Load pending AI adjustments
+  useEffect(() => {
+    if (userId) {
+      getPendingAdjustments(userId).then(setPendingAdj).catch(() => {});
+    }
+  }, [userId]);
+
+  const showAdjBanner = () => {
+    setAdjBanner(true);
+    Animated.sequence([
+      Animated.timing(adjBannerOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+      Animated.delay(2500),
+      Animated.timing(adjBannerOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+    ]).start(() => setAdjBanner(false));
+  };
+
+  const removeAdj = (id: string) => {
+    const updated = pendingAdj.filter((a) => a.id !== id);
+    setPendingAdj(updated);
+    if (updated.length === 0) showAdjBanner();
+  };
+
+  const handleAcceptAdd = async (adj: WorkoutAdjustment) => {
+    // Parse suggested sets like "3×12" → 3 sets
+    let numSets = 3;
+    if (adj.suggested_sets) {
+      const m = adj.suggested_sets.match(/^(\d+)/);
+      if (m) numSets = parseInt(m[1], 10);
+    }
+    addExercise(adj.exercise_id, numSets);
+    // Pre-fill weight if suggested
+    if (adj.suggested_weight) {
+      const store = useWorkoutStore.getState();
+      const ex = store.exercises.find((e) => e.exerciseId === adj.exercise_id);
+      if (ex) {
+        for (let i = 0; i < ex.sets.length; i++) {
+          updateSet(adj.exercise_id, i, 'weight', adj.suggested_weight);
+        }
+      }
+    }
+    await updateAdjustmentStatus(adj.id, 'accepted');
+    removeAdj(adj.id);
+  };
+
+  const handleAcceptAdjust = async (adj: WorkoutAdjustment) => {
+    // Pre-fill the new suggested weight into all sets of the exercise
+    if (adj.suggested_weight) {
+      const ex = exercises.find((e) => e.exerciseId === adj.exercise_id);
+      if (ex) {
+        for (let i = 0; i < ex.sets.length; i++) {
+          updateSet(adj.exercise_id, i, 'weight', adj.suggested_weight);
+        }
+      }
+    }
+    await updateAdjustmentStatus(adj.id, 'accepted');
+    removeAdj(adj.id);
+  };
+
+  const handleAcceptRemove = async (adj: WorkoutAdjustment) => {
+    // Swap exercise: remove old, add replacement
+    removeExercise(adj.exercise_id);
+    if (adj.replace_with_id) {
+      addExercise(adj.replace_with_id, 3);
+    }
+    await updateAdjustmentStatus(adj.id, 'accepted');
+    removeAdj(adj.id);
+  };
+
+  const handleDismissAdj = async (adj: WorkoutAdjustment) => {
+    await updateAdjustmentStatus(adj.id, 'dismissed');
+    removeAdj(adj.id);
+  };
+
+  // Track workout start time
+  useEffect(() => {
+    if (exercises.length > 0 && !workoutStartRef.current) {
+      workoutStartRef.current = new Date().toISOString();
+    } else if (exercises.length === 0) {
+      workoutStartRef.current = null;
+    }
+  }, [exercises.length]);
 
   const loadPlanExercises = () => {
     if (!plan) return;
     for (const pe of plan.exercises) {
       addExercise(pe.exerciseId, pe.sets);
     }
+    trackEvent('workout_started', { source: 'plan', exerciseCount: plan.exercises.length });
   };
 
   const totalSets = exercises.reduce((sum, e) => sum + e.sets.length, 0);
@@ -397,14 +653,26 @@ export default function WorkoutScreen() {
     };
     saveWorkout(record);
     setLastRecord(record);
+    trackEvent('workout_completed', {
+      exerciseCount: performed.length,
+      totalSets: base.totalSets,
+      completedSets: base.completedSets,
+      totalVolume: base.totalVolume,
+    });
 
-    setSummary(stats);
-    Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
+    setShowConfetti(true);
+    setTimeout(() => {
+      setShowConfetti(false);
+      setSummary(stats);
+      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
+    }, 2000);
   };
 
   const dismissSummary = () => {
     Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
       setSummary(null);
+      setAiState('idle');
+      setAiResult(null);
       clearWorkout();
     });
   };
@@ -455,8 +723,8 @@ export default function WorkoutScreen() {
           </ScrollView>
         ) : (
           <View style={styles.empty}>
-            <MaterialIcons name="fitness-center" size={56} color="#E5E5EA" />
-            <Text style={styles.emptyTitle}>{t('workout.noExercises')}</Text>
+            <EmptyWorkout size={150} />
+            <Text style={styles.emptyTitle}>Start your first workout</Text>
             <Text style={styles.emptyText}>{t('workout.noExercisesDesc')}</Text>
             <Pressable
               style={styles.browseBtn}
@@ -500,23 +768,134 @@ export default function WorkoutScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        {/* Exercise Cards */}
+        {/* AI Adjustment Cards — 'add' type (top of list) */}
+        {pendingAdj.filter((a) => a.type === 'add').map((adj) => (
+          <View key={`adj-${adj.id}`} style={[styles.adjCard, styles.adjCardAdd]}>
+            <View style={styles.adjBadgeRow}>
+              <View style={[styles.adjBadge, { backgroundColor: '#00B894' }]}>
+                <Text style={styles.adjBadgeText}>{t('workout.adjNew')}</Text>
+              </View>
+            </View>
+            <Text style={styles.adjExName}>{exerciseNames[adj.exercise_id] || `Exercise ${adj.exercise_id}`}</Text>
+            {adj.suggested_sets && <Text style={styles.adjDetail}>{t('workout.adjSets')}: {adj.suggested_sets}</Text>}
+            {adj.suggested_weight != null && <Text style={styles.adjDetail}>{t('workout.adjWeight')}: {adj.suggested_weight} kg</Text>}
+            <Text style={styles.adjReason}>{adj.reason}</Text>
+            <View style={styles.adjActions}>
+              <Pressable
+                style={({ pressed }) => [styles.adjAcceptBtn, { backgroundColor: '#00B894' }, pressed && { opacity: 0.7 }]}
+                onPress={() => handleAcceptAdd(adj)}
+                accessibilityRole="button"
+                accessibilityLabel={t('workout.adjAccept')}
+              >
+                <MaterialIcons name="check" size={16} color="#FFF" />
+                <Text style={styles.adjAcceptText}>{t('workout.adjAccept')}</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.adjDismissBtn, pressed && { opacity: 0.7 }]}
+                onPress={() => handleDismissAdj(adj)}
+                accessibilityRole="button"
+                accessibilityLabel={t('workout.adjSkip')}
+              >
+                <MaterialIcons name="close" size={16} color="#8E8E93" />
+                <Text style={styles.adjDismissText}>{t('workout.adjSkip')}</Text>
+              </Pressable>
+            </View>
+          </View>
+        ))}
+
+        {/* Exercise Cards with inline adjust/remove adjustment cards */}
         {exercises.map((item) => {
           const s = getExSafety(item.exerciseId);
+          const adjustAdj = pendingAdj.find((a) => a.type === 'adjust' && a.exercise_id === item.exerciseId);
+          const removeAdj_ = pendingAdj.find((a) => a.type === 'remove' && a.exercise_id === item.exerciseId);
+
+          if (removeAdj_) {
+            return (
+              <View key={item.exerciseId} style={[styles.adjCard, styles.adjCardRemove]}>
+                <View style={styles.adjBadgeRow}>
+                  <View style={[styles.adjBadge, { backgroundColor: '#FF3B30' }]}>
+                    <Text style={styles.adjBadgeText}>{t('workout.adjReplace')}</Text>
+                  </View>
+                </View>
+                <Text style={styles.adjExName}>{exerciseNames[item.exerciseId] || `Exercise ${item.exerciseId}`}</Text>
+                {removeAdj_.replace_with_id != null && (
+                  <Text style={styles.adjDetail}>→ {exerciseNames[removeAdj_.replace_with_id] || `Exercise ${removeAdj_.replace_with_id}`}</Text>
+                )}
+                <Text style={styles.adjReason}>{removeAdj_.reason}</Text>
+                <View style={styles.adjActions}>
+                  <Pressable
+                    style={({ pressed }) => [styles.adjAcceptBtn, { backgroundColor: '#FF3B30' }, pressed && { opacity: 0.7 }]}
+                    onPress={() => handleAcceptRemove(removeAdj_)}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('workout.adjDoReplace')}
+                  >
+                    <MaterialIcons name="swap-horiz" size={16} color="#FFF" />
+                    <Text style={styles.adjAcceptText}>{t('workout.adjDoReplace')}</Text>
+                  </Pressable>
+                  <Pressable
+                    style={({ pressed }) => [styles.adjDismissBtn, pressed && { opacity: 0.7 }]}
+                    onPress={() => handleDismissAdj(removeAdj_)}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('workout.adjKeep')}
+                  >
+                    <Text style={styles.adjDismissText}>{t('workout.adjKeep')}</Text>
+                  </Pressable>
+                </View>
+              </View>
+            );
+          }
+
           return (
-            <WorkoutExerciseCard
-              key={item.exerciseId}
-              item={item}
-              safetyLevel={s.level}
-              safetyNote={s.note}
-              fusionNote={s.fusionNote}
-              lastSets={lastSetsMap.get(item.exerciseId)}
-              onUpdateSet={(si, f, v) => updateSet(item.exerciseId, si, f, v)}
-              onToggleSet={(si) => toggleSetComplete(item.exerciseId, si)}
-              onAddSet={() => addSet(item.exerciseId)}
-              onRemoveSet={(si) => removeSet(item.exerciseId, si)}
-              onRemoveExercise={() => removeExercise(item.exerciseId)}
-            />
+            <View key={item.exerciseId}>
+              {adjustAdj && (
+                <View style={[styles.adjCard, styles.adjCardAdjust]}>
+                  <View style={styles.adjBadgeRow}>
+                    <View style={[styles.adjBadge, { backgroundColor: '#FF9500' }]}>
+                      <Text style={styles.adjBadgeText}>{t('workout.adjAdjust')}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.adjExName}>{exerciseNames[item.exerciseId] || `Exercise ${item.exerciseId}`}</Text>
+                  {adjustAdj.suggested_weight != null && (
+                    <Text style={styles.adjDetail}>{t('workout.adjWeight')}: {adjustAdj.suggested_weight} kg</Text>
+                  )}
+                  {adjustAdj.suggested_sets && (
+                    <Text style={styles.adjDetail}>{t('workout.adjSets')}: {adjustAdj.suggested_sets}</Text>
+                  )}
+                  <Text style={styles.adjReason}>{adjustAdj.reason}</Text>
+                  <View style={styles.adjActions}>
+                    <Pressable
+                      style={({ pressed }) => [styles.adjAcceptBtn, { backgroundColor: '#FF9500' }, pressed && { opacity: 0.7 }]}
+                      onPress={() => handleAcceptAdjust(adjustAdj)}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('workout.adjApply')}
+                    >
+                      <MaterialIcons name="check" size={16} color="#FFF" />
+                      <Text style={styles.adjAcceptText}>{t('workout.adjApply')}</Text>
+                    </Pressable>
+                    <Pressable
+                      style={({ pressed }) => [styles.adjDismissBtn, pressed && { opacity: 0.7 }]}
+                      onPress={() => handleDismissAdj(adjustAdj)}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('workout.adjKeepOriginal')}
+                    >
+                      <Text style={styles.adjDismissText}>{t('workout.adjKeepOriginal')}</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              )}
+              <WorkoutExerciseCard
+                item={item}
+                safetyLevel={s.level}
+                safetyNote={s.note}
+                fusionNote={s.fusionNote}
+                lastSets={lastSetsMap.get(item.exerciseId)}
+                onUpdateSet={(si, f, v) => updateSet(item.exerciseId, si, f, v)}
+                onToggleSet={(si) => toggleSetComplete(item.exerciseId, si)}
+                onAddSet={() => addSet(item.exerciseId)}
+                onRemoveSet={(si) => removeSet(item.exerciseId, si)}
+                onRemoveExercise={() => removeExercise(item.exerciseId)}
+              />
+            </View>
           );
         })}
 
@@ -541,10 +920,31 @@ export default function WorkoutScreen() {
         </Pressable>
       </ScrollView>
 
+      {/* AI adjustments processed banner */}
+      {adjBanner && (
+        <Animated.View style={[styles.adjBannerContainer, { opacity: adjBannerOpacity }]}>
+          <MaterialIcons name="check-circle" size={16} color="#00B894" />
+          <Text style={styles.adjBannerText}>{t('workout.adjProcessed')}</Text>
+        </Animated.View>
+      )}
+
+      {/* Confetti Overlay */}
+      {showConfetti && (
+        <View style={styles.confettiOverlay}>
+          <Confetti size={300} />
+          <Text style={styles.confettiText}>{t('workout.complete')} 🎉</Text>
+        </View>
+      )}
+
       {/* Workout Summary Overlay */}
       {summary && (
         <Animated.View style={[styles.summaryOverlay, { opacity: fadeAnim }]}>
           <View style={styles.summaryCard}>
+            <ScrollView
+              style={styles.summaryScroll}
+              contentContainerStyle={styles.summaryScrollContent}
+              showsVerticalScrollIndicator={false}
+            >
             <View style={styles.summaryIconRing}>
               <MaterialIcons name="emoji-events" size={48} color="#FF9500" />
             </View>
@@ -587,18 +987,118 @@ export default function WorkoutScreen() {
               ))}
             </View>
 
-            {lastRecord && (
+            {/* Share + Copy row */}
+            <View style={styles.shareRow}>
               <Pressable
-                style={({ pressed }) => [styles.summaryExportBtn, pressed && { opacity: 0.85 }]}
-                onPress={() => shareWorkout(lastRecord)}
+                style={({ pressed }) => [styles.shareBtn, pressed && { opacity: 0.7 }]}
+                onPress={handleShareText}
                 accessibilityRole="button"
-                accessibilityLabel="Export workout as text"
+                accessibilityLabel={t('workout.shareWorkout')}
               >
-                <MaterialIcons name="share" size={16} color="#00B894" />
-                <Text style={styles.summaryExportBtnText}>{t('workout.exportWorkout')}</Text>
+                <MaterialIcons name="share" size={18} color="#FFFFFF" />
+                <Text style={styles.shareBtnText}>{t('workout.shareWorkout')}</Text>
               </Pressable>
-            )}
+              <Pressable
+                style={({ pressed }) => [styles.copyBtn, pressed && { opacity: 0.7 }]}
+                onPress={handleCopyText}
+                accessibilityRole="button"
+                accessibilityLabel={t('workout.copyWorkout')}
+              >
+                <MaterialIcons name="content-copy" size={18} color="#00B894" />
+                <Text style={styles.copyBtnText}>{t('workout.copyWorkout')}</Text>
+              </Pressable>
+            </View>
 
+            {/* AI Analysis Card */}
+            <View style={styles.aiCard}>
+              {!isPremium ? (
+                <>
+                  <Crown size={50} />
+                  <View style={styles.aiCardHeader}>
+                    <MaterialIcons name="auto-awesome" size={20} color="#FF9500" />
+                    <Text style={styles.aiCardTitle}>{t('workout.aiAnalysisTitle')}</Text>
+                  </View>
+                  <Text style={styles.aiCardDesc}>{t('workout.aiAnalysisDesc')}</Text>
+                  <Pressable
+                    style={({ pressed }) => [styles.aiPremiumBtn, pressed && { opacity: 0.7 }]}
+                    onPress={() => router.push('/premium' as any)}
+                    accessibilityRole="button"
+                  >
+                    <MaterialIcons name="workspace-premium" size={18} color="#FFFFFF" />
+                    <Text style={styles.aiPremiumBtnText}>{t('workout.aiAnalysisUnlockPremium')}</Text>
+                  </Pressable>
+                </>
+              ) : needsMoreWorkouts ? (
+                <>
+                  <View style={styles.aiCardHeader}>
+                    <MaterialIcons name="auto-awesome" size={20} color="#FF9500" />
+                    <Text style={styles.aiCardTitle}>{t('workout.aiAnalysisTitle')}</Text>
+                  </View>
+                  <Text style={styles.aiCardDesc}>{t('workout.aiMinWorkouts')}</Text>
+                </>
+              ) : aiState === 'idle' ? (
+                <>
+                  <View style={styles.aiCardHeader}>
+                    <MaterialIcons name="auto-awesome" size={20} color="#FF9500" />
+                    <Text style={styles.aiCardTitle}>{t('workout.aiAnalysisTitle')}</Text>
+                  </View>
+                  <Text style={styles.aiCardDesc}>{t('workout.aiAnalysisDesc')}</Text>
+                  <Pressable
+                    style={({ pressed }) => [styles.aiStartBtn, pressed && { opacity: 0.7 }]}
+                    onPress={handleAIAnalysis}
+                    accessibilityRole="button"
+                  >
+                    <MaterialIcons name="smart-toy" size={18} color="#FFFFFF" />
+                    <Text style={styles.aiStartBtnText}>{t('workout.aiAnalysisStart')}</Text>
+                  </Pressable>
+                </>
+              ) : aiState === 'loading' ? (
+                <View style={styles.aiLoadingContainer}>
+                  <LoadingSpinner size={80} />
+                  <Text style={styles.aiLoadingText}>{t('workout.aiAnalysisLoading')}</Text>
+                </View>
+              ) : aiState === 'error' ? (
+                <>
+                  <View style={styles.aiCardHeader}>
+                    <MaterialIcons name="error-outline" size={20} color="#FF3B30" />
+                    <Text style={[styles.aiCardTitle, { color: '#FF3B30' }]}>{t('workout.aiAnalysisError')}</Text>
+                  </View>
+                  <Pressable
+                    style={({ pressed }) => [styles.aiStartBtn, pressed && { opacity: 0.7 }]}
+                    onPress={handleAIAnalysis}
+                    accessibilityRole="button"
+                  >
+                    <MaterialIcons name="refresh" size={18} color="#FFFFFF" />
+                    <Text style={styles.aiStartBtnText}>{t('workout.aiAnalysisStart')}</Text>
+                  </Pressable>
+                </>
+              ) : aiResult ? (
+                <>
+                  <View style={styles.aiCardHeader}>
+                    <MaterialIcons name="auto-awesome" size={20} color="#FF9500" />
+                    <Text style={styles.aiCardTitle}>{t('workout.aiAlreadyAnalyzed')}</Text>
+                  </View>
+                  {aiResult.analysisText.split('\n').map((line: string, i: number) => {
+                    const trimmed = line.trim();
+                    if (!trimmed) return <View key={i} style={{ height: 6 }} />;
+                    let color = '#1C1C1E';
+                    if (trimmed.startsWith('\u2705')) color = '#00B894';
+                    else if (trimmed.startsWith('\u26A0') || trimmed.startsWith('\u26A0\uFE0F')) color = '#FF9500';
+                    else if (trimmed.startsWith('\uD83D\uDCA1')) color = '#00B894';
+                    else if (trimmed.startsWith('\uD83D\uDCCA')) color = '#1C1C1E';
+                    return <Text key={i} style={[styles.aiLineText, { color }]}>{trimmed}</Text>;
+                  })}
+                  {aiResult.adjustments.length > 0 && (
+                    <View style={styles.aiRecommendationNotice}>
+                      <MaterialIcons name="check-circle" size={14} color="#00B894" />
+                      <Text style={styles.aiRecommendationText}>{t('workout.aiRecommendationsSaved')}</Text>
+                    </View>
+                  )}
+                  <Text style={styles.aiDisclaimer}>{t('workout.aiDisclaimer')}</Text>
+                </>
+              ) : null}
+            </View>
+            </ScrollView>
             <Pressable
               style={({ pressed }) => [styles.summaryDoneBtn, pressed && { opacity: 0.85 }]}
               onPress={dismissSummary}
@@ -608,6 +1108,14 @@ export default function WorkoutScreen() {
               <Text style={styles.summaryDoneBtnText}>{t('common.done')}</Text>
             </Pressable>
           </View>
+        </Animated.View>
+      )}
+
+      {/* Toast */}
+      {toastMsg && (
+        <Animated.View style={[styles.toast, { opacity: toastOpacity }]} pointerEvents="none">
+          <MaterialIcons name="check-circle" size={18} color="#FFFFFF" />
+          <Text style={styles.toastText}>{toastMsg}</Text>
         </Animated.View>
       )}
     </KeyboardAvoidingView>
@@ -839,10 +1347,11 @@ const styles = StyleSheet.create({
   summaryCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
-    padding: 32,
+    paddingBottom: 24,
     alignItems: 'center',
     width: '100%',
     maxWidth: 360,
+    maxHeight: Dimensions.get('window').height * 0.88,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
@@ -915,7 +1424,29 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#009B7D',
   },
-  summaryExportBtn: {
+  shareRow: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+    marginBottom: 10,
+  },
+  shareBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#00B894',
+    borderRadius: 14,
+    paddingVertical: 12,
+  },
+  shareBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  copyBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -924,14 +1455,125 @@ const styles = StyleSheet.create({
     borderColor: '#00B894',
     borderRadius: 14,
     paddingVertical: 12,
-    width: '100%',
-    marginBottom: 10,
   },
-  summaryExportBtnText: {
+  copyBtnText: {
     fontSize: 14,
     fontWeight: '600',
     color: '#00B894',
   },
+  toast: {
+    position: 'absolute',
+    bottom: 100,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#1C1C1E',
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    zIndex: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  toastText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  aiCard: {
+    width: '100%',
+    backgroundColor: '#FFF8F0',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#FFE0B2',
+  },
+  aiCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  aiCardTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1C1C1E',
+  },
+  aiCardDesc: {
+    fontSize: 13,
+    color: '#8E8E93',
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  aiPremiumBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#FF9500',
+    borderRadius: 12,
+    paddingVertical: 10,
+  },
+  aiPremiumBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  aiStartBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#00B894',
+    borderRadius: 12,
+    paddingVertical: 10,
+  },
+  aiStartBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  aiLoadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  aiLoadingText: {
+    fontSize: 13,
+    color: '#8E8E93',
+    marginTop: 4,
+  },
+  aiLineText: {
+    fontSize: 13,
+    lineHeight: 20,
+    marginBottom: 2,
+  },
+  aiRecommendationNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#E0E0E0',
+  },
+  aiRecommendationText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#00B894',
+  },
+  aiDisclaimer: {
+    fontSize: 11,
+    color: '#AEAEB2',
+    lineHeight: 15,
+    marginTop: 10,
+  },
+
   summaryDoneBtn: {
     backgroundColor: '#00B894',
     borderRadius: 14,
@@ -1060,4 +1702,201 @@ const styles = StyleSheet.create({
   startPlanBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
   browseLinkBtn: { alignItems: 'center', paddingVertical: 8 },
   browseLinkText: { fontSize: 13, color: '#8E8E93', textDecorationLine: 'underline' },
+
+  guideBanner: {
+    backgroundColor: '#E8FAF5',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: '#00B894',
+  },
+  guideHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 10,
+  },
+  guideTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#00B894',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  guideStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  guideStepNum: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  guideStepNumText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  guideStepText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#1C1C1E',
+    lineHeight: 18,
+  },
+
+  // AI Adjustment cards
+  adjCard: {
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
+    borderLeftWidth: 4,
+  },
+  adjCardAdd: {
+    backgroundColor: '#E8FAF5',
+    borderLeftColor: '#00B894',
+  },
+  adjCardAdjust: {
+    backgroundColor: '#FFF3E0',
+    borderLeftColor: '#FF9500',
+    marginBottom: 4,
+  },
+  adjCardRemove: {
+    backgroundColor: '#FFF0EF',
+    borderLeftColor: '#FF3B30',
+  },
+  adjBadgeRow: {
+    flexDirection: 'row',
+    marginBottom: 6,
+  },
+  adjBadge: {
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  adjBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  adjExName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1C1C1E',
+    marginBottom: 4,
+  },
+  adjDetail: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#3C3C43',
+    marginBottom: 2,
+  },
+  adjReason: {
+    fontSize: 12,
+    color: '#8E8E93',
+    lineHeight: 17,
+    marginBottom: 10,
+  },
+  adjActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  adjAcceptBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    minHeight: 48,
+    flex: 1,
+  },
+  adjAcceptText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  adjDismissBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    minHeight: 48,
+    flex: 1,
+    backgroundColor: '#F2F2F7',
+  },
+  adjDismissText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#8E8E93',
+  },
+  adjBannerContainer: {
+    position: 'absolute',
+    top: 100,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#E8FAF5',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    zIndex: 50,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  adjBannerText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#00B894',
+  },
+
+  confettiOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  confettiText: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginTop: 16,
+  },
+  summaryScroll: {
+    width: '100%',
+  },
+  summaryScrollContent: {
+    padding: 32,
+    paddingBottom: 16,
+    alignItems: 'center',
+    width: '100%',
+  },
+  aiScrollContainer: {
+    maxHeight: Dimensions.get('window').height * 0.6,
+    position: 'relative',
+  },
+  aiScrollView: {
+    flexGrow: 0,
+  },
+  aiScrollFade: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 36,
+    backgroundColor: 'rgba(255,255,255,0.88)',
+  },
 });

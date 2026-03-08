@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { trackEvent } from '../../lib/posthog';
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { View, Text, ScrollView, Pressable, StyleSheet, Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -23,6 +24,7 @@ export default function ExerciseDetailScreen() {
 
   const handleAdd = () => {
     addExercise(exercise!.id);
+    trackEvent('exercise_added_to_workout', { exerciseId: exercise!.id, name: exerciseNames[exercise!.id] });
     setShowAdded(true);
     Animated.sequence([
       Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
@@ -80,7 +82,7 @@ export default function ExerciseDetailScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Exercise Illustration */}
-        <ExerciseIllustration muscle={exercise.muscle} exerciseName={name} />
+        <ExerciseIllustration muscle={exercise.muscle} exerciseName={name} exerciseId={exercise.id} />
 
         {/* Safety + Muscle */}
         <View style={styles.topRow}>

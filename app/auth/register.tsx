@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { trackEvent } from '../../lib/posthog';
 import {
   View,
   Text,
@@ -66,8 +67,9 @@ export default function RegisterScreen() {
 
       if (error) {
         setErrors({ form: error.message });
+        trackEvent('register_failed', { reason: error.message });
       } else if (data.user) {
-        // Auth state change will trigger navigation automatically
+        trackEvent('register_success');
       }
     } catch (e) {
       setErrors({ form: t('common.somethingWrong') });

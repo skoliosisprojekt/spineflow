@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { trackEvent } from '../../lib/posthog';
+import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +9,7 @@ import { useSettingsStore, useProfileStore } from '../../stores/settingsStore';
 import { useAuthStore } from '../../stores/authStore';
 import { usePlanStore } from '../../stores/planStore';
 import { supabase } from '../../lib/supabase';
+import { isSoundEnabled, setSoundEnabled } from '../../lib/sounds';
 import type { ThemeMode, WeightUnit, SurgeryType, CurveType, GoalType, ExperienceType, BodyType } from '../../types';
 
 type OptionItem<T extends string> = { value: T; label: string };
@@ -58,8 +60,19 @@ export default function SettingsScreen() {
   const [dirty, setDirty] = useState(false);
   const [planRegenerated, setPlanRegenerated] = useState(false);
   const [customInput, setCustomInput] = useState('');
+  const [soundOn, setSoundOn] = useState(true);
+  const [reassessing, setReassessing] = useState(false);
 
-  useEffect(() => { loadSettings(); loadProfile(); }, []);
+  useEffect(() => {
+    loadSettings(); loadProfile();
+    isSoundEnabled().then(setSoundOn);
+  }, []);
+
+  const handleToggleSound = async () => {
+    const next = !soundOn;
+    setSoundOn(next);
+    await setSoundEnabled(next);
+  };
 
   const SURGERY_OPTIONS: OptionItem<SurgeryType>[] = [
     { value: 'none', label: t('settings.noSurgery') },
@@ -115,7 +128,30 @@ export default function SettingsScreen() {
   };
 
   const handleLogout = async () => {
+    trackEvent('logout');
     await supabase.auth.signOut();
+  };
+
+  const handleReassess = () => {
+    Alert.alert(
+      t('settings.reassessTitle'),
+      t('settings.reassessConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.continue'),
+          onPress: async () => {
+            setReassessing(true);
+            await saveProfile();
+            // Small delay for visual feedback
+            setTimeout(() => {
+              setReassessing(false);
+              router.replace('/(tabs)/exercises' as any);
+            }, 600);
+          },
+        },
+      ],
+    );
   };
 
   const updateProfile = <T,>(setter: (v: T) => void, value: T) => {
@@ -124,6 +160,7 @@ export default function SettingsScreen() {
   };
 
   const handleLanguageChange = async (langCode: string) => {
+    trackEvent('language_changed', { language: langCode });
     await setAppLanguage(langCode);
   };
 
@@ -178,6 +215,16 @@ export default function SettingsScreen() {
               );
             })}
           </View>
+
+          <View style={styles.cardDivider} />
+
+          <Pressable style={styles.settingRow} onPress={handleToggleSound} accessibilityRole="switch" accessibilityState={{ checked: soundOn }}>
+            <MaterialIcons name={soundOn ? 'vibration' : 'phonelink-erase'} size={20} color={soundOn ? '#00B894' : '#AEAEB2'} />
+            <Text style={styles.settingLabel}>{t('settings.timerSound')}</Text>
+            <View style={[styles.toggleTrack, soundOn && styles.toggleTrackOn]}>
+              <View style={[styles.toggleThumb, soundOn && styles.toggleThumbOn]} />
+            </View>
+          </Pressable>
         </View>
 
         {/* Scoliosis Profile */}
@@ -303,6 +350,20 @@ export default function SettingsScreen() {
           <Text style={[styles.regenerateBtnText, planRegenerated && { color: '#00B894' }]}>
             {planRegenerated ? t('settings.planUpdated') : t('settings.regeneratePlan')}
           </Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [styles.reassessBtn, pressed && { opacity: 0.85 }]}
+          onPress={handleReassess}
+          disabled={reassessing}
+          accessibilityRole="button"
+        >
+          {reassessing ? (
+            <ActivityIndicator size="small" color="#5B8DEF" />
+          ) : (
+            <MaterialIcons name="refresh" size={18} color="#5B8DEF" />
+          )}
+          <Text style={styles.reassessBtnText}>{t('settings.reassessExercises')}</Text>
         </Pressable>
 
         {/* Logout */}
@@ -445,6 +506,21 @@ const styles = StyleSheet.create({
   },
   logoutBtnText: { fontSize: 15, fontWeight: '600', color: '#FF3B30' },
 
+  reassessBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#5B8DEF',
+    paddingVertical: 14,
+    gap: 8,
+    marginTop: 12,
+    minHeight: 48,
+  },
+  reassessBtnText: { fontSize: 15, fontWeight: '600', color: '#5B8DEF' },
+
   // Equipment
   equipChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   equipChip: {
@@ -466,6 +542,18 @@ const styles = StyleSheet.create({
   },
   disclaimerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: 4 },
   disclaimerText: { fontSize: 11, color: '#8E8E93', lineHeight: 16, flex: 1 },
+
+  // Toggle switch
+  toggleTrack: {
+    width: 44, height: 26, borderRadius: 13,
+    backgroundColor: '#E5E5EA', justifyContent: 'center', paddingHorizontal: 2,
+  },
+  toggleTrackOn: { backgroundColor: '#00B894' },
+  toggleThumb: {
+    width: 22, height: 22, borderRadius: 11, backgroundColor: '#FFFFFF',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 2,
+  },
+  toggleThumbOn: { alignSelf: 'flex-end' as const },
 
   appInfo: {
     alignItems: 'center',

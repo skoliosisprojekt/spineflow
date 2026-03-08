@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import ErrorBoundary from '../../components/ErrorBoundary';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useHistoryStore, WorkoutRecord } from '../../stores/historyStore';
@@ -7,6 +8,7 @@ import { shareWorkout } from '../../lib/exportWorkout';
 import { useProfileStore } from '../../stores/settingsStore';
 import { exercises as allExercises, exerciseNames } from '../../data/exercises';
 import type { CurveType, GoalType } from '../../types';
+import { EmptyChart } from '../../components/animations';
 
 const WEEKDAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
@@ -57,8 +59,8 @@ function VolumeTrendChart({ workouts }: { workouts: WorkoutRecord[] }) {
 
       {!hasData ? (
         <View style={styles.trendEmpty}>
-          <MaterialIcons name="bar-chart" size={36} color="#E5E5EA" />
-          <Text style={styles.trendEmptyText}>{t('progress.noDataYet')}</Text>
+          <EmptyChart size={150} />
+          <Text style={styles.trendEmptyText}>No workouts yet</Text>
         </View>
       ) : (
         <>
@@ -507,7 +509,7 @@ function PersonalRecords({ workouts }: { workouts: WorkoutRecord[] }) {
   if (prs.length === 0) {
     return (
       <View style={styles.prEmpty}>
-        <MaterialIcons name="emoji-events" size={48} color="#E5E5EA" />
+        <EmptyChart size={150} />
         <Text style={styles.prEmptyTitle}>{t('progress.noRecordsYet')}</Text>
         <Text style={styles.prEmptyText}>{t('progress.noRecordsDesc')}</Text>
       </View>
@@ -569,7 +571,11 @@ function PersonalRecords({ workouts }: { workouts: WorkoutRecord[] }) {
 
 type ProgressTab = 'overview' | 'records';
 
-export default function ProgressScreen() {
+export default function ProgressScreenWrapper() {
+  return <ErrorBoundary><ProgressScreen /></ErrorBoundary>;
+}
+
+function ProgressScreen() {
   const { t } = useTranslation();
   const { workouts, loadHistory, deleteWorkout } = useHistoryStore();
   const { curveType, goal } = useProfileStore();

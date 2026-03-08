@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
+import { trackEvent } from '../../lib/posthog';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -58,6 +59,7 @@ export default function EquipmentScreen() {
   const handleFinish = async () => {
     await saveProfile();
     generatePlan({ surgery, curveType, goal, experience, bodyType });
+    trackEvent('onboarding_completed', { surgery, curveType, goal, experience, bodyType, equipment });
     await setProfileComplete(true);
   };
 

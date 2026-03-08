@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { trackEvent } from '../../lib/posthog';
 import {
   View,
   Text,
@@ -40,6 +41,9 @@ export default function LoginScreen() {
 
       if (authError) {
         setError(authError.message);
+        trackEvent('login_failed', { reason: authError.message });
+      } else {
+        trackEvent('login_success');
       }
     } catch (e) {
       setError(t('common.somethingWrong'));
