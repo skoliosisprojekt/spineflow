@@ -143,6 +143,10 @@ footer{background:#111827;color:#9CA3AF;padding:60px 24px 32px}
   .footer-grid{grid-template-columns:1fr}
 }
 
+/* Success state */
+.signup-success{padding:14px 24px;border-radius:12px;background:var(--accentLight);color:var(--accent);font-weight:600;font-size:15px;display:none;align-items:center;gap:8px;justify-content:center;max-width:460px;margin:0 auto}
+.signup-success.show{display:flex}
+
 /* PAGE VISIBILITY */
 .page{display:none}
 .page.active{display:block}
@@ -163,7 +167,7 @@ footer{background:#111827;color:#9CA3AF;padding:60px 24px 32px}
     <a href="#features" onclick="showPage('home')">Features</a>
     <a href="#ai" onclick="showPage('home')">AI Coach</a>
     <a href="#pricing" onclick="showPage('home')">Pricing</a>
-    <a href="#" class="nav-cta" onclick="showPage('home')">Download</a>
+    <a href="#join" class="nav-cta">Join Beta</a>
   </div>
 </div>
 </nav>
@@ -395,8 +399,16 @@ footer{background:#111827;color:#9CA3AF;padding:60px 24px 32px}
     </div>
   </div>
 
-  <a href="#" class="hero-cta"><span class="material-icons-round">download</span> Coming Soon on Google Play</a>
-  <p class="hero-sub">Available in English, Deutsch, Fran&ccedil;ais, Italiano, Espa&ntilde;ol</p>
+  <form class="hero-form" id="hero-form" action="https://formsubmit.co/skoliosis.projekt@gmail.com" method="POST" onsubmit="return handleSignup(event, 'hero')" style="display:flex;gap:10px;max-width:440px;margin:0 auto 16px">
+    <input type="hidden" name="_subject" value="SpineFlow Beta Signup (Hero)">
+    <input type="hidden" name="_captcha" value="false">
+    <input type="hidden" name="_next" value="">
+    <input type="text" name="_honey" style="display:none">
+    <input type="email" name="email" id="hero-email" placeholder="your@email.com" required style="flex:1;padding:14px 18px;border-radius:12px;border:1.5px solid var(--sep);font-size:15px;background:#fff;outline:none;font-family:inherit">
+    <button type="submit" style="padding:14px 28px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:15px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 4px 16px rgba(0,184,148,0.3);transition:all 0.2s">Join Beta</button>
+  </form>
+  <div class="signup-success" id="hero-success">✅ You're in! We'll reach out soon.</div>
+  <p class="hero-sub" style="font-size:13px;color:var(--text3);margin-top:4px">Free during beta · No credit card required · Your feedback shapes the app</p>
 </section>
 
 <!-- SCOLIOSIS TYPES -->
@@ -617,7 +629,7 @@ footer{background:#111827;color:#9CA3AF;padding:60px 24px 32px}
         <li><span class="material-icons-round">check_circle</span> Dark mode, 5 languages</li>
         <li><span class="material-icons-round">check_circle</span> 100% offline capable</li>
       </ul>
-      <button class="price-btn price-btn-secondary">Get Started Free</button>
+      <a href="#join" class="price-btn price-btn-secondary" style="text-decoration:none">Join Beta — Free Access</a>
     </div>
     <div class="price-card featured">
       <div class="price-name">Premium</div>
@@ -632,8 +644,9 @@ footer{background:#111827;color:#9CA3AF;padding:60px 24px 32px}
         <li><span class="material-icons-round">all_inclusive</span> Unlimited workouts</li>
         <li><span class="material-icons-round">emoji_events</span> Personal Records Tracking</li>
       </ul>
-      <button class="price-btn price-btn-primary">Start 14-Day Free Trial</button>
+      <a href="#join" class="price-btn price-btn-primary" style="text-decoration:none">Join Beta — Test All Features</a>
       <p style="font-size:12px;color:var(--text3);margin-top:8px">Also available: CHF 49.99/year (save 40%)</p>
+      <p style="font-size:12px;color:var(--accent);margin-top:4px;font-weight:600">All features free during beta!</p>
     </div>
   </div>
 </div>
@@ -666,10 +679,20 @@ footer{background:#111827;color:#9CA3AF;padding:60px 24px 32px}
 </section>
 
 <!-- CTA -->
-<section style="text-align:center;padding:60px 24px 80px">
+<section id="join" style="text-align:center;padding:60px 24px 80px">
+  <div class="section-tag">Join the Beta</div>
   <div class="section-title">Ready to Train Safe?</div>
-  <p style="font-size:17px;color:var(--text2);margin:12px auto 32px;max-width:500px">Join the SpineFlow community and train with confidence — knowing every exercise is rated for your spine.</p>
-  <a href="#" class="hero-cta"><span class="material-icons-round">download</span> Coming Soon on Google Play</a>
+  <p style="font-size:17px;color:var(--text2);margin:12px auto 32px;max-width:500px">Join the beta and be one of the first to try SpineFlow. Free during the beta period. Your feedback shapes the app.</p>
+  <form class="hero-form" id="cta-form" action="https://formsubmit.co/skoliosis.projekt@gmail.com" method="POST" onsubmit="return handleSignup(event, 'cta')" style="display:flex;gap:10px;max-width:460px;margin:0 auto 16px;justify-content:center">
+    <input type="hidden" name="_subject" value="SpineFlow Beta Signup (CTA)">
+    <input type="hidden" name="_captcha" value="false">
+    <input type="hidden" name="_next" value="">
+    <input type="text" name="_honey" style="display:none">
+    <input type="email" name="email" id="cta-email" placeholder="your@email.com" required style="flex:1;padding:16px 20px;border-radius:14px;border:1.5px solid var(--sep);font-size:16px;background:#fff;outline:none;font-family:inherit">
+    <button type="submit" style="padding:16px 32px;border-radius:14px;border:none;background:var(--accent);color:#fff;font-size:16px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 4px 16px rgba(0,184,148,0.3);transition:all 0.2s;font-family:inherit">Join Beta — Free</button>
+  </form>
+  <div class="signup-success" id="cta-success">✅ You're on the list! We'll be in touch soon.</div>
+  <p style="font-size:13px;color:var(--text3)">No spam. No credit card. Just early access.</p>
 </section>
 
 </div><!-- end page-home -->
@@ -881,6 +904,7 @@ E-Mail: <a href="/cdn-cgi/l/email-protection#fc8f97939095938f958fd28c8e939699978
       <a href="#safety" onclick="showPage('home')">Safety System</a>
       <a href="#ai" onclick="showPage('home')">AI Coach</a>
       <a href="#pricing" onclick="showPage('home')">Pricing</a>
+      <a href="#join" onclick="showPage('home')">Join Beta</a>
     </div>
     <div class="footer-col">
       <h4>Legal</h4>
@@ -891,4 +915,71 @@ E-Mail: <a href="/cdn-cgi/l/email-protection#fc8f97939095938f958fd28c8e939699978
     </div>
     <div class="footer-col">
       <h4>Contact</h4>
-      <a href="/cdn-cgi/l/email-protection#57243c383b3e38243e24792725383d
+      <a href="mailto:skoliosis.projekt@gmail.com">skoliosis.projekt@gmail.com</a>
+      <a href="https://www.spineflow.app">www.spineflow.app</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>&copy; 2026 SpineFlow. All rights reserved. Made in Z&uuml;rich, Switzerland.</span>
+    <span>Not a medical device. Always consult your doctor.</span>
+  </div>
+</div>
+</footer>
+
+<script>
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+  var el = document.getElementById('page-' + page);
+  if (el) el.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function handleSignup(event, source) {
+  event.preventDefault();
+  var form = document.getElementById(source + '-form');
+  var input = document.getElementById(source + '-email');
+  var success = document.getElementById(source + '-success');
+  var email = input.value.trim();
+
+  if (!email || email.indexOf('@') === -1) {
+    input.style.borderColor = '#FF3B30';
+    input.setAttribute('placeholder', 'Please enter a valid email');
+    setTimeout(function() {
+      input.style.borderColor = '#E5E7EB';
+      input.setAttribute('placeholder', 'your@email.com');
+    }, 2000);
+    return false;
+  }
+
+  var formData = new FormData(form);
+  fetch(form.action, {
+    method: 'POST',
+    body: formData,
+    headers: { 'Accept': 'application/json' }
+  })
+  .then(function() {
+    form.style.display = 'none';
+    success.classList.add('show');
+  })
+  .catch(function() {
+    form.style.display = 'none';
+    success.classList.add('show');
+  });
+
+  return false;
+}
+
+document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+  anchor.addEventListener('click', function(e) {
+    var href = this.getAttribute('href');
+    if (href === '#') return;
+    var target = document.querySelector(href);
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
+</body>
+</html>
