@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "SpineFlow",
-    "slug": "spineflow",
+    "slug": "SpineFlow",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -45,8 +45,7 @@
       "expo-localization",
       "expo-sqlite",
       "expo-image",
-      "expo-sharing",
-      "@sentry/react-native/expo"
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true
