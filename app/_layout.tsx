@@ -28,7 +28,7 @@ function RootLayout() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const segments = useSegments();
-  const { isAuthenticated, consentGiven, profileComplete, welcomeSeen,
+  const { isAuthenticated, consentGiven, profileComplete, welcomeSeen, hasAcceptedBetaTerms,
           setAuth, clearAuth, loadPersistedState, setProfileComplete } = useAuthStore();
   const { loadSettings, setLanguage, setTheme, setUnits } = useSettingsStore();
   const { loadProfile, setSurgery, setCurveType, setGoal, setExperience, setBodyType, setEquipment } = useProfileStore();
@@ -144,10 +144,11 @@ function RootLayout() {
   // Navigation state machine
   useEffect(() => {
     if (isLoading) return;
-    const inWelcome = segments[0] === 'welcome';
-    const inAuth = segments[0] === 'auth';
-    const inConsent = segments[0] === 'consent';
-    const inOnboarding = segments[0] === 'onboarding';
+    const inWelcome     = segments[0] === 'welcome';
+    const inAuth        = segments[0] === 'auth';
+    const inConsent     = segments[0] === 'consent';
+    const inOnboarding  = segments[0] === 'onboarding';
+    const inLegalConsent = (segments[0] as string) === 'legal-consent';
 
     if (!welcomeSeen) {
       if (!inWelcome) router.replace('/welcome');
@@ -157,10 +158,12 @@ function RootLayout() {
       if (!inConsent) router.replace('/consent');
     } else if (!profileComplete) {
       if (!inOnboarding) router.replace('/onboarding/surgery');
+    } else if (!hasAcceptedBetaTerms) {
+      if (!inLegalConsent) router.replace('/legal-consent' as any);
     } else {
-      if (inWelcome || inAuth || inConsent || inOnboarding) router.replace('/(tabs)');
+      if (inWelcome || inAuth || inConsent || inOnboarding || inLegalConsent) router.replace('/(tabs)');
     }
-  }, [isAuthenticated, consentGiven, profileComplete, welcomeSeen, isLoading, segments]);
+  }, [isAuthenticated, consentGiven, profileComplete, welcomeSeen, hasAcceptedBetaTerms, isLoading, segments]);
 
   return (
     <SQLiteProvider
@@ -187,6 +190,7 @@ function RootLayout() {
             <Stack.Screen name="settings" options={{ presentation: 'card' }} />
             <Stack.Screen name="premium" options={{ presentation: 'modal' }} />
             <Stack.Screen name="planner" options={{ presentation: 'card' }} />
+            <Stack.Screen name="legal-consent" options={{ gestureEnabled: false }} />
           </Stack>
         </>
       )}

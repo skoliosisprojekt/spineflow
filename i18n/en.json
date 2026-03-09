@@ -13,7 +13,7 @@
     "somethingWrong": "Something went wrong. Please try again."
   },
   "safety": {
-    "safe": "Safe",
+    "safe": "Guided",
     "modify": "Modify",
     "avoid": "Avoid"
   },
@@ -25,12 +25,12 @@
     "nutrition": "Nutrition"
   },
   "welcome": {
-    "slide1Title": "Safe Training with Scoliosis",
-    "slide1Desc": "SpineFlow tells you which exercises are safe for YOUR specific curve type and surgery history.",
-    "slide2Title": "Personalized Safety Ratings",
-    "slide2Desc": "Every exercise is rated Safe, Modify, or Avoid — personalized for your scoliosis profile.",
+    "slide1Title": "Mindful Training with Scoliosis",
+    "slide1Desc": "SpineFlow shows which exercises are suitable for YOUR specific curve type and surgery history — always listen to your body.",
+    "slide2Title": "Personalized Guidance Ratings",
+    "slide2Desc": "Every exercise is rated Guided, Modify, or Avoid — general fitness inspiration personalized to your profile.",
     "slide3Title": "Track Your Progress",
-    "slide3Desc": "Log workouts, track volume, hit personal records — all while staying safe.",
+    "slide3Desc": "Log workouts, track volume, hit personal records — always listening to your body.",
     "getStarted": "Get Started"
   },
   "consent": {
@@ -43,13 +43,13 @@
     "privacyContent": "SpineFlow collects and processes the following data:\n\n• Email address (for authentication)\n• Scoliosis type and surgery history (for personalized safety ratings)\n• Workout logs (for progress tracking)\n• Nutrition logs (for calorie tracking)\n\nYour health data is stored securely in Switzerland (Zurich) and is never shared with third parties. You can delete all your data at any time via Settings.\n\nSpineFlow complies with the GDPR (EU) and nDSG (Swiss Federal Data Protection Act).\n\nFull policy available at www.spineflow.app",
     "privacyAccept": "I accept the Privacy Policy",
     "disclaimerTitle": "Medical & Liability Disclaimer",
-    "disclaimerContent": "IMPORTANT — PLEASE READ CAREFULLY\n\nSpineFlow is NOT a medical device, NOT a medical application, and does NOT provide medical advice, diagnosis, or treatment.\n\nALL EXERCISES ARE PERFORMED AT YOUR OWN RISK. SpineFlow accepts NO LIABILITY for any injury, damage, or harm arising from the use of this application.\n\nThe safety ratings (\"Safe\", \"Modify\", \"Avoid\") are GENERAL GUIDELINES ONLY. They are not personalized medical recommendations.\n\nYou MUST consult a qualified medical professional before beginning any exercise program, especially if you have had spinal surgery.\n\nIf there is any conflict between SpineFlow's recommendations and your doctor's instructions, ALWAYS FOLLOW YOUR DOCTOR.\n\nFull disclaimer available at www.spineflow.app",
+    "disclaimerContent": "IMPORTANT — PLEASE READ CAREFULLY\n\nSpineFlow provides general fitness education, not medical treatment. SpineFlow is NOT a medical device and does NOT provide medical advice, diagnosis, or treatment.\n\nALL EXERCISES ARE PERFORMED AT YOUR OWN RISK. SpineFlow accepts NO LIABILITY for any injury, damage, or harm arising from the use of this application.\n\nThe guidance ratings (\"Guided\", \"Modify\", \"Avoid\") are GENERAL FITNESS INSPIRATION ONLY. They are not personalized medical recommendations.\n\nYou MUST consult a qualified healthcare professional before beginning any exercise program, especially if you have had spinal surgery.\n\nIf there is any conflict between SpineFlow's suggestions and your doctor's instructions, ALWAYS FOLLOW YOUR DOCTOR.\n\nFull disclaimer available at www.spineflow.app",
     "disclaimerAccept": "I accept the Medical & Liability Disclaimer",
     "saving": "Saving...",
     "continue": "Continue"
   },
   "auth": {
-    "tagline": "Your safe gym companion for scoliosis",
+    "tagline": "Your mindful fitness companion for scoliosis",
     "welcomeBack": "Welcome Back",
     "emailPlaceholder": "Email address",
     "passwordPlaceholder": "Password",
@@ -82,7 +82,7 @@
   "onboarding": {
     "surgery": {
       "title": "Have you had spinal surgery?",
-      "subtitle": "This significantly affects which exercises are safe for you.",
+      "subtitle": "This significantly affects which exercises are suitable for your profile.",
       "none": "No surgery",
       "noneDesc": "No spinal operations",
       "partial": "Partial spinal fusion",
@@ -173,7 +173,7 @@
     "customEquipment": "Custom Equipment",
     "customEquipmentPlaceholder": "e.g. Kettlebell, TRX...",
     "addCustom": "Add",
-    "customDisclaimer": "Custom equipment has no safety ratings — use at your own risk.",
+    "customDisclaimer": "Custom equipment has no guidance ratings — proceed with care and listen to your body.",
     "yourEquipment": "Your Equipment"
   },
   "home": {
@@ -190,8 +190,8 @@
     "scoliosisType": "Scoliosis Type",
     "surgeryHistory": "Surgery History",
     "mainGoal": "Main Goal",
-    "safetyFirst": "Safety First",
-    "safetyDesc": "All exercises are rated for your specific curve type and surgery history. Always listen to your body."
+    "safetyFirst": "Guided Training",
+    "safetyDesc": "All exercises have guidance ratings for your profile. This is general fitness education — always consult a healthcare professional and listen to your body."
   },
   "muscles": {
     "all": "All",
@@ -212,7 +212,7 @@
     "coachTip": "Coach Tip",
     "modRequired": "Modification Required",
     "postSurgeryNote": "Post-Surgery Note",
-    "notSafe": "Not safe for your condition",
+    "notSafe": "Not recommended for your profile",
     "addedToWorkout": "Added to Workout",
     "removeFromWorkout": "Remove from Workout",
     "addToWorkout": "Add to Workout",
@@ -351,7 +351,7 @@
     "aiAlreadyAnalyzed": "Already analyzed",
     "aiMinWorkouts": "At least 2 workouts are needed for an analysis.",
     "aiRecommendationsSaved": "Recommendations will be shown in the next workout",
-    "aiDisclaimer": "This analysis was generated by AI and is for informational purposes only. It does not replace professional medical or physiotherapy advice.",
+    "aiDisclaimer": "This app provides general fitness education, not medical treatment. This AI-generated analysis is for informational purposes only and does not replace advice from a qualified healthcare professional.",
     "adjNew": "NEW",
     "adjAdjust": "ADJUST",
     "adjReplace": "REPLACE",

@@ -13,7 +13,7 @@
     "somethingWrong": "Etwas ist schiefgelaufen. Bitte versuche es erneut."
   },
   "safety": {
-    "safe": "Sicher",
+    "safe": "Geführt",
     "modify": "Anpassen",
     "avoid": "Vermeiden"
   },
@@ -25,12 +25,12 @@
     "nutrition": "Ernährung"
   },
   "welcome": {
-    "slide1Title": "Sicheres Training mit Skoliose",
-    "slide1Desc": "SpineFlow zeigt dir, welche Übungen für DEINEN Kurventyp und deine OP-Geschichte sicher sind.",
-    "slide2Title": "Personalisierte Sicherheitsbewertungen",
-    "slide2Desc": "Jede Übung wird als Sicher, Anpassen oder Vermeiden bewertet — personalisiert für dein Skoliose-Profil.",
+    "slide1Title": "Achtsames Training mit Skoliose",
+    "slide1Desc": "SpineFlow zeigt dir, welche Übungen für DEINEN Kurventyp und deine OP-Geschichte geeignet sind — höre immer auf deinen Körper.",
+    "slide2Title": "Personalisierte Bewertungen",
+    "slide2Desc": "Jede Übung wird als Geführt, Anpassen oder Vermeiden bewertet — allgemeine Fitness-Inspiration für dein Profil.",
     "slide3Title": "Verfolge deinen Fortschritt",
-    "slide3Desc": "Logge Workouts, tracke Volumen, knacke persönliche Rekorde — alles sicher.",
+    "slide3Desc": "Logge Workouts, tracke Volumen, knacke persönliche Rekorde — und höre immer auf deinen Körper.",
     "getStarted": "Los geht's"
   },
   "consent": {
@@ -43,13 +43,13 @@
     "privacyContent": "SpineFlow erhebt und verarbeitet folgende Daten:\n\n• E-Mail-Adresse (zur Authentifizierung)\n• Skoliose-Typ und OP-Geschichte (für personalisierte Sicherheitsbewertungen)\n• Trainings-Logs (zur Fortschrittsverfolgung)\n• Ernährungs-Logs (zur Kalorienerfassung)\n\nDeine Gesundheitsdaten werden sicher in der Schweiz (Zürich) gespeichert und nie an Dritte weitergegeben. Du kannst deine Daten jederzeit in den Einstellungen löschen.\n\nSpineFlow entspricht der DSGVO (EU) und dem nDSG (Schweizer Datenschutzgesetz).\n\nVollständige Erklärung unter www.spineflow.app",
     "privacyAccept": "Ich akzeptiere die Datenschutzerklärung",
     "disclaimerTitle": "Medizinischer Haftungsausschluss",
-    "disclaimerContent": "WICHTIG — BITTE SORGFÄLTIG LESEN\n\nSpineFlow ist KEIN Medizinprodukt, KEINE medizinische Anwendung und gibt KEINE medizinischen Ratschläge, Diagnosen oder Behandlungen.\n\nALLE ÜBUNGEN WERDEN AUF EIGENES RISIKO DURCHGEFÜHRT. SpineFlow übernimmt KEINE HAFTUNG für Verletzungen, Schäden oder Beeinträchtigungen.\n\nDie Sicherheitsbewertungen (\"Sicher\", \"Anpassen\", \"Vermeiden\") sind NUR ALLGEMEINE RICHTLINIEN. Sie sind keine personalisierten medizinischen Empfehlungen.\n\nDu MUSST einen Arzt konsultieren, bevor du mit einem Trainingsprogramm beginnst, besonders nach einer Wirbelsäulenoperation.\n\nBei Widersprüchen zwischen SpineFlow und deinem Arzt, FOLGE IMMER DEINEM ARZT.\n\nVollständiger Haftungsausschluss unter www.spineflow.app",
+    "disclaimerContent": "WICHTIG — BITTE SORGFÄLTIG LESEN\n\nSpineFlow bietet allgemeine Fitness-Bildung, keine medizinische Behandlung. SpineFlow ist KEIN Medizinprodukt und gibt KEINE medizinischen Ratschläge, Diagnosen oder Behandlungen.\n\nALLE ÜBUNGEN WERDEN AUF EIGENES RISIKO DURCHGEFÜHRT. SpineFlow übernimmt KEINE HAFTUNG für Verletzungen, Schäden oder Beeinträchtigungen.\n\nDie Bewertungen (\"Geführt\", \"Anpassen\", \"Vermeiden\") sind NUR ALLGEMEINE FITNESS-INSPIRATION. Sie sind keine personalisierten medizinischen Empfehlungen.\n\nDu MUSST einen Arzt konsultieren, bevor du mit einem Trainingsprogramm beginnst, besonders nach einer Wirbelsäulenoperation.\n\nBei Widersprüchen zwischen SpineFlow und deinem Arzt, FOLGE IMMER DEINEM ARZT.\n\nVollständiger Haftungsausschluss unter www.spineflow.app",
     "disclaimerAccept": "Ich akzeptiere den medizinischen Haftungsausschluss",
     "saving": "Speichern...",
     "continue": "Weiter"
   },
   "auth": {
-    "tagline": "Dein sicherer Trainingsbegleiter für Skoliose",
+    "tagline": "Dein achtsamer Fitness-Begleiter für Skoliose",
     "welcomeBack": "Willkommen zurück",
     "emailPlaceholder": "E-Mail-Adresse",
     "passwordPlaceholder": "Passwort",
@@ -82,7 +82,7 @@
   "onboarding": {
     "surgery": {
       "title": "Hattest du eine Wirbelsäulenoperation?",
-      "subtitle": "Dies beeinflusst massgeblich, welche Übungen sicher sind.",
+      "subtitle": "Dies beeinflusst massgeblich, welche Übungen für dein Profil geeignet sind.",
       "none": "Keine Operation",
       "noneDesc": "Keine Wirbelsäulenoperationen",
       "partial": "Teilweise Wirbelsäulenfusion",
@@ -173,7 +173,7 @@
     "customEquipment": "Eigenes Equipment",
     "customEquipmentPlaceholder": "z.B. Kettlebell, TRX...",
     "addCustom": "Hinzufügen",
-    "customDisclaimer": "Eigenes Equipment hat keine Sicherheitsbewertung — Nutzung auf eigene Verantwortung.",
+    "customDisclaimer": "Eigenes Equipment hat keine Bewertung — mit Vorsicht vorgehen und auf deinen Körper hören.",
     "yourEquipment": "Dein Equipment"
   },
   "home": {
@@ -190,8 +190,8 @@
     "scoliosisType": "Skoliose-Typ",
     "surgeryHistory": "OP-Geschichte",
     "mainGoal": "Hauptziel",
-    "safetyFirst": "Sicherheit zuerst",
-    "safetyDesc": "Alle Übungen sind für deinen Kurventyp und OP-Status bewertet. Höre immer auf deinen Körper."
+    "safetyFirst": "Geführtes Training",
+    "safetyDesc": "Alle Übungen haben Bewertungen für dein Profil. Dies ist allgemeine Fitness-Bildung — konsultiere immer einen Arzt und höre auf deinen Körper."
   },
   "muscles": {
     "all": "Alle",
@@ -212,7 +212,7 @@
     "coachTip": "Trainer-Tipp",
     "modRequired": "Anpassung erforderlich",
     "postSurgeryNote": "Hinweis nach OP",
-    "notSafe": "Nicht sicher für deine Situation",
+    "notSafe": "Nicht empfohlen für dein Profil",
     "addedToWorkout": "Zum Training hinzugefügt",
     "removeFromWorkout": "Aus Training entfernen",
     "addToWorkout": "Zum Training hinzufügen",
@@ -351,7 +351,7 @@
     "aiAlreadyAnalyzed": "Bereits analysiert",
     "aiMinWorkouts": "Mindestens 2 Workouts noetig fuer eine Analyse.",
     "aiRecommendationsSaved": "Empfehlungen werden im naechsten Workout angezeigt",
-    "aiDisclaimer": "Diese Analyse wurde von KI erstellt und dient nur zu Informationszwecken. Sie ersetzt keine professionelle medizinische oder physiotherapeutische Beratung.",
+    "aiDisclaimer": "Diese App bietet allgemeine Fitness-Bildung, keine medizinische Behandlung. Diese KI-Analyse dient nur zu Informationszwecken und ersetzt keine Beratung durch eine qualifizierte Fachkraft.",
     "adjNew": "NEU",
     "adjAdjust": "ANPASSEN",
     "adjReplace": "ERSETZEN",

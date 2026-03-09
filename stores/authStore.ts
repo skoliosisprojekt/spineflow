@@ -14,6 +14,8 @@ interface AuthState {
   setConsentGiven: (given: boolean) => Promise<void>;
   setProfileComplete: (complete: boolean) => Promise<void>;
   setWelcomeSeen: () => Promise<void>;
+  hasAcceptedBetaTerms: boolean;
+  setHasAcceptedBetaTerms: () => Promise<void>;
   loadPersistedState: () => Promise<void>;
 }
 
@@ -24,6 +26,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   consentGiven: false,
   profileComplete: false,
   welcomeSeen: false,
+  hasAcceptedBetaTerms: false,
 
   setAuth: (userId, email) => set({ isAuthenticated: true, userId, email }),
   clearAuth: () => {
@@ -48,14 +51,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await AsyncStorage.setItem('welcomeSeen', 'true');
   },
 
+  setHasAcceptedBetaTerms: async () => {
+    set({ hasAcceptedBetaTerms: true });
+    await AsyncStorage.setItem('hasAcceptedBetaTerms', 'true');
+  },
+
   loadPersistedState: async () => {
-    const consent = await AsyncStorage.getItem('consentGiven');
-    const profile = await AsyncStorage.getItem('profileComplete');
-    const welcome = await AsyncStorage.getItem('welcomeSeen');
+    const consent  = await AsyncStorage.getItem('consentGiven');
+    const profile  = await AsyncStorage.getItem('profileComplete');
+    const welcome  = await AsyncStorage.getItem('welcomeSeen');
+    const betaTerms = await AsyncStorage.getItem('hasAcceptedBetaTerms');
     set({
       consentGiven: consent === 'true',
       profileComplete: profile === 'true',
       welcomeSeen: welcome === 'true',
+      hasAcceptedBetaTerms: betaTerms === 'true',
     });
   },
 }));
