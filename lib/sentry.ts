@@ -1,13 +1,9 @@
-// Sentry stub — real SDK requires a development build (expo run:android/ios).
-// Enable by replacing this file's contents once native modules are available.
+import * as Sentry from '@sentry/react-native';
 
-const Sentry = {
-  init: (_options?: any) => {},
-  captureException: (_error: any, _hint?: any) => '',
-  captureMessage: (_message: string) => '',
-  wrap: <T,>(component: T): T => component,
-  withScope: (_callback: (scope: any) => void) => {},
-  setUser: (_user: any) => {},
-};
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  tracesSampleRate: 0.2,
+  enabled: !__DEV__,
+});
 
 export default Sentry;
