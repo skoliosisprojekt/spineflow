@@ -76,7 +76,11 @@ function RootLayout() {
               bodyType: cloudProfile.body_type,
               equipment: cloudProfile.equipment,
             }));
-            if (cloudProfile.language) await setLanguage(cloudProfile.language);
+            if (cloudProfile.language) {
+              // Only apply cloud language if the user hasn't set a local preference
+              const localLang = await AsyncStorage.getItem('language');
+              if (!localLang) await setLanguage(cloudProfile.language);
+            }
             if (cloudProfile.theme) await setTheme(cloudProfile.theme as any);
             if (cloudProfile.units) await setUnits(cloudProfile.units as any);
             if (cloudProfile.profile_complete) await setProfileComplete(true);

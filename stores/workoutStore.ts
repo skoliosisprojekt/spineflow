@@ -120,11 +120,11 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     try {
       const raw = await AsyncStorage.getItem(STORAGE_KEY);
       let exercises: WorkoutExercise[] = raw ? (JSON.parse(raw) as WorkoutExercise[]) : [];
-      console.log('[WorkoutStore] loadWorkout: existing exercises=', exercises.length);
+      // A resumed workout from STORAGE_KEY means the session was active
+      const hadActiveSession = exercises.length > 0;
 
       // Merge AI-suggested exercises queued for next workout
       const pendingRaw = await AsyncStorage.getItem(PENDING_KEY);
-      console.log('[WorkoutStore] loadWorkout: pendingRaw=', pendingRaw);
       if (pendingRaw) {
         const pending = JSON.parse(pendingRaw) as PendingExercise[];
         for (const p of pending) {
@@ -141,14 +141,14 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           }
         }
         await AsyncStorage.removeItem(PENDING_KEY);
-        console.log('[WorkoutStore] loadWorkout: merged pending, total exercises=', exercises.length);
       }
 
       if (exercises.length > 0) {
-        set({ exercises, isActive: exercises.length > 0 });
+        // isActive=true only for resumed sessions; pending-only = preview (not started)
+        set({ exercises, isActive: hadActiveSession });
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(exercises));
       }
-    } catch (e) { console.error('[WorkoutStore] loadWorkout error:', e); }
+    } catch {}
   },
 
   saveExerciseForNextWorkout: async (exerciseId, numSets, weight) => {

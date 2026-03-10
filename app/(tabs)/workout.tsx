@@ -397,7 +397,7 @@ export default function WorkoutScreenWrapper() {
 function WorkoutScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { exercises, addExercise, updateSet, toggleSetComplete, addSet, removeSet, removeExercise, clearWorkout, loadWorkout, saveExerciseForNextWorkout } = useWorkoutStore();
+  const { exercises, isActive, addExercise, updateSet, toggleSetComplete, addSet, removeSet, removeExercise, clearWorkout, startWorkout, loadWorkout, saveExerciseForNextWorkout } = useWorkoutStore();
   const saveWorkout = useHistoryStore((s) => s.saveWorkout);
   const workoutHistory = useHistoryStore((s) => s.workouts);
   const { plan, loadPlan } = usePlanStore();
@@ -727,7 +727,7 @@ function WorkoutScreen() {
     });
   };
 
-  if (exercises.length === 0) {
+  if (exercises.length === 0 || !isActive) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -754,9 +754,33 @@ function WorkoutScreen() {
                 </View>
               ))}
             </View>
+            {exercises.length > 0 && !isActive && (
+              <View style={styles.planCard}>
+                <View style={styles.planHeader}>
+                  <MaterialIcons name="auto-awesome" size={20} color="#00B894" />
+                  <Text style={[styles.planTitle, { color: '#00B894' }]}>{t('ai.suggestedExercises') || 'KI-Empfehlungen'}</Text>
+                </View>
+                {exercises.map((ex, i) => (
+                  <View key={ex.exerciseId} style={styles.planExRow}>
+                    <Text style={styles.planExNum}>{i + 1}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.planExName}>{exerciseNames[ex.exerciseId] || `Exercise ${ex.exerciseId}`}</Text>
+                      <Text style={styles.planExSets}>{ex.sets.length} Sets</Text>
+                    </View>
+                    <MaterialIcons name="star" size={14} color="#00B894" />
+                  </View>
+                ))}
+              </View>
+            )}
             <Pressable
               style={({ pressed }) => [styles.startPlanBtn, pressed && { opacity: 0.85 }]}
-              onPress={loadPlanExercises}
+              onPress={() => {
+                if (exercises.length > 0 && !isActive) {
+                  startWorkout();
+                } else {
+                  loadPlanExercises();
+                }
+              }}
               accessibilityRole="button"
               accessibilityLabel="Start planned workout"
             >
