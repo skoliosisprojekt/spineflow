@@ -776,6 +776,7 @@ function WorkoutScreen() {
               style={({ pressed }) => [styles.startPlanBtn, pressed && { opacity: 0.85 }]}
               onPress={() => {
                 if (exercises.length > 0 && !isActive) {
+                  loadPlanExercises(); // adds plan exercises (skips duplicates already in store)
                   startWorkout();
                 } else {
                   loadPlanExercises();
