@@ -192,7 +192,20 @@
     "surgeryHistory": "Surgery History",
     "mainGoal": "Main Goal",
     "safetyFirst": "Guided Training",
-    "safetyDesc": "All exercises have guidance ratings for your profile. This is general fitness education — always consult a healthcare professional and listen to your body."
+    "safetyDesc": "All exercises have guidance ratings for your profile. This is general fitness education — always consult a healthcare professional and listen to your body.",
+    "chartInfoTitle": "How is this calculated?",
+    "chartInfoBody": "Training volume per day = sum of weight × repetitions across all completed sets (in kg).\n\nBodyweight exercises are not included in the volume.\n\nHigher values = more work done.",
+    "myPerformance": "My Performance",
+    "performance30d": {
+      "title": "Training experience?",
+      "subtitle": "This determines exercise selection and intensity.",
+      "beginner": "Beginner",
+      "beginnerDesc": "0–6 months · Fewer exercises, 3 sets each — focus on learning form",
+      "intermediate": "Intermediate",
+      "intermediateDesc": "6–24 months · Balanced volume with moderate exercise count",
+      "advanced": "Advanced",
+      "advancedDesc": "2+ years · More exercises per muscle group, up to 5 sets"
+    }
   },
   "muscles": {
     "all": "All",
@@ -238,7 +251,7 @@
     "15": "Free, anywhere, anytime. Engages the entire anterior chain. Use a mirror to check for asymmetric arm push.",
     "16": "Isolation for quads with zero spinal load. Use single-leg to check for left-right strength differences.",
     "17": "Hamstrings support the pelvis and lower back. Strengthening them helps reduce back pain from scoliosis.",
-    "18": "Dumbbells allow independent loading, but the hip hinge is still demanding on the spine. Master the movement pattern first.",
+    "18": "Use dumbbells (not barbell). Keep back neutral at all times. Reduce range of motion if needed. Use mirror.",
     "19": "One of the best glute exercises with minimal spinal compression. Upper back is supported on the bench.",
     "20": "Seated version removes all lower body momentum — pure shoulder isolation. Use mirror to catch uneven lifting.",
     "21": "Machine-supported rear delt work — perfect for scoliosis. The chest pad keeps your spine stable.",

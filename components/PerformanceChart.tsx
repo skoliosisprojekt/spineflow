@@ -1,8 +1,18 @@
 import { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet, Pressable, Alert } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import Svg, { Path, Defs, LinearGradient, Stop, Line, Text as SvgText, Circle } from 'react-native-svg';
+import Svg, { Path, Defs, LinearGradient, Stop, Text as SvgText, Circle } from 'react-native-svg';
 import type { WorkoutRecord } from '../stores/historyStore';
+
+export function useChartInfo() {
+  const { t } = useTranslation();
+  return () => Alert.alert(
+    t('home.chartInfoTitle') || 'Wie wird das berechnet?',
+    t('home.chartInfoBody') || 'Trainingsvolumen pro Tag = Summe aus Gewicht × Wiederholungen aller abgeschlossenen Sätze (in kg).\n\nKörpergewichtsübungen fließen nicht ins Volumen ein.\n\nHöhere Werte = mehr geleistete Arbeit.',
+    [{ text: 'OK' }]
+  );
+}
 
 interface Props {
   workouts: WorkoutRecord[];
@@ -13,12 +23,12 @@ const CHART_HEIGHT = 120;
 const PADDING = { top: 12, bottom: 28, left: 8, right: 8 };
 
 export default function PerformanceChart({ workouts, width }: Props) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const chartW = width - PADDING.left - PADDING.right;
   const chartH = CHART_HEIGHT - PADDING.top - PADDING.bottom;
 
-  // Build 30-day data: total completed sets per day
+  // Build 30-day data: total volume (kg) per day as energy metric
   const days = useMemo(() => {
     const result: { label: string; value: number; isWeekBoundary: boolean }[] = [];
     const now = new Date();
@@ -27,9 +37,9 @@ export default function PerformanceChart({ workouts, width }: Props) {
       d.setDate(d.getDate() - i);
       const dateStr = d.toDateString();
       const dayWorkouts = workouts.filter((w) => new Date(w.date).toDateString() === dateStr);
-      const totalSets = dayWorkouts.reduce((sum, w) => sum + w.completedSets, 0);
+      const totalVolume = dayWorkouts.reduce((sum, w) => sum + (w.totalVolume ?? 0), 0);
       const label = i % 7 === 0 ? d.toLocaleDateString(i18n.language, { day: 'numeric', month: 'numeric' }) : '';
-      result.push({ label, value: totalSets, isWeekBoundary: i % 7 === 0 });
+      result.push({ label, value: totalVolume, isWeekBoundary: i % 7 === 0 });
     }
     return result;
   }, [workouts, i18n.language]);
@@ -60,7 +70,7 @@ export default function PerformanceChart({ workouts, width }: Props) {
   const hasTodayData = todayPt.value > 0;
 
   return (
-    <View>
+    <View style={{ position: 'relative' }}>
       <Svg width={width} height={CHART_HEIGHT}>
         <Defs>
           <LinearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
@@ -96,6 +106,7 @@ export default function PerformanceChart({ workouts, width }: Props) {
           <Circle cx={todayPt.x} cy={todayPt.y} r="4" fill="#00B894" stroke="#FFFFFF" strokeWidth="2" />
         )}
       </Svg>
+
     </View>
   );
 }

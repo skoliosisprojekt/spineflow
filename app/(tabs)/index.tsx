@@ -9,7 +9,7 @@ import { useWorkoutStore } from '../../stores/workoutStore';
 import { useHistoryStore } from '../../stores/historyStore';
 import { useNutritionStore } from '../../stores/nutritionStore';
 import { WaterDrop } from '../../components/animations';
-import PerformanceChart from '../../components/PerformanceChart';
+import PerformanceChart, { useChartInfo } from '../../components/PerformanceChart';
 
 export default function HomeScreenWrapper() {
   return <ErrorBoundary><HomeScreen /></ErrorBoundary>;
@@ -55,6 +55,7 @@ function HomeScreen() {
   const hasActiveWorkout = workoutExercises.length > 0;
 
   const chartWidth = Dimensions.get('window').width - 32 - 40; // card padding
+  const showChartInfo = useChartInfo();
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
@@ -73,8 +74,10 @@ function HomeScreen() {
       <View style={styles.chartCard}>
         <View style={styles.chartHeader}>
           <MaterialIcons name="show-chart" size={18} color="#00B894" />
-          <Text style={styles.chartTitle}>{t('home.performance30d') || 'Leistung — 30 Tage'}</Text>
-          <Text style={styles.chartSubtitle}>{t('home.completedSets') || 'abgeschlossene Sätze/Tag'}</Text>
+          <Text style={styles.chartTitle}>{t('home.myPerformance') || 'Meine Leistung'}</Text>
+          <Pressable onPress={showChartInfo} hitSlop={8} accessibilityRole="button" accessibilityLabel="Chart info" style={{ marginLeft: 'auto' }}>
+            <MaterialIcons name="info-outline" size={16} color="#C7C7CC" />
+          </Pressable>
         </View>
         <PerformanceChart workouts={workouts} width={chartWidth} />
       </View>
