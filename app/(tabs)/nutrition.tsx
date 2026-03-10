@@ -194,7 +194,7 @@ function BodyDataCard() {
   const [h, setH] = useState('');
   const [w, setW] = useState('');
   const [a, setA] = useState('');
-  const [g, setG] = useState<Gender>('male');
+  const [g, setG] = useState<Gender>('female');
   const [saving, setSaving] = useState(false);
 
   const valid = Number(h) > 0 && Number(w) > 0 && Number(a) > 0;
