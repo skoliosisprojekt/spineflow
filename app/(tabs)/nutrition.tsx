@@ -218,11 +218,11 @@ function BodyDataCard() {
 
       <Text style={bdStyles.label}>{t('nutrition.gender')}</Text>
       <View style={bdStyles.genderRow}>
-        <Pressable style={[bdStyles.genderBtn, g === 'male' && bdStyles.genderActive]} onPress={() => setG('male')} accessibilityRole="radio">
-          <Text style={[bdStyles.genderText, g === 'male' && bdStyles.genderTextActive]}>♂ {t('nutrition.male')}</Text>
-        </Pressable>
         <Pressable style={[bdStyles.genderBtn, g === 'female' && bdStyles.genderActive]} onPress={() => setG('female')} accessibilityRole="radio">
           <Text style={[bdStyles.genderText, g === 'female' && bdStyles.genderTextActive]}>♀ {t('nutrition.female')}</Text>
+        </Pressable>
+        <Pressable style={[bdStyles.genderBtn, g === 'male' && bdStyles.genderActive]} onPress={() => setG('male')} accessibilityRole="radio">
+          <Text style={[bdStyles.genderText, g === 'male' && bdStyles.genderTextActive]}>♂ {t('nutrition.male')}</Text>
         </Pressable>
       </View>
 
@@ -268,7 +268,7 @@ const bdStyles = StyleSheet.create({
   genderText: { fontSize: 14, fontWeight: '600', color: '#8E8E93' },
   genderTextActive: { color: '#00B894' },
   inputRow: { flexDirection: 'row', gap: 10, marginTop: 4, marginBottom: 20 },
-  inputGroup: { flex: 1 },
+  inputGroup: { flex: 1, justifyContent: 'flex-end' },
   input: { backgroundColor: '#F2F2F7', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 13, fontSize: 20, fontWeight: '700', color: '#1C1C1E', textAlign: 'center' },
   btn: { flexDirection: 'row', backgroundColor: '#00B894', borderRadius: 14, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 52 },
   btnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
