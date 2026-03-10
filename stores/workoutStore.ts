@@ -120,9 +120,11 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     try {
       const raw = await AsyncStorage.getItem(STORAGE_KEY);
       let exercises: WorkoutExercise[] = raw ? (JSON.parse(raw) as WorkoutExercise[]) : [];
+      console.log('[WorkoutStore] loadWorkout: existing exercises=', exercises.length);
 
       // Merge AI-suggested exercises queued for next workout
       const pendingRaw = await AsyncStorage.getItem(PENDING_KEY);
+      console.log('[WorkoutStore] loadWorkout: pendingRaw=', pendingRaw);
       if (pendingRaw) {
         const pending = JSON.parse(pendingRaw) as PendingExercise[];
         for (const p of pending) {
@@ -139,23 +141,28 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           }
         }
         await AsyncStorage.removeItem(PENDING_KEY);
+        console.log('[WorkoutStore] loadWorkout: merged pending, total exercises=', exercises.length);
       }
 
       if (exercises.length > 0) {
         set({ exercises, isActive: exercises.length > 0 });
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(exercises));
       }
-    } catch {}
+    } catch (e) { console.error('[WorkoutStore] loadWorkout error:', e); }
   },
 
   saveExerciseForNextWorkout: async (exerciseId, numSets, weight) => {
     try {
       const raw = await AsyncStorage.getItem(PENDING_KEY);
       const pending: PendingExercise[] = raw ? JSON.parse(raw) : [];
+      console.log('[WorkoutStore] saveForNext: existing pending=', pending.length, 'adding exerciseId=', exerciseId);
       if (!pending.some((p) => p.exerciseId === exerciseId)) {
         pending.push({ exerciseId, numSets, weight });
         await AsyncStorage.setItem(PENDING_KEY, JSON.stringify(pending));
+        console.log('[WorkoutStore] saveForNext: saved. total pending=', pending.length);
+      } else {
+        console.log('[WorkoutStore] saveForNext: already in pending, skipped');
       }
-    } catch {}
+    } catch (e) { console.error('[WorkoutStore] saveForNext error:', e); }
   },
 }));

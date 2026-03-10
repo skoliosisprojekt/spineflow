@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Animated, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useWorkoutStore, WorkoutExercise } from '../../stores/workoutStore';
 import { useHistoryStore, WorkoutRecord } from '../../stores/historyStore';
@@ -544,7 +544,16 @@ function WorkoutScreen() {
 
   const loadHistory = useHistoryStore((s) => s.loadHistory);
   const loadNutrition = useNutritionStore((s) => s.loadNutrition);
-  useEffect(() => { loadWorkout(); loadPlan(); loadHistory(); loadNutrition(); }, []);
+  useEffect(() => { loadPlan(); loadHistory(); loadNutrition(); }, []);
+
+  // Load workout + pending AI exercises whenever the tab gains focus with no active workout
+  useFocusEffect(
+    useCallback(() => {
+      if (exercises.length === 0) {
+        loadWorkout();
+      }
+    }, [exercises.length])
+  );
 
   // Load pending AI adjustments
   useEffect(() => {
@@ -714,7 +723,7 @@ function WorkoutScreen() {
       setAiState('idle');
       setAiResult(null);
       clearWorkout();
-      loadWorkout(); // picks up any AI-suggested exercises saved for next workout
+      router.replace('/(tabs)/progress');
     });
   };
 

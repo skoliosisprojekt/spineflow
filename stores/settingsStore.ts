@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { saveProfileToCloud } from '../lib/cloudSync';
 import { useAuthStore } from './authStore';
 import { usePremiumStore } from './premiumStore';
+import i18n from '../i18n';
 import type { ThemeMode, WeightUnit, SurgeryType, CurveType, GoalType, ExperienceType, BodyType, Gender } from '../types';
 
 interface SettingsState {
@@ -21,6 +22,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   units: 'kg',
   setLanguage: async (language) => {
     set({ language });
+    await i18n.changeLanguage(language);
     await AsyncStorage.setItem('language', language);
     const uid = useAuthStore.getState().userId;
     if (uid) saveProfileToCloud(uid, { language }).catch(() => {});

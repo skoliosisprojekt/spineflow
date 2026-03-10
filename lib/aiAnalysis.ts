@@ -56,8 +56,8 @@ function parseResponse(raw: string): AIAnalysisResult {
           suggested_sets: a.suggested_sets ?? null,
         }));
       }
-    } catch {
-      // JSON parse failed — keep analysisText, no adjustments
+    } catch (e) {
+      console.error('[AI analyse] adjustments JSON parse failed:', e);
     }
   }
 
@@ -284,5 +284,8 @@ export async function runAIAnalysis(params: AIAnalysisParams): Promise<AIAnalysi
 
   // The Edge Function returns the raw text with optional <adjustments> block
   const rawText = typeof data === 'string' ? data : (data?.analysis || data?.text || JSON.stringify(data));
-  return parseResponse(rawText);
+  console.log('[AI analyse] rawText preview:', rawText?.slice(-300));
+  const result = parseResponse(rawText);
+  console.log('[AI analyse] adjustments parsed:', result.adjustments.length, JSON.stringify(result.adjustments));
+  return result;
 }
