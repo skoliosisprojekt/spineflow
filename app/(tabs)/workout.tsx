@@ -27,12 +27,12 @@ import { trackEvent } from '../../lib/posthog';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import ErrorBoundary from '../../components/ErrorBoundary';
 
-function RestBar({ onSkip }: { onSkip?: () => void }) {
+function RestBar({ onSkip, defaultRest = 90 }: { onSkip?: () => void; defaultRest?: number }) {
   const { t } = useTranslation();
   const [elapsed, setElapsed] = useState(0);
-  const [target, setTarget] = useState(90);
+  const [target, setTarget] = useState(defaultRest);
   const [editing, setEditing] = useState(false);
-  const [editValue, setEditValue] = useState('90');
+  const [editValue, setEditValue] = useState(String(defaultRest));
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const soundPlayedRef = useRef(false);
@@ -311,7 +311,10 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, fusionNote, lastSe
             </Pressable>
           </View>
           {i === restAfterIndex && !restSkipped && (
-            <RestBar onSkip={() => setRestSkipped(true)} />
+            <RestBar
+              onSkip={() => setRestSkipped(true)}
+              defaultRest={exercise ? parseInt(exercise.rest) || 90 : 90}
+            />
           )}
         </View>
         );
