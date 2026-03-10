@@ -21,7 +21,8 @@
         "backgroundColor": "#00B894"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.skoliosisprojekt.SpineFlow"
+      "package": "com.skoliosisprojekt.SpineFlow",
+      "versionCode": 2
     },
     "web": {
       "bundler": "metro",
