@@ -130,6 +130,8 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, fusionNote, lastSe
   const { t } = useTranslation();
   const exercise = allExercises.find((e) => e.id === item.exerciseId);
   const name = exerciseNames[item.exerciseId] || `Exercise ${item.exerciseId}`;
+  // Bodyweight / bands-only exercises don't need a numeric weight
+  const isWeightless = !exercise || exercise.equip.length === 0 || (exercise.equip.every((eq) => eq === 'bands'));
   const completedSets = item.sets.filter((s) => s.completed).length;
   const tipKey = `exerciseTips.${item.exerciseId}`;
   const tip = t(tipKey) !== tipKey ? t(tipKey) : exerciseTips[item.exerciseId];
@@ -256,8 +258,8 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, fusionNote, lastSe
       {/* Set Headers */}
       <View style={styles.setRow}>
         <Text style={[styles.setHeader, { width: 36 }]}>{t('workout.set')}</Text>
-        <Text style={[styles.setHeader, { flex: 1 }]}>{t('workout.weightKg')}</Text>
-        <Text style={[styles.setHeader, { flex: 1 }]}>{t('workout.reps')}</Text>
+        {!isWeightless && <Text style={[styles.setHeader, { flex: 1 }]}>{t('workout.weightKg')}</Text>}
+        <Text style={[styles.setHeader, { flex: isWeightless ? 2 : 1 }]}>{t('workout.reps')}</Text>
         <Text style={[styles.setHeader, { width: 44 }]}></Text>
       </View>
 
@@ -268,18 +270,20 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, fusionNote, lastSe
         <View key={i}>
           <View style={[styles.setRow, s.completed && styles.setRowDone]}>
             <Text style={[styles.setNumber, s.completed && styles.setTextDone]}>{i + 1}</Text>
+            {!isWeightless && (
+              <TextInput
+                style={[styles.setInput, s.completed && styles.setInputDone]}
+                value={s.weight > 0 ? String(s.weight) : ''}
+                onChangeText={(t) => onUpdateSet(i, 'weight', Number(t) || 0)}
+                keyboardType="numeric"
+                placeholder={prev ? String(prev.weight) : '0'}
+                placeholderTextColor="#C7C7CC"
+                editable={!s.completed}
+                accessibilityLabel={`Set ${i + 1} weight`}
+              />
+            )}
             <TextInput
-              style={[styles.setInput, s.completed && styles.setInputDone]}
-              value={s.weight > 0 ? String(s.weight) : ''}
-              onChangeText={(t) => onUpdateSet(i, 'weight', Number(t) || 0)}
-              keyboardType="numeric"
-              placeholder={prev ? String(prev.weight) : '0'}
-              placeholderTextColor="#C7C7CC"
-              editable={!s.completed}
-              accessibilityLabel={`Set ${i + 1} weight`}
-            />
-            <TextInput
-              style={[styles.setInput, s.completed && styles.setInputDone]}
+              style={[styles.setInput, isWeightless && { flex: 2 }, s.completed && styles.setInputDone]}
               value={s.reps > 0 ? String(s.reps) : ''}
               onChangeText={(t) => onUpdateSet(i, 'reps', Number(t) || 0)}
               keyboardType="numeric"

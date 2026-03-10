@@ -168,8 +168,15 @@ export async function runAIWorkoutGeneration(
           rec.exercises
             .map((e) => {
               const name = exerciseNames[e.exerciseId] ?? `Ex${e.exerciseId}`;
-              const vol  = e.sets.reduce((s, set) => s + set.weight * set.reps, 0);
-              return `  ${name}: ${e.sets.length} sets, ${vol.toLocaleString()} kg total`;
+              const exData = allExercises.find((ex) => ex.id === e.exerciseId);
+              const weightless = !exData || exData.equip.length === 0 || exData.equip.every((eq) => eq === 'bands');
+              if (weightless) {
+                const totalReps = e.sets.reduce((s, set) => s + set.reps, 0);
+                return `  ${name}: ${e.sets.length} sets, ${totalReps} reps total (bodyweight)`;
+              }
+              const vol = e.sets.reduce((s, set) => s + set.weight * set.reps, 0);
+              const maxW = Math.max(...e.sets.map((set) => set.weight));
+              return `  ${name}: ${e.sets.length} sets, ${vol.toLocaleString()} kg total, max ${maxW} kg`;
             })
             .join('\n'),
         ].join('\n'))
