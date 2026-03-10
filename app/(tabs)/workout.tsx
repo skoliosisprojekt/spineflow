@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Animated, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Animated, KeyboardAvoidingView, Platform, Dimensions, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -753,7 +753,16 @@ function WorkoutScreen() {
                   </View>
                   {pe.note && <MaterialIcons name="info-outline" size={14} color="#FF9500" style={{ marginRight: 4 }} />}
                   <Pressable
-                    onPress={() => removeExerciseFromPlan(pe.exerciseId)}
+                    onPress={() => {
+                      Alert.alert(
+                        t('workout.removeExerciseTitle') || 'Übung entfernen',
+                        t('workout.removeExerciseMsg', { name: exerciseNames[pe.exerciseId] || `Exercise ${pe.exerciseId}` }) || `"${exerciseNames[pe.exerciseId] || `Exercise ${pe.exerciseId}`}" aus dem Plan entfernen?`,
+                        [
+                          { text: t('common.cancel') || 'Abbrechen', style: 'cancel' },
+                          { text: t('common.remove') || 'Entfernen', style: 'destructive', onPress: () => removeExerciseFromPlan(pe.exerciseId) },
+                        ]
+                      );
+                    }}
                     hitSlop={8}
                     accessibilityRole="button"
                     accessibilityLabel="Remove exercise from plan"

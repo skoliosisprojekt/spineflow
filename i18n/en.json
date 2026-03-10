@@ -2,6 +2,7 @@
   "common": {
     "save": "Save",
     "cancel": "Cancel",
+    "remove": "Remove",
     "next": "Next",
     "stepOf": "Step {{step}} of {{total}}",
     "back": "Back",
@@ -368,6 +369,8 @@
     "noExercisesDesc": "Add exercises from the library to start your workout",
     "tipToggle": "Tips",
     "cancelWorkout": "Cancel Workout",
+    "removeExerciseTitle": "Remove Exercise",
+    "removeExerciseMsg": "Remove \"{{name}}\" from your plan?",
     "exercisesCount": "{{count}} exercises · {{completed}}/{{total}} sets",
     "setsDone": "{{completed}}/{{total}} sets done",
     "planSubtitle": "{{count}} exercises tailored for your {{curveType}} scoliosis",

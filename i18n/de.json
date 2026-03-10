@@ -2,6 +2,7 @@
   "common": {
     "save": "Speichern",
     "cancel": "Abbrechen",
+    "remove": "Entfernen",
     "next": "Weiter",
     "stepOf": "Schritt {{step}} von {{total}}",
     "back": "Zurück",
@@ -368,6 +369,8 @@
     "noExercisesDesc": "Füge Übungen aus der Bibliothek hinzu, um dein Training zu starten",
     "tipToggle": "Tipps",
     "cancelWorkout": "Training abbrechen",
+    "removeExerciseTitle": "Übung entfernen",
+    "removeExerciseMsg": "\"{{name}}\" aus dem Plan entfernen?",
     "exercisesCount": "{{count}} Übungen · {{completed}}/{{total}} Sätze",
     "setsDone": "{{completed}}/{{total}} Sätze geschafft",
     "planSubtitle": "{{count}} Übungen für deine {{curveType}}-Skoliose",
