@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     overflow: 'hidden',
     position: 'relative',
-    minHeight: 310,
+    height: 310,
   },
 
   // Background decorations
@@ -347,6 +347,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 16,
     lineHeight: 22,
+    height: 44,
     paddingHorizontal: 12,
   },
 
