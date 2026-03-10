@@ -8,6 +8,7 @@ import { exercises, exerciseNames, exerciseTips, exerciseMods, exerciseFusionMod
 import { getSafety } from '../../lib/safety';
 import { useProfileStore } from '../../stores/settingsStore';
 import { useWorkoutStore } from '../../stores/workoutStore';
+import { useHistoryStore } from '../../stores/historyStore';
 import SafetyBadge from '../../components/SafetyBadge';
 import ExerciseIllustration from '../../components/ExerciseIllustration';
 import type { SafetyLevel } from '../../types';
@@ -18,6 +19,16 @@ export default function ExerciseDetailScreen() {
   const { t } = useTranslation();
   const { curveType, surgery } = useProfileStore();
   const { addExercise, hasExercise, removeExercise } = useWorkoutStore();
+  const workouts = useHistoryStore((s) => s.workouts);
+
+  // Last 5 sessions where this exercise was performed
+  const exerciseHistory = workouts
+    .filter((w) => w.exercises.some((e) => e.exerciseId === Number(id)))
+    .slice(0, 5)
+    .map((w) => ({
+      date: w.date,
+      sets: w.exercises.find((e) => e.exerciseId === Number(id))!.sets,
+    }));
   const navigation = useNavigation();
   const [showAdded, setShowAdded] = useState(false);
   const fadeAnim = useState(() => new Animated.Value(0))[0];
@@ -180,6 +191,29 @@ export default function ExerciseDetailScreen() {
               <Text style={[styles.sectionTitle, { color: '#FF3B30' }]}>{t('exerciseDetail.postSurgeryNote')}</Text>
             </View>
             <Text style={styles.bodyText}>{fusionMod}</Text>
+          </View>
+        )}
+
+        {/* Personal History */}
+        {exerciseHistory.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons name="history" size={18} color="#5856D6" />
+              <Text style={[styles.sectionTitle, { color: '#5856D6' }]}>{t('exerciseDetail.myHistory') || 'Meine Leistungen'}</Text>
+            </View>
+            {exerciseHistory.map((entry, i) => {
+              const maxWeight = Math.max(...entry.sets.map((s) => s.weight ?? 0));
+              const totalReps = entry.sets.reduce((sum, s) => sum + (s.reps ?? 0), 0);
+              const dateStr = new Date(entry.date).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: '2-digit' });
+              return (
+                <View key={i} style={styles.historyRow}>
+                  <Text style={styles.historyDate}>{dateStr}</Text>
+                  <Text style={styles.historyDetail}>{entry.sets.length}×</Text>
+                  {maxWeight > 0 && <Text style={styles.historyWeight}>{maxWeight} kg</Text>}
+                  <Text style={styles.historyReps}>{totalReps} reps</Text>
+                </View>
+              );
+            })}
           </View>
         )}
 
@@ -378,4 +412,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1C1C1E',
   },
+
+  historyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 6,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E5E5EA',
+  },
+  historyDate: { fontSize: 13, color: '#8E8E93', width: 64 },
+  historyDetail: { fontSize: 13, fontWeight: '600', color: '#1C1C1E', minWidth: 28 },
+  historyWeight: { fontSize: 13, fontWeight: '700', color: '#00B894', minWidth: 56 },
+  historyReps: { fontSize: 13, color: '#3C3C43' },
 });

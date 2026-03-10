@@ -747,10 +747,10 @@ function WorkoutScreen() {
               {plan.exercises.map((pe, i) => (
                 <View key={pe.exerciseId} style={styles.planExRow}>
                   <Text style={styles.planExNum}>{i + 1}</Text>
-                  <View style={{ flex: 1 }}>
+                  <Pressable style={{ flex: 1 }} onPress={() => router.push(`/exercise/${pe.exerciseId}` as any)} accessibilityRole="button">
                     <Text style={styles.planExName}>{exerciseNames[pe.exerciseId] || `Exercise ${pe.exerciseId}`}</Text>
                     <Text style={styles.planExSets}>{t('workout.planSets', { count: pe.sets })}{pe.note ? ` · ${t(pe.note)}` : ''}</Text>
-                  </View>
+                  </Pressable>
                   {pe.note && <MaterialIcons name="info-outline" size={14} color="#FF9500" style={{ marginRight: 4 }} />}
                   <Pressable
                     onPress={() => {
