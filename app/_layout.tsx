@@ -191,7 +191,7 @@ function RootLayout() {
             <Stack.Screen name="onboarding" />
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="exercise/[id]" options={{ presentation: 'card' }} />
-            <Stack.Screen name="settings" options={{ presentation: 'card' }} />
+            <Stack.Screen name="settings/index" options={{ presentation: 'card' }} />
             <Stack.Screen name="premium" options={{ presentation: 'modal' }} />
             <Stack.Screen name="planner" options={{ presentation: 'card' }} />
             <Stack.Screen name="legal-consent" options={{ gestureEnabled: false }} />

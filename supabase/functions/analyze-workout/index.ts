@@ -1,6 +1,6 @@
 // @ts-nocheck — Deno runtime, not Node.js
 const ANTHROPIC_API_KEY: string = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
-const ANTHROPIC_MODEL = 'claude-3-5-haiku-20241022';
+const ANTHROPIC_MODEL = 'claude-sonnet-4-20250514';
 
 // ─── Exercise catalog fed to the AI for generate mode ────────────────────────
 const EXERCISE_CATALOG = `
@@ -197,6 +197,7 @@ Deno.serve(async (req: Request) => {
 
   if (!anthropicRes.ok) {
     const errText = await anthropicRes.text();
+    console.error('[analyze-workout] Anthropic API error:', anthropicRes.status, errText);
     return new Response(`Anthropic error: ${errText}`, { status: 502 });
   }
 

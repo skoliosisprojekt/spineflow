@@ -201,7 +201,12 @@ export async function runAIWorkoutGeneration(
     },
   });
 
-  if (error) throw new Error(error.message || 'AI workout generation failed');
+  if (error) {
+    let errBody = '';
+    try { errBody = await (error as any).context?.text?.() ?? ''; } catch {}
+    console.error('[AI generate] error:', error.message, '| body:', errBody);
+    throw new Error(error.message || 'AI workout generation failed');
+  }
 
   const rawText = typeof data === 'string' ? data : (data?.text ?? JSON.stringify(data));
   const exercises = parseWorkoutResponse(rawText, profile);
@@ -270,7 +275,12 @@ export async function runAIAnalysis(params: AIAnalysisParams): Promise<AIAnalysi
     },
   });
 
-  if (error) throw new Error(error.message || 'AI analysis failed');
+  if (error) {
+    let errBody = '';
+    try { errBody = await (error as any).context?.text?.() ?? ''; } catch {}
+    console.error('[AI analyse] error:', error.message, '| body:', errBody);
+    throw new Error(error.message || 'AI analysis failed');
+  }
 
   // The Edge Function returns the raw text with optional <adjustments> block
   const rawText = typeof data === 'string' ? data : (data?.analysis || data?.text || JSON.stringify(data));
