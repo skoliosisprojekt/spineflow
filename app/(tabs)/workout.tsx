@@ -670,11 +670,24 @@ function WorkoutScreen() {
   };
 
   const handleCancelWorkout = () => {
-    const minutesSpent = workoutStartRef.current
-      ? Math.round((Date.now() - new Date(workoutStartRef.current).getTime()) / 60_000)
-      : 0;
-    trackWorkoutCancelled(minutesSpent);
-    clearWorkout();
+    Alert.alert(
+      t('workout.cancelConfirmTitle') || 'Training abbrechen?',
+      t('workout.cancelConfirmMsg') || 'Dein Fortschritt geht verloren. Bist du sicher?',
+      [
+        { text: t('common.back') || 'Zurück', style: 'cancel' },
+        {
+          text: t('workout.cancelConfirmYes') || 'Abbrechen',
+          style: 'destructive',
+          onPress: () => {
+            const minutesSpent = workoutStartRef.current
+              ? Math.round((Date.now() - new Date(workoutStartRef.current).getTime()) / 60_000)
+              : 0;
+            trackWorkoutCancelled(minutesSpent);
+            clearWorkout();
+          },
+        },
+      ]
+    );
   };
 
   const totalSets = exercises.reduce((sum, e) => sum + e.sets.length, 0);
