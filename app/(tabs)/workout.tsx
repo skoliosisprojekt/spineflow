@@ -751,28 +751,18 @@ function WorkoutScreen() {
                     <Text style={styles.planExName}>{exerciseNames[pe.exerciseId] || `Exercise ${pe.exerciseId}`}</Text>
                     <Text style={styles.planExSets}>{t('workout.planSets', { count: pe.sets })}{pe.note ? ` · ${t(pe.note)}` : ''}</Text>
                   </View>
-                  {pe.note && <MaterialIcons name="info-outline" size={14} color="#FF9500" />}
+                  {pe.note && <MaterialIcons name="info-outline" size={14} color="#FF9500" style={{ marginRight: 4 }} />}
+                  <Pressable
+                    onPress={() => removeExerciseFromPlan(pe.exerciseId)}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Remove exercise from plan"
+                  >
+                    <MaterialIcons name="close" size={16} color="#C7C7CC" />
+                  </Pressable>
                 </View>
               ))}
             </View>
-            {exercises.length > 0 && !isActive && (
-              <View style={styles.planCard}>
-                <View style={styles.planHeader}>
-                  <MaterialIcons name="auto-awesome" size={20} color="#00B894" />
-                  <Text style={[styles.planTitle, { color: '#00B894' }]}>{t('ai.suggestedExercises') || 'KI-Empfehlungen'}</Text>
-                </View>
-                {exercises.map((ex, i) => (
-                  <View key={ex.exerciseId} style={styles.planExRow}>
-                    <Text style={styles.planExNum}>{i + 1}</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.planExName}>{exerciseNames[ex.exerciseId] || `Exercise ${ex.exerciseId}`}</Text>
-                      <Text style={styles.planExSets}>{ex.sets.length} Sets</Text>
-                    </View>
-                    <MaterialIcons name="star" size={14} color="#00B894" />
-                  </View>
-                ))}
-              </View>
-            )}
             <Pressable
               style={({ pressed }) => [styles.startPlanBtn, pressed && { opacity: 0.85 }]}
               onPress={() => {
