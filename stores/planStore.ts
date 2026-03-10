@@ -33,6 +33,9 @@ interface PlanState {
   generatePlan: (profile: WorkoutPlan['profile']) => void;  // equipment must be included in profile
   clearPlan: () => void;
   loadPlan: () => Promise<void>;
+  addExerciseToPlan: (exerciseId: number, sets: number, curveType: CurveType, surgery: SurgeryType) => void;
+  removeExerciseFromPlan: (exerciseId: number) => void;
+  replaceExerciseInPlan: (removeId: number, addId: number, sets: number, curveType: CurveType, surgery: SurgeryType) => void;
 }
 
 const STORAGE_KEY = 'spineflow_workout_plan';
@@ -189,6 +192,56 @@ export const usePlanStore = create<PlanState>((set, get) => ({
   clearPlan: () => {
     set({ plan: null });
     AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
+  },
+
+  addExerciseToPlan: (exerciseId, sets, curveType, surgery) => {
+    const { plan } = get();
+    if (!plan) return;
+    if (plan.exercises.some((e) => e.exerciseId === exerciseId)) return; // already in plan
+    const ex = allExercises.find((e) => e.id === exerciseId);
+    if (!ex) return;
+    const safety = getFullSafety(ex, curveType, surgery);
+    if (safety === 'avoid') return; // safety guard
+    let note: string | undefined;
+    if (surgery !== 'none' && exerciseFusionMods[exerciseId]) note = `exerciseFusionMods.${exerciseId}`;
+    else if (safety === 'modify' && exerciseMods[exerciseId]) note = `exerciseMods.${exerciseId}`;
+    const updated: WorkoutPlan = {
+      ...plan,
+      exercises: [...plan.exercises, { exerciseId, sets, safety, note }],
+    };
+    set({ plan: updated });
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated)).catch(() => {});
+  },
+
+  removeExerciseFromPlan: (exerciseId) => {
+    const { plan } = get();
+    if (!plan) return;
+    const updated: WorkoutPlan = {
+      ...plan,
+      exercises: plan.exercises.filter((e) => e.exerciseId !== exerciseId),
+    };
+    set({ plan: updated });
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated)).catch(() => {});
+  },
+
+  replaceExerciseInPlan: (removeId, addId, sets, curveType, surgery) => {
+    const { plan } = get();
+    if (!plan) return;
+    const ex = allExercises.find((e) => e.id === addId);
+    if (!ex) return;
+    const safety = getFullSafety(ex, curveType, surgery);
+    if (safety === 'avoid') return;
+    let note: string | undefined;
+    if (surgery !== 'none' && exerciseFusionMods[addId]) note = `exerciseFusionMods.${addId}`;
+    else if (safety === 'modify' && exerciseMods[addId]) note = `exerciseMods.${addId}`;
+    const updated: WorkoutPlan = {
+      ...plan,
+      exercises: plan.exercises.map((e) =>
+        e.exerciseId === removeId ? { exerciseId: addId, sets, safety, note } : e
+      ),
+    };
+    set({ plan: updated });
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated)).catch(() => {});
   },
 
   loadPlan: async () => {

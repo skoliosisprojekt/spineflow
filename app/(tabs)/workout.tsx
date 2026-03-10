@@ -400,7 +400,7 @@ function WorkoutScreen() {
   const { exercises, isActive, addExercise, updateSet, toggleSetComplete, addSet, removeSet, removeExercise, clearWorkout, startWorkout, loadWorkout, saveExerciseForNextWorkout } = useWorkoutStore();
   const saveWorkout = useHistoryStore((s) => s.saveWorkout);
   const workoutHistory = useHistoryStore((s) => s.workouts);
-  const { plan, loadPlan } = usePlanStore();
+  const { plan, loadPlan, addExerciseToPlan, removeExerciseFromPlan, replaceExerciseInPlan } = usePlanStore();
   const { curveType, surgery, goal, experience } = useProfileStore();
   const { language } = useSettingsStore();
   const { isPremium } = usePremiumStore();
@@ -579,14 +579,13 @@ function WorkoutScreen() {
 
   const handleAcceptAdd = async (adj: WorkoutAdjustment) => {
     trackAIAdjustmentHandled('accepted', exerciseNames[adj.exercise_id] ?? `Exercise ${adj.exercise_id}`);
-    // Parse suggested sets like "3×12" → 3 sets
     let numSets = 3;
     if (adj.suggested_sets) {
       const m = adj.suggested_sets.match(/^(\d+)/);
       if (m) numSets = parseInt(m[1], 10);
     }
     addExercise(adj.exercise_id, numSets);
-    // Pre-fill weight if suggested
+    addExerciseToPlan(adj.exercise_id, numSets, curveType, surgery);
     if (adj.suggested_weight) {
       const store = useWorkoutStore.getState();
       const ex = store.exercises.find((e) => e.exerciseId === adj.exercise_id);
@@ -617,10 +616,12 @@ function WorkoutScreen() {
 
   const handleAcceptRemove = async (adj: WorkoutAdjustment) => {
     trackAIAdjustmentHandled('accepted', exerciseNames[adj.exercise_id] ?? `Exercise ${adj.exercise_id}`);
-    // Swap exercise: remove old, add replacement
     removeExercise(adj.exercise_id);
     if (adj.replace_with_id) {
       addExercise(adj.replace_with_id, 3);
+      replaceExerciseInPlan(adj.exercise_id, adj.replace_with_id, 3, curveType, surgery);
+    } else {
+      removeExerciseFromPlan(adj.exercise_id);
     }
     await updateAdjustmentStatus(adj.id, 'accepted');
     removeAdj(adj.id);
@@ -1234,6 +1235,7 @@ function WorkoutScreen() {
                                 accessibilityRole="button"
                                 onPress={() => {
                                   saveExerciseForNextWorkout(adj.exercise_id, numSets, adj.suggested_weight ?? undefined);
+                                  addExerciseToPlan(adj.exercise_id, numSets, curveType, surgery);
                                   setActionedAdjIdx(prev => new Set([...prev, idx]));
                                   showToast(t('adjustments.added'));
                                 }}
@@ -1301,9 +1303,10 @@ function WorkoutScreen() {
                                 accessibilityLabel={t('adjustments.replaceButton')}
                                 accessibilityRole="button"
                                 onPress={() => {
-                                  removeExercise(adj.exercise_id);
                                   if (adj.replace_with_id != null) {
-                                    addExercise(adj.replace_with_id, 3);
+                                    replaceExerciseInPlan(adj.exercise_id, adj.replace_with_id, 3, curveType, surgery);
+                                  } else {
+                                    removeExerciseFromPlan(adj.exercise_id);
                                   }
                                   setActionedAdjIdx(prev => new Set([...prev, idx]));
                                   showToast(t('adjustments.added'));
