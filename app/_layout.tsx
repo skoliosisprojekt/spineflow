@@ -21,6 +21,9 @@ import { useHistoryStore } from '../stores/historyStore';
 import { usePremiumStore } from '../stores/premiumStore';
 import '../i18n';
 import { loadSavedLanguage } from '../i18n';
+import * as SplashScreen from 'expo-splash-screen';
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const LAST_USER_KEY = 'spineflow_last_user_id';
 
@@ -111,6 +114,7 @@ function RootLayout() {
         console.warn('[layout] init error:', e);
       } finally {
         setIsLoading(false);
+        SplashScreen.hideAsync().catch(() => {});
       }
     };
     init();
