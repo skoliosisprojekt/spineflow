@@ -196,6 +196,7 @@
     "chartInfoTitle": "How is this calculated?",
     "chartInfoBody": "Training volume per day = sum of weight × repetitions across all completed sets (in kg).\n\nBodyweight exercises are not included in the volume.\n\nHigher values = more work done.",
     "myPerformance": "My Performance",
+    "myPerformances": "My Performance",
     "performance30d": {
       "title": "Training experience?",
       "subtitle": "This determines exercise selection and intensity.",

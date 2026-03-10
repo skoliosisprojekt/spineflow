@@ -194,6 +194,7 @@
     "safetyFirst": "Geführtes Training",
     "safetyDesc": "Alle Übungen haben Bewertungen für dein Profil. Dies ist allgemeine Fitness-Bildung — konsultiere immer einen Arzt und höre auf deinen Körper.",
     "myPerformance": "Meine Leistung",
+    "myPerformances": "Meine Leistungen",
     "chartInfoTitle": "Wie wird das berechnet?",
     "chartInfoBody": "Trainingsvolumen pro Tag = Summe aus Gewicht \u00d7 Wiederholungen aller abgeschlossenen S\u00e4tze (in kg).\n\nK\u00f6rpergewichts\u00fcbungen flie\u00dfen nicht ins Volumen ein.\n\nH\u00f6here Werte = mehr geleistete Arbeit."
   },

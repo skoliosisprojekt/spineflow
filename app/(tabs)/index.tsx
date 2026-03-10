@@ -74,7 +74,7 @@ function HomeScreen() {
       <View style={styles.chartCard}>
         <View style={styles.chartHeader}>
           <MaterialIcons name="show-chart" size={18} color="#00B894" />
-          <Text style={styles.chartTitle}>{t('home.myPerformance') || 'Meine Leistung'}</Text>
+          <Text style={styles.chartTitle}>{t('home.myPerformances') || 'Meine Leistungen'}</Text>
           <Pressable onPress={showChartInfo} hitSlop={8} accessibilityRole="button" accessibilityLabel="Chart info" style={{ marginLeft: 'auto' }}>
             <MaterialIcons name="info-outline" size={16} color="#C7C7CC" />
           </Pressable>
