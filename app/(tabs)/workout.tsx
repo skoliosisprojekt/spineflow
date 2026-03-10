@@ -714,6 +714,7 @@ function WorkoutScreen() {
       setAiState('idle');
       setAiResult(null);
       clearWorkout();
+      loadWorkout(); // picks up any AI-suggested exercises saved for next workout
     });
   };
 
