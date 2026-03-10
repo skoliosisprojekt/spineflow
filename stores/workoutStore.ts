@@ -7,6 +7,12 @@ export interface WorkoutExercise {
   addedAt: number;
 }
 
+interface PendingExercise {
+  exerciseId: number;
+  numSets: number;
+  weight?: number;
+}
+
 interface WorkoutState {
   /** Exercises in the current workout session */
   exercises: WorkoutExercise[];
@@ -23,9 +29,12 @@ interface WorkoutState {
   clearWorkout: () => void;
   startWorkout: () => void;
   loadWorkout: () => Promise<void>;
+  /** Save an AI-suggested exercise for the NEXT workout (survives clearWorkout) */
+  saveExerciseForNextWorkout: (exerciseId: number, numSets: number, weight?: number) => Promise<void>;
 }
 
 const STORAGE_KEY = 'spineflow_current_workout';
+const PENDING_KEY  = 'spineflow_next_workout_pending';
 
 export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   exercises: [],
@@ -110,9 +119,42 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   loadWorkout: async () => {
     try {
       const raw = await AsyncStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const exercises = JSON.parse(raw) as WorkoutExercise[];
+      let exercises: WorkoutExercise[] = raw ? (JSON.parse(raw) as WorkoutExercise[]) : [];
+
+      // Merge AI-suggested exercises queued for next workout
+      const pendingRaw = await AsyncStorage.getItem(PENDING_KEY);
+      if (pendingRaw) {
+        const pending = JSON.parse(pendingRaw) as PendingExercise[];
+        for (const p of pending) {
+          if (!exercises.some((e) => e.exerciseId === p.exerciseId)) {
+            exercises = [...exercises, {
+              exerciseId: p.exerciseId,
+              addedAt: Date.now(),
+              sets: Array.from({ length: p.numSets }, () => ({
+                weight: p.weight ?? 0,
+                reps: 0,
+                completed: false,
+              })),
+            }];
+          }
+        }
+        await AsyncStorage.removeItem(PENDING_KEY);
+      }
+
+      if (exercises.length > 0) {
         set({ exercises, isActive: exercises.length > 0 });
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(exercises));
+      }
+    } catch {}
+  },
+
+  saveExerciseForNextWorkout: async (exerciseId, numSets, weight) => {
+    try {
+      const raw = await AsyncStorage.getItem(PENDING_KEY);
+      const pending: PendingExercise[] = raw ? JSON.parse(raw) : [];
+      if (!pending.some((p) => p.exerciseId === exerciseId)) {
+        pending.push({ exerciseId, numSets, weight });
+        await AsyncStorage.setItem(PENDING_KEY, JSON.stringify(pending));
       }
     } catch {}
   },

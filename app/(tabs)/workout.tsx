@@ -397,7 +397,7 @@ export default function WorkoutScreenWrapper() {
 function WorkoutScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { exercises, addExercise, updateSet, toggleSetComplete, addSet, removeSet, removeExercise, clearWorkout, loadWorkout } = useWorkoutStore();
+  const { exercises, addExercise, updateSet, toggleSetComplete, addSet, removeSet, removeExercise, clearWorkout, loadWorkout, saveExerciseForNextWorkout } = useWorkoutStore();
   const saveWorkout = useHistoryStore((s) => s.saveWorkout);
   const workoutHistory = useHistoryStore((s) => s.workouts);
   const { plan, loadPlan } = usePlanStore();
@@ -1199,12 +1199,7 @@ function WorkoutScreen() {
                                 accessibilityLabel={t('adjustments.addToWorkout')}
                                 accessibilityRole="button"
                                 onPress={() => {
-                                  addExercise(adj.exercise_id, numSets);
-                                  if (adj.suggested_weight) {
-                                    for (let i = 0; i < numSets; i++) {
-                                      updateSet(adj.exercise_id, i, 'weight', adj.suggested_weight);
-                                    }
-                                  }
+                                  saveExerciseForNextWorkout(adj.exercise_id, numSets, adj.suggested_weight ?? undefined);
                                   setActionedAdjIdx(prev => new Set([...prev, idx]));
                                   showToast(t('adjustments.added'));
                                 }}
