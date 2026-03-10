@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { useEffect, useMemo } from 'react';
+import { View, Text, Pressable, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import ErrorBoundary from '../../components/ErrorBoundary';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { useWorkoutStore } from '../../stores/workoutStore';
 import { useHistoryStore } from '../../stores/historyStore';
 import { useNutritionStore } from '../../stores/nutritionStore';
 import { WaterDrop } from '../../components/animations';
+import PerformanceChart from '../../components/PerformanceChart';
 
 export default function HomeScreenWrapper() {
   return <ErrorBoundary><HomeScreen /></ErrorBoundary>;
@@ -53,6 +54,8 @@ function HomeScreen() {
   // Active workout
   const hasActiveWorkout = workoutExercises.length > 0;
 
+  const chartWidth = Dimensions.get('window').width - 32 - 40; // card padding
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       {/* Header */}
@@ -64,6 +67,16 @@ function HomeScreen() {
         <Pressable onPress={() => router.push('/settings' as any)} style={styles.settingsButton} accessibilityRole="button" accessibilityLabel="Settings">
           <MaterialIcons name="settings" size={22} color="#8E8E93" />
         </Pressable>
+      </View>
+
+      {/* 30-Day Performance Chart */}
+      <View style={styles.chartCard}>
+        <View style={styles.chartHeader}>
+          <MaterialIcons name="show-chart" size={18} color="#00B894" />
+          <Text style={styles.chartTitle}>{t('home.performance30d') || 'Leistung — 30 Tage'}</Text>
+          <Text style={styles.chartSubtitle}>{t('home.completedSets') || 'abgeschlossene Sätze/Tag'}</Text>
+        </View>
+        <PerformanceChart workouts={workouts} width={chartWidth} />
       </View>
 
       {/* Today's Stats */}
@@ -217,4 +230,15 @@ const styles = StyleSheet.create({
   badge: { backgroundColor: '#E8FAF5', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 3 },
   badgeText: { fontSize: 12, fontWeight: '600', color: '#009B7D' },
   separator: { height: 1, backgroundColor: '#F2F2F7' },
+
+  chartCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    paddingBottom: 8,
+    marginBottom: 14,
+  },
+  chartHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  chartTitle: { fontSize: 14, fontWeight: '700', color: '#1C1C1E' },
+  chartSubtitle: { fontSize: 11, color: '#8E8E93', marginLeft: 'auto' },
 });
