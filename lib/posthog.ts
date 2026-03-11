@@ -2,10 +2,16 @@ import PostHog from 'posthog-react-native';
 
 export const POSTHOG_EU_HOST = 'https://eu.i.posthog.com';
 
-export const posthog = new PostHog(
-  process.env.EXPO_PUBLIC_POSTHOG_KEY ?? '',
-  { host: POSTHOG_EU_HOST },
-);
+let posthog: PostHog;
+try {
+  posthog = new PostHog(
+    process.env.EXPO_PUBLIC_POSTHOG_KEY ?? '',
+    { host: POSTHOG_EU_HOST, flushAt: 20, flushInterval: 30_000 },
+  );
+} catch {
+  posthog = { capture: () => {}, identify: () => {}, reset: () => {}, screen: () => {} } as any;
+}
+export { posthog };
 
 export function identifyUser(userId: string, properties?: Record<string, any>) {
   try { posthog.identify(userId, properties); } catch {}
