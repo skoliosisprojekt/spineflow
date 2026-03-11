@@ -216,13 +216,17 @@ function BodyDataCard() {
       <Text style={bdStyles.title}>{t('nutrition.bodyDataTitle')}</Text>
       <Text style={bdStyles.subtitle}>{t('nutrition.bodyDataSubtitle')}</Text>
 
-      <Text style={bdStyles.label}>{t('nutrition.gender')}</Text>
+      <Text style={bdStyles.label}>{t('nutrition.metabolicBasis')}</Text>
+      <Text style={bdStyles.metabolicHint}>{t('nutrition.metabolicHint')}</Text>
       <View style={bdStyles.genderRow}>
         <Pressable style={[bdStyles.genderBtn, g === 'female' && bdStyles.genderActive]} onPress={() => setG('female')} accessibilityRole="radio">
           <Text style={[bdStyles.genderText, g === 'female' && bdStyles.genderTextActive]}>♀ {t('nutrition.female')}</Text>
         </Pressable>
         <Pressable style={[bdStyles.genderBtn, g === 'male' && bdStyles.genderActive]} onPress={() => setG('male')} accessibilityRole="radio">
           <Text style={[bdStyles.genderText, g === 'male' && bdStyles.genderTextActive]}>♂ {t('nutrition.male')}</Text>
+        </Pressable>
+        <Pressable style={[bdStyles.genderBtn, g === 'diverse' && bdStyles.genderActive]} onPress={() => setG('diverse')} accessibilityRole="radio">
+          <Text style={[bdStyles.genderText, g === 'diverse' && bdStyles.genderTextActive]}>⚧ {t('nutrition.diverse')}</Text>
         </Pressable>
       </View>
 
@@ -262,7 +266,8 @@ const bdStyles = StyleSheet.create({
   title: { fontSize: 20, fontWeight: '700', color: '#1C1C1E', textAlign: 'center', marginBottom: 6 },
   subtitle: { fontSize: 13, color: '#8E8E93', textAlign: 'center', lineHeight: 19, marginBottom: 16 },
   label: { fontSize: 11, fontWeight: '600', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, marginTop: 12 },
-  genderRow: { flexDirection: 'row', gap: 10 },
+  metabolicHint: { fontSize: 11, color: '#AEAEB2', lineHeight: 16, marginBottom: 8, marginTop: -2 },
+  genderRow: { flexDirection: 'row', gap: 8 },
   genderBtn: { flex: 1, paddingVertical: 11, borderRadius: 10, borderWidth: 1.5, borderColor: '#E5E5EA', alignItems: 'center', backgroundColor: '#F2F2F7' },
   genderActive: { borderColor: '#00B894', backgroundColor: '#E8FAF5' },
   genderText: { fontSize: 14, fontWeight: '600', color: '#8E8E93' },

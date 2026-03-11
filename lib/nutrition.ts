@@ -1,4 +1,4 @@
-export type Gender = 'male' | 'female';
+export type Gender = 'male' | 'female' | 'diverse';
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active';
 
 export interface MacroTargets {
@@ -23,7 +23,7 @@ export function calculateTDEE(
   gender: Gender,
   activityLevel: ActivityLevel = 'moderate',
 ): number {
-  const genderOffset = gender === 'male' ? 5 : -161;
+  const genderOffset = gender === 'male' ? 5 : gender === 'female' ? -161 : -78; // diverse = avg(male, female)
   const bmr = 10 * weight + 6.25 * height - 5 * age + genderOffset;
   return Math.round(bmr * ACTIVITY_MULTIPLIERS[activityLevel]);
 }
