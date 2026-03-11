@@ -22,7 +22,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.skoliosisprojekt.SpineFlow",
-      "versionCode": 3
+      "versionCode": 4
     },
     "web": {
       "bundler": "metro",
