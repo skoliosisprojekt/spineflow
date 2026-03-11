@@ -1,4 +1,3 @@
-import Sentry from '../lib/sentry';
 import { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { View, StatusBar } from 'react-native';
@@ -8,7 +7,7 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
 import { useSettingsStore, useProfileStore } from '../stores/settingsStore';
 import { Session } from '@supabase/supabase-js';
-import { resetUser, trackScreen } from '../lib/posthog';
+import { resetUser, trackScreen, captureError } from '../lib/posthog';
 import { identifyUserProfile } from '../lib/analytics';
 import ErrorBoundary from '../components/ErrorBoundary';
 import OfflineBanner from '../components/OfflineBanner';
@@ -24,6 +23,18 @@ import { loadSavedLanguage } from '../i18n';
 import * as SplashScreen from 'expo-splash-screen';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// Global unhandled JS error handler — catches crashes outside React tree
+try {
+  const ErrUtils = (global as any).ErrorUtils;
+  if (ErrUtils?.setGlobalHandler) {
+    const prev = ErrUtils.getGlobalHandler();
+    ErrUtils.setGlobalHandler((error: Error, isFatal: boolean) => {
+      captureError(error, { source: 'GlobalErrorUtils', is_fatal: isFatal });
+      prev?.(error, isFatal);
+    });
+  }
+} catch {}
 
 const LAST_USER_KEY = 'spineflow_last_user_id';
 
@@ -116,6 +127,7 @@ function RootLayout() {
       }
       } catch (e) {
         console.warn('[layout] init error:', e);
+        captureError(e, { source: '_layout.init' });
       } finally {
         setIsLoading(false);
         SplashScreen.hideAsync().catch(() => {});
@@ -207,4 +219,4 @@ function RootLayout() {
   );
 }
 
-export default Sentry.wrap(RootLayout);
+export default RootLayout;

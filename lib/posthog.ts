@@ -22,3 +22,18 @@ export function trackEvent(event: string, properties?: Record<string, any>) {
 export function trackScreen(screenName: string, properties?: Record<string, any>) {
   try { posthog.screen(screenName, properties); } catch {}
 }
+
+export function captureError(
+  error: unknown,
+  context?: { componentStack?: string | null; source?: string; [key: string]: any },
+) {
+  try {
+    const err = error instanceof Error ? error : new Error(String(error));
+    posthog.capture('app_error', {
+      error_name: err.name,
+      error_message: err.message,
+      error_stack: err.stack ?? '',
+      ...context,
+    });
+  } catch {}
+}

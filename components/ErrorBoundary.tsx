@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import Sentry from '../lib/sentry';
+import { captureError } from '../lib/posthog';
 
 interface Props {
   children: React.ReactNode;
@@ -22,7 +22,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    Sentry.captureException(error, { extra: { componentStack: errorInfo.componentStack } });
+    captureError(error, { source: 'ErrorBoundary', componentStack: errorInfo.componentStack });
   }
 
   handleReset = () => {
