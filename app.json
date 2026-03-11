@@ -2,7 +2,7 @@
   "expo": {
     "name": "SpineFlow",
     "slug": "SpineFlow",
-    "version": "1.0.0",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "spineflow",
@@ -22,7 +22,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.skoliosisprojekt.SpineFlow",
-      "versionCode": 2
+      "versionCode": 3
     },
     "web": {
       "bundler": "metro",
