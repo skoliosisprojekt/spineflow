@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { trackEvent } from '../../lib/posthog';
+import { useTheme } from '../../lib/theme';
+import type { ThemeColors } from '../../lib/theme';
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { View, Text, ScrollView, Pressable, StyleSheet, Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -14,6 +16,8 @@ import ExerciseIllustration from '../../components/ExerciseIllustration';
 import type { SafetyLevel } from '../../types';
 
 export default function ExerciseDetailScreen() {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { t } = useTranslation();
@@ -85,7 +89,7 @@ export default function ExerciseDetailScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={goBack} style={styles.backBtn} accessibilityLabel="Go back" accessibilityRole="button">
-          <MaterialIcons name="arrow-back" size={24} color="#1C1C1E" />
+          <MaterialIcons name="arrow-back" size={24} color={C.text} />
         </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1}>{name}</Text>
         <View style={{ width: 48 }} />
@@ -130,7 +134,7 @@ export default function ExerciseDetailScreen() {
         {/* Target Muscles */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialIcons name="track-changes" size={18} color="#1C1C1E" />
+            <MaterialIcons name="track-changes" size={18} color={C.text} />
             <Text style={styles.sectionTitle}>{t('exerciseDetail.targetMuscles')}</Text>
           </View>
           <View style={styles.targetList}>
@@ -145,7 +149,7 @@ export default function ExerciseDetailScreen() {
         {/* Equipment */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialIcons name="fitness-center" size={18} color="#1C1C1E" />
+            <MaterialIcons name="fitness-center" size={18} color={C.text} />
             <Text style={styles.sectionTitle}>{t('exerciseDetail.equipmentNeeded')}</Text>
           </View>
           {exercise.equip.length === 0 ? (
@@ -166,7 +170,7 @@ export default function ExerciseDetailScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <MaterialIcons name="lightbulb-outline" size={18} color="#00B894" />
-              <Text style={[styles.sectionTitle, { color: '#00B894' }]}>{t('exerciseDetail.coachTip')}</Text>
+              <Text style={[styles.sectionTitle, { color: C.accent }]}>{t('exerciseDetail.coachTip')}</Text>
             </View>
             <Text style={styles.bodyText}>{tip}</Text>
           </View>
@@ -177,7 +181,7 @@ export default function ExerciseDetailScreen() {
           <View style={[styles.section, styles.modSection]}>
             <View style={styles.sectionHeader}>
               <MaterialIcons name="warning" size={18} color="#CC7700" />
-              <Text style={[styles.sectionTitle, { color: '#CC7700' }]}>{t('exerciseDetail.modRequired')}</Text>
+              <Text style={[styles.sectionTitle, { color: C.orange }]}>{t('exerciseDetail.modRequired')}</Text>
             </View>
             <Text style={styles.bodyText}>{mod}</Text>
           </View>
@@ -188,7 +192,7 @@ export default function ExerciseDetailScreen() {
           <View style={[styles.section, styles.surgerySection]}>
             <View style={styles.sectionHeader}>
               <MaterialIcons name="local-hospital" size={18} color="#FF3B30" />
-              <Text style={[styles.sectionTitle, { color: '#FF3B30' }]}>{t('exerciseDetail.postSurgeryNote')}</Text>
+              <Text style={[styles.sectionTitle, { color: C.red }]}>{t('exerciseDetail.postSurgeryNote')}</Text>
             </View>
             <Text style={styles.bodyText}>{fusionMod}</Text>
           </View>
@@ -199,7 +203,7 @@ export default function ExerciseDetailScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <MaterialIcons name="history" size={18} color="#5856D6" />
-              <Text style={[styles.sectionTitle, { color: '#5856D6' }]}>{t('exerciseDetail.myHistory') || 'Meine Leistungen'}</Text>
+              <Text style={[styles.sectionTitle, { color: C.purple }]}>{t('exerciseDetail.myHistory') || 'Meine Leistungen'}</Text>
             </View>
             {exerciseHistory.map((entry, i) => {
               const maxWeight = Math.max(...entry.sets.map((s) => s.weight ?? 0));
@@ -265,164 +269,47 @@ export default function ExerciseDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2F2F7' },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  errorText: { fontSize: 16, color: '#8E8E93', marginTop: 12 },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 56,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: '#F2F2F7',
-  },
-  backBtn: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1C1C1E',
-    textAlign: 'center',
-  },
-
-  scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
-
-  topRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
-  musclePill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-  },
-  muscleText: { fontSize: 13, fontWeight: '600', color: '#3C3C43' },
-
-  avoidWarning: {
-    flexDirection: 'row',
-    backgroundColor: '#FFF0EF',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 16,
-    gap: 10,
-    alignItems: 'flex-start',
-  },
-  avoidText: { flex: 1, fontSize: 13, color: '#FF3B30', lineHeight: 19 },
-
-  infoRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  infoCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-    gap: 4,
-  },
-  infoLabel: { fontSize: 11, color: '#8E8E93', fontWeight: '500' },
-  infoValue: { fontSize: 16, fontWeight: '700', color: '#1C1C1E' },
-
-  section: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
-  },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: '#1C1C1E' },
-  bodyText: { fontSize: 14, color: '#3C3C43', lineHeight: 20 },
-
-  modSection: { borderLeftWidth: 3, borderLeftColor: '#FF9500' },
-  surgerySection: { borderLeftWidth: 3, borderLeftColor: '#FF3B30' },
-
-  targetList: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  targetChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    backgroundColor: '#F2F2F7',
-    borderRadius: 8,
-  },
-  targetText: { fontSize: 12, color: '#3C3C43', fontWeight: '500' },
-
-  blockedButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFF0EF',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#FF3B30',
-    paddingVertical: 16,
-    marginTop: 8,
-    gap: 8,
-    minHeight: 52,
-  },
-  blockedButtonText: { fontSize: 16, fontWeight: '700', color: '#FF3B30' },
-
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#00B894',
-    borderRadius: 14,
-    paddingVertical: 16,
-    marginTop: 8,
-    gap: 8,
-    minHeight: 52,
-  },
-  addButtonText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
-  addedButton: { backgroundColor: '#3C3C43' },
-  removeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    marginTop: 8,
-    gap: 6,
-    minHeight: 44,
-  },
-  removeButtonText: { fontSize: 14, fontWeight: '500', color: '#FF3B30' },
-
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  overlayCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    paddingVertical: 32,
-    paddingHorizontal: 48,
-    alignItems: 'center',
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  overlayText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1C1C1E',
-  },
-
-  historyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 6,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E5EA',
-  },
-  historyDate: { fontSize: 13, color: '#8E8E93', width: 64 },
-  historyDetail: { fontSize: 13, fontWeight: '600', color: '#1C1C1E', minWidth: 28 },
-  historyWeight: { fontSize: 13, fontWeight: '700', color: '#00B894', minWidth: 56 },
-  historyReps: { fontSize: 13, color: '#3C3C43' },
-});
+function makeStyles(C: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.bg },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    errorText: { fontSize: 16, color: C.text3, marginTop: 12 },
+    header: { flexDirection: 'row', alignItems: 'center', paddingTop: 56, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: C.bg },
+    backBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+    headerTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: C.text, textAlign: 'center' },
+    scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
+    topRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
+    musclePill: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: C.card, borderRadius: 12 },
+    muscleText: { fontSize: 13, fontWeight: '600', color: C.text2 },
+    avoidWarning: { flexDirection: 'row', backgroundColor: C.redLight, borderRadius: 12, padding: 14, marginBottom: 16, gap: 10, alignItems: 'flex-start' },
+    avoidText: { flex: 1, fontSize: 13, color: C.red, lineHeight: 19 },
+    infoRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+    infoCard: { flex: 1, backgroundColor: C.card, borderRadius: 12, padding: 14, alignItems: 'center', gap: 4 },
+    infoLabel: { fontSize: 11, color: C.text3, fontWeight: '500' },
+    infoValue: { fontSize: 16, fontWeight: '700', color: C.text },
+    section: { backgroundColor: C.card, borderRadius: 12, padding: 14, marginBottom: 12 },
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+    sectionTitle: { fontSize: 14, fontWeight: '700', color: C.text },
+    bodyText: { fontSize: 14, color: C.text2, lineHeight: 20 },
+    modSection: { borderLeftWidth: 3, borderLeftColor: C.orange },
+    surgerySection: { borderLeftWidth: 3, borderLeftColor: C.red },
+    targetList: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    targetChip: { paddingHorizontal: 10, paddingVertical: 5, backgroundColor: C.bg, borderRadius: 8 },
+    targetText: { fontSize: 12, color: C.text2, fontWeight: '500' },
+    blockedButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: C.redLight, borderRadius: 14, borderWidth: 1.5, borderColor: C.red, paddingVertical: 16, marginTop: 8, gap: 8, minHeight: 52 },
+    blockedButtonText: { fontSize: 16, fontWeight: '700', color: C.red },
+    addButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: C.accent, borderRadius: 14, paddingVertical: 16, marginTop: 8, gap: 8, minHeight: 52 },
+    addButtonText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+    addedButton: { backgroundColor: C.text2 },
+    removeButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, marginTop: 8, gap: 6, minHeight: 44 },
+    removeButtonText: { fontSize: 14, fontWeight: '500', color: C.red },
+    overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', zIndex: 10 },
+    overlayCard: { backgroundColor: C.card, borderRadius: 20, paddingVertical: 32, paddingHorizontal: 48, alignItems: 'center', gap: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 8 },
+    overlayText: { fontSize: 18, fontWeight: '700', color: C.text },
+    historyRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.sep },
+    historyDate: { fontSize: 13, color: C.text3, width: 64 },
+    historyDetail: { fontSize: 13, fontWeight: '600', color: C.text, minWidth: 28 },
+    historyWeight: { fontSize: 13, fontWeight: '700', color: C.accent, minWidth: 56 },
+    historyReps: { fontSize: 13, color: C.text2 },
+  });
+}

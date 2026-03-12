@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useTheme } from '../../lib/theme';
+import type { ThemeColors } from '../../lib/theme';
 import { trackEvent } from '../../lib/posthog';
 import { useNetwork } from '../../lib/network';
 import {
@@ -18,6 +20,8 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 
 export default function LoginScreen() {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -163,140 +167,37 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F2F2F7',
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 24,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  logoText: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#1C1C1E',
-    marginTop: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#8E8E93',
-    marginTop: 4,
-  },
-  form: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#1C1C1E',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F2F2F7',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    marginBottom: 12,
-    minHeight: 48,
-  },
-  inputIcon: {
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1C1C1E',
-    paddingVertical: 12,
-  },
-  eyeIcon: {
-    padding: 8,
-    minWidth: 48,
-    minHeight: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  forgotContainer: {
-    alignItems: 'flex-end',
-    marginBottom: 20,
-    minHeight: 48,
-    justifyContent: 'center',
-  },
-  forgotText: {
-    fontSize: 14,
-    color: '#00B894',
-    fontWeight: '500',
-  },
-  button: {
-    backgroundColor: '#00B894',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    minHeight: 48,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF0EF',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 16,
-    gap: 8,
-  },
-  errorBannerText: {
-    flex: 1,
-    color: '#FF3B30',
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E5E5EA',
-  },
-  dividerText: {
-    marginHorizontal: 12,
-    fontSize: 13,
-    color: '#8E8E93',
-  },
-  registerButton: {
-    borderWidth: 2,
-    borderColor: '#00B894',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    minHeight: 48,
-  },
-  registerButtonText: {
-    color: '#00B894',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
+function makeStyles(C: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.bg },
+    scrollContent: { flexGrow: 1, justifyContent: 'center', padding: 24 },
+    logoContainer: { alignItems: 'center', marginBottom: 32 },
+    logoText: { fontSize: 32, fontWeight: '700', color: C.text, marginTop: 8 },
+    subtitle: { fontSize: 14, color: C.text3, marginTop: 4 },
+    form: {
+      backgroundColor: C.card, borderRadius: 16, padding: 24,
+      shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.04, shadowRadius: 3, elevation: 1,
+    },
+    title: { fontSize: 22, fontWeight: '600', color: C.text, marginBottom: 20, textAlign: 'center' },
+    inputContainer: {
+      flexDirection: 'row', alignItems: 'center', backgroundColor: C.bg,
+      borderRadius: 12, paddingHorizontal: 12, marginBottom: 12, minHeight: 48,
+    },
+    inputIcon: { marginRight: 8 },
+    input: { flex: 1, fontSize: 16, color: C.text, paddingVertical: 12 },
+    eyeIcon: { padding: 8, minWidth: 48, minHeight: 48, justifyContent: 'center', alignItems: 'center' },
+    forgotContainer: { alignItems: 'flex-end', marginBottom: 20, minHeight: 48, justifyContent: 'center' },
+    forgotText: { fontSize: 14, color: C.accent, fontWeight: '500' },
+    button: { backgroundColor: C.accent, borderRadius: 12, paddingVertical: 16, alignItems: 'center', minHeight: 48 },
+    buttonDisabled: { opacity: 0.7 },
+    buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
+    errorBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.redLight, borderRadius: 10, padding: 12, marginBottom: 16, gap: 8 },
+    errorBannerText: { flex: 1, color: C.red, fontSize: 13, lineHeight: 18 },
+    dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
+    dividerLine: { flex: 1, height: 1, backgroundColor: C.sep },
+    dividerText: { marginHorizontal: 12, fontSize: 13, color: C.text3 },
+    registerButton: { borderWidth: 2, borderColor: C.accent, borderRadius: 12, paddingVertical: 16, alignItems: 'center', minHeight: 48 },
+    registerButtonText: { color: C.accent, fontSize: 16, fontWeight: '600' },
+  });
+}

@@ -1,5 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { useTheme } from '../lib/theme';
+import type { ThemeColors } from '../lib/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +17,8 @@ const FEATURES = [
 ];
 
 export default function PremiumScreen() {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const router = useRouter();
   const { t } = useTranslation();
   const { isPremium, isBetaTester, setPremium } = usePremiumStore();
@@ -45,7 +49,7 @@ export default function PremiumScreen() {
           accessibilityRole="button"
           accessibilityLabel={t('common.back')}
         >
-          <MaterialIcons name="close" size={24} color="#1C1C1E" />
+          <MaterialIcons name="close" size={24} color={C.text} />
         </Pressable>
       </View>
 
@@ -136,166 +140,29 @@ export default function PremiumScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F2F2F7',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 54,
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scrollContent: {
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingBottom: 60,
-  },
-  iconRing: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: '#FFF3E0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 24,
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#1C1C1E',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: '#8E8E93',
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 32,
-    paddingHorizontal: 16,
-  },
-  featureList: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    gap: 14,
-    marginBottom: 32,
-  },
-  featureRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  featureIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#FFF3E0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  featureText: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1C1C1E',
-    lineHeight: 20,
-  },
-  unlockBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#FF9500',
-    borderRadius: 14,
-    paddingVertical: 16,
-    width: '100%',
-    minHeight: 52,
-    marginBottom: 12,
-  },
-  unlockBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  restoreBtn: {
-    paddingVertical: 12,
-  },
-  restoreBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#8E8E93',
-  },
-  activeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#E8FAF5',
-    borderRadius: 14,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    width: '100%',
-    justifyContent: 'center',
-  },
-  activeText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#00B894',
-  },
-
-  betaIconRing: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: '#E3F2FD',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 24,
-    marginBottom: 16,
-  },
-  betaTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#1C1C1E',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  betaMessage: {
-    fontSize: 15,
-    color: '#8E8E93',
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 32,
-    paddingHorizontal: 8,
-  },
-  betaBackBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#2196F3',
-    borderRadius: 14,
-    paddingVertical: 16,
-    width: '100%',
-    minHeight: 52,
-    marginTop: 8,
-  },
-  betaBackBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-});
+function makeStyles(C: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.bg },
+    header: { flexDirection: 'row', alignItems: 'center', paddingTop: 54, paddingHorizontal: 16, paddingBottom: 8 },
+    backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.card, justifyContent: 'center', alignItems: 'center' },
+    scrollContent: { alignItems: 'center', paddingHorizontal: 24, paddingBottom: 60 },
+    iconRing: { width: 88, height: 88, borderRadius: 44, backgroundColor: C.orangeLight, justifyContent: 'center', alignItems: 'center', marginTop: 24, marginBottom: 16 },
+    title: { fontSize: 24, fontWeight: '800', color: C.text, textAlign: 'center', marginBottom: 8 },
+    subtitle: { fontSize: 15, color: C.text3, textAlign: 'center', lineHeight: 22, marginBottom: 32, paddingHorizontal: 16 },
+    featureList: { width: '100%', backgroundColor: C.card, borderRadius: 16, padding: 16, gap: 14, marginBottom: 32 },
+    featureRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    featureIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: C.orangeLight, justifyContent: 'center', alignItems: 'center' },
+    featureText: { flex: 1, fontSize: 14, fontWeight: '600', color: C.text, lineHeight: 20 },
+    unlockBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.orange, borderRadius: 14, paddingVertical: 16, width: '100%', minHeight: 52, marginBottom: 12 },
+    unlockBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+    restoreBtn: { paddingVertical: 12 },
+    restoreBtnText: { fontSize: 13, fontWeight: '600', color: C.text3 },
+    activeContainer: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.accentLight, borderRadius: 14, paddingHorizontal: 20, paddingVertical: 14, width: '100%', justifyContent: 'center' },
+    activeText: { fontSize: 15, fontWeight: '700', color: C.accent },
+    betaIconRing: { width: 88, height: 88, borderRadius: 44, backgroundColor: C.blue + '22', justifyContent: 'center', alignItems: 'center', marginTop: 24, marginBottom: 16 },
+    betaTitle: { fontSize: 22, fontWeight: '800', color: C.text, textAlign: 'center', marginBottom: 12 },
+    betaMessage: { fontSize: 15, color: C.text3, textAlign: 'center', lineHeight: 22, marginBottom: 32, paddingHorizontal: 8 },
+    betaBackBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.blue, borderRadius: 14, paddingVertical: 16, width: '100%', minHeight: 52, marginTop: 8 },
+    betaBackBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  });
+}

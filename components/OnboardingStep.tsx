@@ -1,7 +1,9 @@
-import { ReactNode } from 'react';
+import { ReactNode, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../lib/theme';
+import type { ThemeColors } from '../lib/theme';
 
 interface Option {
   id: string;
@@ -37,6 +39,8 @@ export default function OnboardingStep({
   multiSelect = false,
   extraContent,
 }: OnboardingStepProps) {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { t } = useTranslation();
 
   const isSelected = (id: string) =>
@@ -60,7 +64,7 @@ export default function OnboardingStep({
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <MaterialIcons name="arrow-back" size={24} color="#1C1C1E" />
+            <MaterialIcons name="arrow-back" size={24} color={C.text} />
           </TouchableOpacity>
         )}
 
@@ -99,7 +103,7 @@ export default function OnboardingStep({
                 <MaterialIcons
                   name={option.icon}
                   size={24}
-                  color={isSelected(option.id) ? '#FFFFFF' : '#8E8E93'}
+                  color={isSelected(option.id) ? '#FFFFFF' : C.text3}
                 />
               </View>
               <View style={styles.optionText}>
@@ -136,131 +140,37 @@ export default function OnboardingStep({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F2F2F7',
-  },
-  header: {
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 8,
-  },
-  backButton: {
-    width: 48,
-    height: 48,
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  progressContainer: {
-    flexDirection: 'row',
-    gap: 6,
-    marginBottom: 8,
-  },
-  progressDot: {
-    flex: 1,
-    height: 4,
-    borderRadius: 2,
-  },
-  progressDone: {
-    backgroundColor: '#00B894',
-  },
-  progressActive: {
-    backgroundColor: '#00B894',
-  },
-  progressInactive: {
-    backgroundColor: '#E5E5EA',
-  },
-  stepLabel: {
-    fontSize: 12,
-    color: '#8E8E93',
-  },
-  content: {
-    padding: 24,
-    paddingTop: 16,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: '#1C1C1E',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#8E8E93',
-    marginBottom: 24,
-    lineHeight: 20,
-  },
-  optionsContainer: {
-    gap: 12,
-  },
-  optionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
-    minHeight: 64,
-  },
-  optionCardSelected: {
-    borderColor: '#00B894',
-    backgroundColor: '#F0FDF9',
-  },
-  iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#F2F2F7',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  iconContainerSelected: {
-    backgroundColor: '#00B894',
-  },
-  optionText: {
-    flex: 1,
-  },
-  optionLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1C1C1E',
-  },
-  optionLabelSelected: {
-    color: '#009B7D',
-  },
-  optionDescription: {
-    fontSize: 12,
-    color: '#8E8E93',
-    marginTop: 2,
-  },
-  footer: {
-    padding: 24,
-    paddingBottom: 40,
-  },
-  nextButton: {
-    flexDirection: 'row',
-    backgroundColor: '#00B894',
-    borderRadius: 12,
-    paddingVertical: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    minHeight: 48,
-  },
-  nextButtonDisabled: {
-    backgroundColor: '#AEAEB2',
-  },
-  nextButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
+function makeStyles(C: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.bg },
+    header: { paddingTop: 60, paddingHorizontal: 24, paddingBottom: 8 },
+    backButton: { width: 48, height: 48, justifyContent: 'center', marginBottom: 8 },
+    progressContainer: { flexDirection: 'row', gap: 6, marginBottom: 8 },
+    progressDot: { flex: 1, height: 4, borderRadius: 2 },
+    progressDone: { backgroundColor: C.accent },
+    progressActive: { backgroundColor: C.accent },
+    progressInactive: { backgroundColor: C.sep },
+    stepLabel: { fontSize: 12, color: C.text3 },
+    content: { padding: 24, paddingTop: 16 },
+    title: { fontSize: 26, fontWeight: '700', color: C.text, marginBottom: 8 },
+    subtitle: { fontSize: 14, color: C.text3, marginBottom: 24, lineHeight: 20 },
+    optionsContainer: { gap: 12 },
+    optionCard: {
+      flexDirection: 'row', alignItems: 'center', backgroundColor: C.card,
+      borderRadius: 16, padding: 16, borderWidth: 2, borderColor: 'transparent',
+      shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.04, shadowRadius: 3, elevation: 1, minHeight: 64,
+    },
+    optionCardSelected: { borderColor: C.accent, backgroundColor: C.accentLight },
+    iconContainer: { width: 44, height: 44, borderRadius: 12, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+    iconContainerSelected: { backgroundColor: C.accent },
+    optionText: { flex: 1 },
+    optionLabel: { fontSize: 16, fontWeight: '600', color: C.text },
+    optionLabelSelected: { color: C.accentDark },
+    optionDescription: { fontSize: 12, color: C.text3, marginTop: 2 },
+    footer: { padding: 24, paddingBottom: 40 },
+    nextButton: { flexDirection: 'row', backgroundColor: C.accent, borderRadius: 12, paddingVertical: 16, justifyContent: 'center', alignItems: 'center', gap: 8, minHeight: 48 },
+    nextButtonDisabled: { backgroundColor: C.text4 },
+    nextButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
+  });
+}

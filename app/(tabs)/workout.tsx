@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useTheme } from '../../lib/theme';
+import type { ThemeColors } from '../../lib/theme';
 import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Animated, KeyboardAvoidingView, Platform, Dimensions, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -26,8 +28,11 @@ import { trackWorkoutStarted, trackWorkoutCompleted, trackWorkoutCancelled, trac
 import { trackEvent } from '../../lib/posthog';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import ErrorBoundary from '../../components/ErrorBoundary';
+import { CustomModal } from '../../components/CustomModal';
 
 function RestBar({ onSkip, defaultRest = 90 }: { onSkip?: () => void; defaultRest?: number }) {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { t } = useTranslation();
   const [elapsed, setElapsed] = useState(0);
   const [target, setTarget] = useState(defaultRest);
@@ -127,6 +132,8 @@ interface WorkoutExerciseCardProps {
 }
 
 function WorkoutExerciseCard({ item, safetyLevel, safetyNote, fusionNote, lastSets, onUpdateSet, onToggleSet, onAddSet, onRemoveSet, onRemoveExercise }: WorkoutExerciseCardProps) {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { t } = useTranslation();
   const exercise = allExercises.find((e) => e.id === item.exerciseId);
   const name = exerciseNames[item.exerciseId] || `Exercise ${item.exerciseId}`;
@@ -174,7 +181,7 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, fusionNote, lastSe
       {/* Modification Warning */}
       {safetyLevel === 'modify' && safetyNote && (
         <View style={styles.safetyBanner}>
-          <MaterialIcons name="warning" size={14} color="#CC7700" />
+          <MaterialIcons name="warning" size={14} color={C.orange} />
           <Text style={styles.safetyBannerText}>{safetyNote}</Text>
         </View>
       )}
@@ -182,7 +189,7 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, fusionNote, lastSe
       {/* Post-Surgery Note */}
       {fusionNote && (
         <View style={styles.fusionBanner}>
-          <MaterialIcons name="local-hospital" size={14} color="#FF3B30" />
+          <MaterialIcons name="local-hospital" size={14} color={C.red} />
           <Text style={styles.fusionBannerText}>{fusionNote}</Text>
         </View>
       )}
@@ -202,7 +209,7 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, fusionNote, lastSe
             accessibilityRole="button"
             accessibilityLabel="Show exercise guide"
           >
-            <MaterialIcons name={showGuide ? 'expand-less' : 'directions-run'} size={18} color="#00B894" />
+            <MaterialIcons name={showGuide ? 'expand-less' : 'directions-run'} size={18} color={C.accent} />
           </Pressable>
         )}
         {tip && (
@@ -212,7 +219,7 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, fusionNote, lastSe
             accessibilityRole="button"
             accessibilityLabel="Show form tips"
           >
-            <MaterialIcons name={showTip ? 'expand-less' : 'lightbulb-outline'} size={18} color="#FF9500" />
+            <MaterialIcons name={showTip ? 'expand-less' : 'lightbulb-outline'} size={18} color={C.orange} />
           </Pressable>
         )}
         <Pressable
@@ -221,14 +228,14 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, fusionNote, lastSe
           accessibilityRole="button"
           accessibilityLabel={`Remove ${name} from workout`}
         >
-          <MaterialIcons name="close" size={18} color="#FF3B30" />
+          <MaterialIcons name="close" size={18} color={C.red} />
         </Pressable>
       </View>
 
       {/* Form Tip */}
       {showTip && tip && (
         <View style={styles.tipBanner}>
-          <MaterialIcons name="lightbulb" size={14} color="#FF9500" />
+          <MaterialIcons name="lightbulb" size={14} color={C.orange} />
           <Text style={styles.tipBannerText}>{tip}</Text>
         </View>
       )}
@@ -237,7 +244,7 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, fusionNote, lastSe
       {showGuide && steps && (
         <View style={styles.guideBanner}>
           <View style={styles.guideHeader}>
-            <MaterialIcons name="directions-run" size={16} color="#00B894" />
+            <MaterialIcons name="directions-run" size={16} color={C.accent} />
             <Text style={styles.guideTitle}>{t('workout.howTo')}</Text>
           </View>
           {steps.map((s, i) => {
@@ -277,7 +284,7 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, fusionNote, lastSe
                 onChangeText={(t) => onUpdateSet(i, 'weight', Number(t) || 0)}
                 keyboardType="numeric"
                 placeholder={prev ? String(prev.weight) : '0'}
-                placeholderTextColor="#C7C7CC"
+                placeholderTextColor={C.text4}
                 editable={!s.completed}
                 accessibilityLabel={`Set ${i + 1} weight`}
               />
@@ -288,7 +295,7 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, fusionNote, lastSe
               onChangeText={(t) => onUpdateSet(i, 'reps', Number(t) || 0)}
               keyboardType="numeric"
               placeholder={prev ? String(prev.reps) : '0'}
-              placeholderTextColor="#C7C7CC"
+              placeholderTextColor={C.text4}
               editable={!s.completed}
               accessibilityLabel={`Set ${i + 1} reps`}
             />
@@ -323,7 +330,7 @@ function WorkoutExerciseCard({ item, safetyLevel, safetyNote, fusionNote, lastSe
       {/* Add / Remove Set */}
       <View style={styles.setActions}>
         <Pressable onPress={onAddSet} style={styles.addSetBtn} accessibilityRole="button" accessibilityLabel="Add a set">
-          <MaterialIcons name="add" size={16} color="#00B894" />
+          <MaterialIcons name="add" size={16} color={C.accent} />
           <Text style={styles.addSetText}>{t('workout.addSet')}</Text>
         </Pressable>
       </View>
@@ -402,6 +409,8 @@ export default function WorkoutScreenWrapper() {
 }
 
 function WorkoutScreen() {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const router = useRouter();
   const { t } = useTranslation();
   const { exercises, isActive, addExercise, updateSet, toggleSetComplete, addSet, removeSet, removeExercise, clearWorkout, startWorkout, loadWorkout, saveExerciseForNextWorkout } = useWorkoutStore();
@@ -425,6 +434,7 @@ function WorkoutScreen() {
   const [actionedAdjIdx, setActionedAdjIdx] = useState<Set<number>>(new Set());
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const toastOpacity = useRef(new Animated.Value(0)).current;
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const workoutStartRef = useRef<string | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -669,25 +679,15 @@ function WorkoutScreen() {
     trackWorkoutStarted({ source: 'plan', exercise_count: plan.exercises.length });
   };
 
-  const handleCancelWorkout = () => {
-    Alert.alert(
-      t('workout.cancelConfirmTitle') || 'Training abbrechen?',
-      t('workout.cancelConfirmMsg') || 'Dein Fortschritt geht verloren. Bist du sicher?',
-      [
-        { text: t('common.back') || 'Zurück', style: 'cancel' },
-        {
-          text: t('workout.cancelConfirmYes') || 'Abbrechen',
-          style: 'destructive',
-          onPress: () => {
-            const minutesSpent = workoutStartRef.current
-              ? Math.round((Date.now() - new Date(workoutStartRef.current).getTime()) / 60_000)
-              : 0;
-            trackWorkoutCancelled(minutesSpent);
-            clearWorkout();
-          },
-        },
-      ]
-    );
+  const handleCancelWorkout = () => setShowCancelModal(true);
+
+  const confirmCancelWorkout = () => {
+    setShowCancelModal(false);
+    const minutesSpent = workoutStartRef.current
+      ? Math.round((Date.now() - new Date(workoutStartRef.current).getTime()) / 60_000)
+      : 0;
+    trackWorkoutCancelled(minutesSpent);
+    clearWorkout();
   };
 
   const totalSets = exercises.reduce((sum, e) => sum + e.sets.length, 0);
@@ -758,7 +758,7 @@ function WorkoutScreen() {
           <ScrollView contentContainerStyle={styles.planPreview} showsVerticalScrollIndicator={false}>
             <View style={styles.planCard}>
               <View style={styles.planHeader}>
-                <MaterialIcons name="auto-awesome" size={22} color="#FF9500" />
+                <MaterialIcons name="auto-awesome" size={22} color={C.orange} />
                 <Text style={styles.planTitle}>{t('workout.yourPlan')}</Text>
               </View>
               <Text style={styles.planSubtitle}>
@@ -771,7 +771,7 @@ function WorkoutScreen() {
                     <Text style={styles.planExName}>{exerciseNames[pe.exerciseId] || `Exercise ${pe.exerciseId}`}</Text>
                     <Text style={styles.planExSets}>{t('workout.planSets', { count: pe.sets })}{pe.note ? ` · ${t(pe.note)}` : ''}</Text>
                   </Pressable>
-                  {pe.note && <MaterialIcons name="info-outline" size={14} color="#FF9500" style={{ marginRight: 4 }} />}
+                  {pe.note && <MaterialIcons name="info-outline" size={14} color={C.orange} style={{ marginRight: 4 }} />}
                   <Pressable
                     onPress={() => {
                       Alert.alert(
@@ -787,7 +787,7 @@ function WorkoutScreen() {
                     accessibilityRole="button"
                     accessibilityLabel="Remove exercise from plan"
                   >
-                    <MaterialIcons name="close" size={16} color="#C7C7CC" />
+                    <MaterialIcons name="close" size={16} color={C.text4} />
                   </Pressable>
                 </View>
               ))}
@@ -853,7 +853,7 @@ function WorkoutScreen() {
           accessibilityRole="button"
           accessibilityLabel="Add more exercises"
         >
-          <MaterialIcons name="add" size={20} color="#00B894" />
+          <MaterialIcons name="add" size={20} color={C.accent} />
         </Pressable>
       </View>
 
@@ -867,7 +867,7 @@ function WorkoutScreen() {
         {pendingAdj.filter((a) => a.type === 'add').map((adj) => (
           <View key={`adj-${adj.id}`} style={[styles.adjCard, styles.adjCardAdd]}>
             <View style={styles.adjBadgeRow}>
-              <View style={[styles.adjBadge, { backgroundColor: '#00B894' }]}>
+              <View style={[styles.adjBadge, { backgroundColor: C.accent }]}>
                 <Text style={styles.adjBadgeText}>{t('workout.adjNew')}</Text>
               </View>
             </View>
@@ -877,7 +877,7 @@ function WorkoutScreen() {
             <Text style={styles.adjReason}>{adj.reason}</Text>
             <View style={styles.adjActions}>
               <Pressable
-                style={({ pressed }) => [styles.adjAcceptBtn, { backgroundColor: '#00B894' }, pressed && { opacity: 0.7 }]}
+                style={({ pressed }) => [styles.adjAcceptBtn, { backgroundColor: C.accent }, pressed && { opacity: 0.7 }]}
                 onPress={() => handleAcceptAdd(adj)}
                 accessibilityRole="button"
                 accessibilityLabel={t('workout.adjAccept')}
@@ -891,7 +891,7 @@ function WorkoutScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={t('workout.adjSkip')}
               >
-                <MaterialIcons name="close" size={16} color="#8E8E93" />
+                <MaterialIcons name="close" size={16} color={C.text3} />
                 <Text style={styles.adjDismissText}>{t('workout.adjSkip')}</Text>
               </Pressable>
             </View>
@@ -908,7 +908,7 @@ function WorkoutScreen() {
             return (
               <View key={item.exerciseId} style={[styles.adjCard, styles.adjCardRemove]}>
                 <View style={styles.adjBadgeRow}>
-                  <View style={[styles.adjBadge, { backgroundColor: '#FF3B30' }]}>
+                  <View style={[styles.adjBadge, { backgroundColor: C.red }]}>
                     <Text style={styles.adjBadgeText}>{t('workout.adjReplace')}</Text>
                   </View>
                 </View>
@@ -919,7 +919,7 @@ function WorkoutScreen() {
                 <Text style={styles.adjReason}>{removeAdj_.reason}</Text>
                 <View style={styles.adjActions}>
                   <Pressable
-                    style={({ pressed }) => [styles.adjAcceptBtn, { backgroundColor: '#FF3B30' }, pressed && { opacity: 0.7 }]}
+                    style={({ pressed }) => [styles.adjAcceptBtn, { backgroundColor: C.red }, pressed && { opacity: 0.7 }]}
                     onPress={() => handleAcceptRemove(removeAdj_)}
                     accessibilityRole="button"
                     accessibilityLabel={t('workout.adjDoReplace')}
@@ -945,7 +945,7 @@ function WorkoutScreen() {
               {adjustAdj && (
                 <View style={[styles.adjCard, styles.adjCardAdjust]}>
                   <View style={styles.adjBadgeRow}>
-                    <View style={[styles.adjBadge, { backgroundColor: '#FF9500' }]}>
+                    <View style={[styles.adjBadge, { backgroundColor: C.orange }]}>
                       <Text style={styles.adjBadgeText}>{t('workout.adjAdjust')}</Text>
                     </View>
                   </View>
@@ -959,7 +959,7 @@ function WorkoutScreen() {
                   <Text style={styles.adjReason}>{adjustAdj.reason}</Text>
                   <View style={styles.adjActions}>
                     <Pressable
-                      style={({ pressed }) => [styles.adjAcceptBtn, { backgroundColor: '#FF9500' }, pressed && { opacity: 0.7 }]}
+                      style={({ pressed }) => [styles.adjAcceptBtn, { backgroundColor: C.orange }, pressed && { opacity: 0.7 }]}
                       onPress={() => handleAcceptAdjust(adjustAdj)}
                       accessibilityRole="button"
                       accessibilityLabel={t('workout.adjApply')}
@@ -1018,7 +1018,7 @@ function WorkoutScreen() {
       {/* AI adjustments processed banner */}
       {adjBanner && (
         <Animated.View style={[styles.adjBannerContainer, { opacity: adjBannerOpacity }]}>
-          <MaterialIcons name="check-circle" size={16} color="#00B894" />
+          <MaterialIcons name="check-circle" size={16} color={C.accent} />
           <Text style={styles.adjBannerText}>{t('ai.recommendationsApplied')}</Text>
         </Animated.View>
       )}
@@ -1041,7 +1041,7 @@ function WorkoutScreen() {
               showsVerticalScrollIndicator={false}
             >
             <View style={styles.summaryIconRing}>
-              <MaterialIcons name="emoji-events" size={48} color="#FF9500" />
+              <MaterialIcons name="emoji-events" size={48} color={C.orange} />
             </View>
             <Text style={styles.summaryTitle}>{t('workout.complete')}</Text>
             <Text style={styles.summarySubtitle}>{t('workout.greatJob')}</Text>
@@ -1065,7 +1065,7 @@ function WorkoutScreen() {
 
             {summary.totalVolume > 0 && (
               <View style={styles.summaryVolumeRow}>
-                <MaterialIcons name="fitness-center" size={16} color="#00B894" />
+                <MaterialIcons name="fitness-center" size={16} color={C.accent} />
                 <Text style={styles.summaryVolumeText}>
                   {t('workout.totalVolume', { volume: summary.totalVolume.toLocaleString() })}
                 </Text>
@@ -1076,7 +1076,7 @@ function WorkoutScreen() {
             <View style={styles.highlightsContainer}>
               {summary.highlights.map((h, i) => (
                 <View key={i} style={styles.highlightRow}>
-                  <MaterialIcons name={h.icon} size={16} color="#FF9500" />
+                  <MaterialIcons name={h.icon} size={16} color={C.orange} />
                   <Text style={styles.highlightText}>{h.text}</Text>
                 </View>
               ))}
@@ -1099,7 +1099,7 @@ function WorkoutScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={t('workout.copy')}
               >
-                <MaterialIcons name="content-copy" size={18} color="#00B894" />
+                <MaterialIcons name="content-copy" size={18} color={C.accent} />
                 <Text style={styles.copyBtnText}>{t('workout.copy')}</Text>
               </Pressable>
             </View>
@@ -1110,7 +1110,7 @@ function WorkoutScreen() {
                 <>
                   <Crown size={50} />
                   <View style={styles.aiCardHeader}>
-                    <MaterialIcons name="auto-awesome" size={20} color="#FF9500" />
+                    <MaterialIcons name="auto-awesome" size={20} color={C.orange} />
                     <Text style={styles.aiCardTitle}>{t('workout.aiAnalysisTitle')}</Text>
                   </View>
                   <Text style={styles.aiCardDesc}>{t('workout.aiAnalysisDesc')}</Text>
@@ -1126,7 +1126,7 @@ function WorkoutScreen() {
               ) : needsMoreWorkouts ? (
                 <>
                   <View style={styles.aiCardHeader}>
-                    <MaterialIcons name="auto-awesome" size={20} color="#FF9500" />
+                    <MaterialIcons name="auto-awesome" size={20} color={C.orange} />
                     <Text style={styles.aiCardTitle}>{t('workout.aiAnalysisTitle')}</Text>
                   </View>
                   <Text style={styles.aiCardDesc}>{t('ai.needMoreWorkouts')}</Text>
@@ -1134,12 +1134,12 @@ function WorkoutScreen() {
               ) : aiState === 'offline' ? (
                 <>
                   <View style={styles.aiCardHeader}>
-                    <MaterialIcons name="cloud-off" size={20} color="#8E8E93" />
-                    <Text style={[styles.aiCardTitle, { color: '#8E8E93' }]}>{t('offline.banner')}</Text>
+                    <MaterialIcons name="cloud-off" size={20} color={C.text3} />
+                    <Text style={[styles.aiCardTitle, { color: C.text3 }]}>{t('offline.banner')}</Text>
                   </View>
                   <Text style={styles.aiCardDesc}>{t('offline.aiUnavailable')}</Text>
                   <Pressable
-                    style={[styles.aiStartBtn, { backgroundColor: '#C7C7CC', opacity: 0.7 }]}
+                    style={[styles.aiStartBtn, { backgroundColor: C.text4, opacity: 0.7 }]}
                     disabled
                     accessibilityRole="button"
                   >
@@ -1149,7 +1149,7 @@ function WorkoutScreen() {
               ) : aiState === 'idle' ? (
                 <>
                   <View style={styles.aiCardHeader}>
-                    <MaterialIcons name="auto-awesome" size={20} color="#FF9500" />
+                    <MaterialIcons name="auto-awesome" size={20} color={C.orange} />
                     <Text style={styles.aiCardTitle}>{t('workout.aiAnalysisTitle')}</Text>
                   </View>
                   <Text style={styles.aiCardDesc}>{t('workout.aiAnalysisDesc')}</Text>
@@ -1170,8 +1170,8 @@ function WorkoutScreen() {
               ) : aiState === 'error' ? (
                 <>
                   <View style={styles.aiCardHeader}>
-                    <MaterialIcons name="error-outline" size={20} color="#FF3B30" />
-                    <Text style={[styles.aiCardTitle, { color: '#FF3B30' }]}>{t('workout.aiAnalysisError')}</Text>
+                    <MaterialIcons name="error-outline" size={20} color={C.red} />
+                    <Text style={[styles.aiCardTitle, { color: C.red }]}>{t('workout.aiAnalysisError')}</Text>
                   </View>
                   <Pressable
                     style={({ pressed }) => [styles.aiStartBtn, pressed && { opacity: 0.7 }]}
@@ -1185,17 +1185,17 @@ function WorkoutScreen() {
               ) : aiResult ? (
                 <>
                   <View style={styles.aiCardHeader}>
-                    <MaterialIcons name="auto-awesome" size={20} color="#FF9500" />
+                    <MaterialIcons name="auto-awesome" size={20} color={C.orange} />
                     <Text style={styles.aiCardTitle}>{t('ai.alreadyAnalyzed')}</Text>
                   </View>
                   {aiResult.analysisText.split('\n').map((line: string, i: number) => {
                     const trimmed = line.trim();
                     if (!trimmed) return <View key={i} style={{ height: 6 }} />;
-                    let color = '#1C1C1E';
-                    if (trimmed.startsWith('\u2705')) color = '#00B894';
-                    else if (trimmed.startsWith('\u26A0') || trimmed.startsWith('\u26A0\uFE0F')) color = '#FF9500';
-                    else if (trimmed.startsWith('\uD83D\uDCA1')) color = '#00B894';
-                    else if (trimmed.startsWith('\uD83D\uDCCA')) color = '#1C1C1E';
+                    let color = C.text;
+                    if (trimmed.startsWith('\u2705')) color = C.accent;
+                    else if (trimmed.startsWith('\u26A0') || trimmed.startsWith('\u26A0\uFE0F')) color = C.orange;
+                    else if (trimmed.startsWith('\uD83D\uDCA1')) color = C.accent;
+                    else if (trimmed.startsWith('\uD83D\uDCCA')) color = C.text;
                     return <Text key={i} style={[styles.aiLineText, { color }]}>{trimmed}</Text>;
                   })}
                   {aiResult.adjustments.length > 0 && (
@@ -1236,7 +1236,7 @@ function WorkoutScreen() {
                               </View>
                               {addModNote && (
                                 <View style={styles.adjModWarning}>
-                                  <MaterialIcons name="warning" size={13} color="#FF9500" />
+                                  <MaterialIcons name="warning" size={14} color={C.red} />
                                   <Text style={styles.adjModWarningText}>{addModNote}</Text>
                                 </View>
                               )}
@@ -1368,12 +1368,26 @@ function WorkoutScreen() {
           <Text style={styles.toastText}>{toastMsg}</Text>
         </Animated.View>
       )}
+
+      {/* Cancel Workout Confirmation Modal */}
+      <CustomModal
+        visible={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        title={t('workout.cancelConfirmTitle')}
+        description={t('workout.cancelConfirmMsg')}
+        primaryLabel={t('workout.cancelConfirmYes')}
+        onPrimary={confirmCancelWorkout}
+        cancelLabel={t('common.back')}
+        variant="danger"
+        icon="fitness-center"
+      />
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2F2F7' },
+function makeStyles(C: ThemeColors) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.bg },
 
   header: {
     flexDirection: 'row',
@@ -1383,27 +1397,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 8,
   },
-  title: { fontSize: 26, fontWeight: '700', color: '#1C1C1E' },
-  subtitle: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
+  title: { fontSize: 26, fontWeight: '700', color: C.text },
+  subtitle: { fontSize: 13, color: C.text3, marginTop: 2 },
   addMoreBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: C.card,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
   progressBar: {
     height: 4,
-    backgroundColor: '#E5E5EA',
+    backgroundColor: C.sep,
     marginHorizontal: 24,
     borderRadius: 2,
     marginBottom: 8,
   },
   progressFill: {
     height: 4,
-    backgroundColor: '#00B894',
+    backgroundColor: C.accent,
     borderRadius: 2,
   },
 
@@ -1411,7 +1425,7 @@ const styles = StyleSheet.create({
 
   // Rest Bar
   restBar: {
-    backgroundColor: '#FFF8F0',
+    backgroundColor: C.orangeLight,
     borderRadius: 10,
     padding: 10,
     marginVertical: 6,
@@ -1430,18 +1444,18 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     fontWeight: '600',
-    color: '#3C3C43',
+    color: C.text2,
     fontVariant: ['tabular-nums'],
   },
   restBarTarget: {
     textDecorationLine: 'underline',
-    color: '#8E8E93',
+    color: C.text3,
   },
   restBarInput: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#1C1C1E',
-    backgroundColor: '#FFFFFF',
+    color: C.text,
+    backgroundColor: C.card,
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -1451,11 +1465,11 @@ const styles = StyleSheet.create({
   restBarSkip: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: C.text3,
   },
   restBarTrack: {
     height: 6,
-    backgroundColor: '#E5E5EA',
+    backgroundColor: C.sep,
     borderRadius: 3,
     overflow: 'hidden',
   },
@@ -1466,7 +1480,7 @@ const styles = StyleSheet.create({
 
   // Exercise Card
   exerciseCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: C.card,
     borderRadius: 14,
     padding: 16,
     marginBottom: 12,
@@ -1476,29 +1490,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  exerciseName: { fontSize: 16, fontWeight: '700', color: '#1C1C1E' },
-  exerciseMeta: { fontSize: 12, color: '#8E8E93', marginTop: 2 },
+  exerciseName: { fontSize: 16, fontWeight: '700', color: C.text },
+  exerciseMeta: { fontSize: 12, color: C.text3, marginTop: 2 },
 
   tipToggleBtn: {
     width: 32, height: 32, borderRadius: 16,
-    backgroundColor: '#FFF8F0', justifyContent: 'center', alignItems: 'center', marginRight: 6,
+    backgroundColor: C.orangeLight, justifyContent: 'center', alignItems: 'center', marginRight: 6,
   },
   tipBanner: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 6,
-    backgroundColor: '#FFF8F0', borderRadius: 8, padding: 10, marginBottom: 10,
+    backgroundColor: C.orangeLight, borderRadius: 8, padding: 10, marginBottom: 10,
   },
-  tipBannerText: { flex: 1, fontSize: 12, fontWeight: '500', color: '#8B6914', lineHeight: 17 },
+  tipBannerText: { flex: 1, fontSize: 12, fontWeight: '500', color: C.orange, lineHeight: 17 },
 
   lastWorkoutRow: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingVertical: 4, paddingHorizontal: 2, marginBottom: 4,
   },
-  lastWorkoutText: { fontSize: 11, fontWeight: '500', color: '#AEAEB2' },
+  lastWorkoutText: { fontSize: 11, fontWeight: '500', color: C.text4 },
   removeBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#FFF0EF',
+    backgroundColor: C.redLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1511,22 +1525,22 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   setRowDone: { opacity: 0.6 },
-  setHeader: { fontSize: 11, fontWeight: '600', color: '#8E8E93', textTransform: 'uppercase' },
-  setNumber: { width: 36, fontSize: 14, fontWeight: '600', color: '#1C1C1E', textAlign: 'center' },
-  setTextDone: { color: '#8E8E93' },
+  setHeader: { fontSize: 11, fontWeight: '600', color: C.text3, textTransform: 'uppercase' },
+  setNumber: { width: 36, fontSize: 14, fontWeight: '600', color: C.text, textAlign: 'center' },
+  setTextDone: { color: C.text3 },
   setInput: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: C.bg,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 8,
     fontSize: 15,
     fontWeight: '600',
-    color: '#1C1C1E',
+    color: C.text,
     textAlign: 'center',
     minHeight: 40,
   },
-  setInputDone: { backgroundColor: '#E8FAF5', color: '#8E8E93' },
+  setInputDone: { backgroundColor: C.accentLight, color: C.text3 },
   checkBtn: {
     width: 44,
     height: 44,
@@ -1543,17 +1557,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#F0FDF9',
+    backgroundColor: C.accentLight,
     minHeight: 36,
   },
-  addSetText: { fontSize: 13, fontWeight: '600', color: '#00B894' },
+  addSetText: { fontSize: 13, fontWeight: '600', color: C.accent },
 
   // Bottom buttons
   finishBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#00B894',
+    backgroundColor: C.accent,
     borderRadius: 14,
     paddingVertical: 16,
     marginTop: 8,
@@ -1566,15 +1580,15 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     minHeight: 48,
   },
-  cancelBtnText: { fontSize: 14, fontWeight: '500', color: '#FF3B30' },
+  cancelBtnText: { fontSize: 14, fontWeight: '500', color: C.red },
 
   // Empty state
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#1C1C1E', marginTop: 16 },
-  emptyText: { fontSize: 14, color: '#8E8E93', textAlign: 'center', marginTop: 8, lineHeight: 20, maxWidth: 260 },
+  emptyTitle: { fontSize: 18, fontWeight: '600', color: C.text, marginTop: 16 },
+  emptyText: { fontSize: 14, color: C.text3, textAlign: 'center', marginTop: 8, lineHeight: 20, maxWidth: 260 },
   browseBtn: {
     flexDirection: 'row',
-    backgroundColor: '#00B894',
+    backgroundColor: C.accent,
     borderRadius: 12,
     paddingHorizontal: 24,
     paddingVertical: 14,
@@ -1595,7 +1609,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   summaryCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: C.card,
     borderRadius: 24,
     paddingBottom: 24,
     alignItems: 'center',
@@ -1612,7 +1626,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#FFF8F0',
+    backgroundColor: C.orangeLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -1620,18 +1634,18 @@ const styles = StyleSheet.create({
   summaryTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#1C1C1E',
+    color: C.text,
     marginBottom: 4,
   },
   summarySubtitle: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: C.text3,
     marginBottom: 24,
   },
   summaryStats: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F2F2F7',
+    backgroundColor: C.bg,
     borderRadius: 14,
     padding: 16,
     width: '100%',
@@ -1644,25 +1658,25 @@ const styles = StyleSheet.create({
   summaryStatValue: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#00B894',
+    color: C.accent,
   },
   summaryStatLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: C.text3,
     marginTop: 2,
     textTransform: 'uppercase',
   },
   summaryStatDivider: {
     width: 1,
     height: 32,
-    backgroundColor: '#E5E5EA',
+    backgroundColor: C.sep,
   },
   summaryVolumeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#E8FAF5',
+    backgroundColor: C.accentLight,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -1672,7 +1686,7 @@ const styles = StyleSheet.create({
   summaryVolumeText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#009B7D',
+    color: C.accent,
   },
   shareRow: {
     flexDirection: 'row',
@@ -1686,7 +1700,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#00B894',
+    backgroundColor: C.accent,
     borderRadius: 14,
     paddingVertical: 12,
   },
@@ -1702,14 +1716,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     borderWidth: 1.5,
-    borderColor: '#00B894',
+    borderColor: C.accent,
     borderRadius: 14,
     paddingVertical: 12,
   },
   copyBtnText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#00B894',
+    color: C.accent,
   },
   toast: {
     position: 'absolute',
@@ -1718,7 +1732,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: C.text,
     borderRadius: 12,
     paddingHorizontal: 20,
     paddingVertical: 12,
@@ -1732,16 +1746,16 @@ const styles = StyleSheet.create({
   toastText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: C.bg,
   },
   aiCard: {
     width: '100%',
-    backgroundColor: '#FFF8F0',
+    backgroundColor: C.orangeLight,
     borderRadius: 14,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#FFE0B2',
+    borderColor: C.orange + '40',
   },
   aiCardHeader: {
     flexDirection: 'row',
@@ -1752,11 +1766,11 @@ const styles = StyleSheet.create({
   aiCardTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#1C1C1E',
+    color: C.text,
   },
   aiCardDesc: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: C.text3,
     lineHeight: 18,
     marginBottom: 12,
   },
@@ -1765,7 +1779,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#FF9500',
+    backgroundColor: C.orange,
     borderRadius: 12,
     paddingVertical: 10,
   },
@@ -1779,7 +1793,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#00B894',
+    backgroundColor: C.accent,
     borderRadius: 12,
     paddingVertical: 10,
   },
@@ -1794,7 +1808,7 @@ const styles = StyleSheet.create({
   },
   aiLoadingText: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: C.text3,
     marginTop: 4,
   },
   aiLineText: {
@@ -1809,23 +1823,23 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E0E0E0',
+    borderTopColor: C.sep,
   },
   aiRecommendationText: {
     flex: 1,
     fontSize: 13,
     fontWeight: '600',
-    color: '#00B894',
+    color: C.accent,
   },
   aiDisclaimer: {
     fontSize: 11,
-    color: '#AEAEB2',
+    color: C.text4,
     lineHeight: 15,
     marginTop: 10,
   },
 
   summaryDoneBtn: {
-    backgroundColor: '#00B894',
+    backgroundColor: C.accent,
     borderRadius: 14,
     paddingVertical: 16,
     width: '100%',
@@ -1847,7 +1861,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#FFF8F0',
+    backgroundColor: C.orangeLight,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -1856,7 +1870,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     fontWeight: '600',
-    color: '#3C3C43',
+    color: C.text2,
     lineHeight: 18,
   },
 
@@ -1865,45 +1879,45 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#FFF8F0',
+    backgroundColor: C.orangeLight,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 8,
     marginBottom: 10,
     borderLeftWidth: 3,
-    borderLeftColor: '#FF9500',
+    borderLeftColor: C.orange,
   },
   safetyBannerText: {
     flex: 1,
     fontSize: 11,
     fontWeight: '500',
-    color: '#CC7700',
+    color: C.orange,
     lineHeight: 15,
   },
   fusionBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#FFF0F0',
+    backgroundColor: C.redLight,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 8,
     marginBottom: 10,
     borderLeftWidth: 3,
-    borderLeftColor: '#FF3B30',
+    borderLeftColor: C.red,
   },
   fusionBannerText: {
     flex: 1,
     fontSize: 11,
     fontWeight: '500',
-    color: '#CC2920',
+    color: C.red,
     lineHeight: 15,
   },
 
   // Plan preview
   planPreview: { paddingHorizontal: 16, paddingBottom: 100 },
   planCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: C.card,
     borderRadius: 16,
     padding: 20,
     marginBottom: 14,
@@ -1914,35 +1928,35 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 6,
   },
-  planTitle: { fontSize: 18, fontWeight: '700', color: '#1C1C1E' },
-  planSubtitle: { fontSize: 13, color: '#8E8E93', marginBottom: 16 },
+  planTitle: { fontSize: 18, fontWeight: '700', color: C.text },
+  planSubtitle: { fontSize: 13, color: C.text3, marginBottom: 16 },
   planExRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     paddingVertical: 10,
     borderTopWidth: 1,
-    borderTopColor: '#F2F2F7',
+    borderTopColor: C.bg,
   },
   planExNum: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#E8FAF5',
-    color: '#00B894',
+    backgroundColor: C.accentLight,
+    color: C.accent,
     fontSize: 12,
     fontWeight: '700',
     textAlign: 'center',
     lineHeight: 24,
     overflow: 'hidden',
   },
-  planExName: { fontSize: 14, fontWeight: '600', color: '#1C1C1E' },
-  planExSets: { fontSize: 11, color: '#8E8E93', marginTop: 1 },
+  planExName: { fontSize: 14, fontWeight: '600', color: C.text },
+  planExSets: { fontSize: 11, color: C.text3, marginTop: 1 },
   startPlanBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#00B894',
+    backgroundColor: C.accent,
     borderRadius: 14,
     paddingVertical: 16,
     gap: 8,
@@ -1951,15 +1965,15 @@ const styles = StyleSheet.create({
   },
   startPlanBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
   browseLinkBtn: { alignItems: 'center', paddingVertical: 8 },
-  browseLinkText: { fontSize: 13, color: '#8E8E93', textDecorationLine: 'underline' },
+  browseLinkText: { fontSize: 13, color: C.text3, textDecorationLine: 'underline' },
 
   guideBanner: {
-    backgroundColor: '#E8FAF5',
+    backgroundColor: C.accentLight,
     borderRadius: 10,
     padding: 12,
     marginBottom: 10,
     borderLeftWidth: 3,
-    borderLeftColor: '#00B894',
+    borderLeftColor: C.accent,
   },
   guideHeader: {
     flexDirection: 'row',
@@ -1970,7 +1984,7 @@ const styles = StyleSheet.create({
   guideTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#00B894',
+    color: C.accent,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -1995,7 +2009,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     fontWeight: '500',
-    color: '#1C1C1E',
+    color: C.text,
     lineHeight: 18,
   },
 
@@ -2007,17 +2021,17 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
   },
   adjCardAdd: {
-    backgroundColor: '#E8FAF5',
-    borderLeftColor: '#00B894',
+    backgroundColor: C.accentLight,
+    borderLeftColor: C.accent,
   },
   adjCardAdjust: {
-    backgroundColor: '#FFF3E0',
-    borderLeftColor: '#FF9500',
+    backgroundColor: C.orangeLight,
+    borderLeftColor: C.orange,
     marginBottom: 4,
   },
   adjCardRemove: {
-    backgroundColor: '#FFF0EF',
-    borderLeftColor: '#FF3B30',
+    backgroundColor: C.redLight,
+    borderLeftColor: C.red,
   },
   adjBadgeRow: {
     flexDirection: 'row',
@@ -2038,18 +2052,18 @@ const styles = StyleSheet.create({
   adjExName: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#1C1C1E',
+    color: C.text,
     marginBottom: 4,
   },
   adjDetail: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#3C3C43',
+    color: C.text2,
     marginBottom: 2,
   },
   adjReason: {
     fontSize: 12,
-    color: '#8E8E93',
+    color: C.text3,
     lineHeight: 17,
     marginBottom: 10,
   },
@@ -2081,12 +2095,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     minHeight: 48,
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: C.bg,
   },
   adjDismissText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: C.text3,
   },
   adjBannerContainer: {
     position: 'absolute',
@@ -2095,7 +2109,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#E8FAF5',
+    backgroundColor: C.accentLight,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -2109,7 +2123,7 @@ const styles = StyleSheet.create({
   adjBannerText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#00B894',
+    color: C.accent,
   },
 
   confettiOverlay: {
@@ -2147,37 +2161,37 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 36,
-    backgroundColor: 'rgba(255,255,255,0.88)',
+    backgroundColor: C.card,
   },
   adjCardsContainer: {
     width: '100%',
     marginTop: 12,
     gap: 10,
   },
-  adjBadgeGreen: { backgroundColor: '#00B894' },
-  adjBadgeOrange: { backgroundColor: '#FF9500' },
-  adjBadgeRed: { backgroundColor: '#FF3B30' },
+  adjBadgeGreen: { backgroundColor: C.accent },
+  adjBadgeOrange: { backgroundColor: C.orange },
+  adjBadgeRed: { backgroundColor: C.red },
   adjCardExName: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#1C1C1E',
+    color: C.text,
     flex: 1,
   },
   adjCardReason: {
     fontSize: 12,
-    color: '#636366',
+    color: C.text3,
     lineHeight: 17,
     marginBottom: 6,
   },
   adjCardChange: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#FF9500',
+    color: C.orange,
     marginBottom: 4,
   },
   adjCardMeta: {
     fontSize: 12,
-    color: '#8E8E93',
+    color: C.text3,
     marginBottom: 6,
   },
   adjBtn: {
@@ -2187,15 +2201,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 6,
   },
-  adjBtnGreen: { backgroundColor: '#00B894' },
-  adjBtnOrange: { backgroundColor: '#FF9500' },
+  adjBtnGreen: { backgroundColor: C.accent },
+  adjBtnOrange: { backgroundColor: C.orange },
   adjBtnRedOutline: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: '#FF3B30',
+    borderColor: C.red,
   },
   adjBtnApplied: {
-    backgroundColor: '#F2F2F7',
+    backgroundColor: C.bg,
   },
   adjBtnText: {
     color: '#FFFFFF',
@@ -2203,27 +2217,28 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   adjBtnRedText: {
-    color: '#FF3B30',
+    color: C.red,
     fontSize: 14,
     fontWeight: '600',
   },
   adjBtnAppliedText: {
-    color: '#8E8E93',
+    color: C.text3,
   },
   adjModWarning: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 5,
-    backgroundColor: '#FFF3E0',
+    backgroundColor: C.orangeLight,
     borderRadius: 8,
     padding: 8,
     marginBottom: 6,
   },
   adjModWarningText: {
     fontSize: 11,
-    color: '#E65100',
+    color: C.orange,
     lineHeight: 16,
     flex: 1,
     fontWeight: '600',
   },
-});
+  });
+}

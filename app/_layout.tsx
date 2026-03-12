@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
-import { View, StatusBar } from 'react-native';
+import { View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LoadingSpinner } from '../components/animations';
 import { supabase } from '../lib/supabase';
@@ -20,6 +21,7 @@ import { useHistoryStore } from '../stores/historyStore';
 import { usePremiumStore } from '../stores/premiumStore';
 import '../i18n';
 import { loadSavedLanguage } from '../i18n';
+import { useTheme, useIsDark } from '../lib/theme';
 import * as SplashScreen from 'expo-splash-screen';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -39,6 +41,8 @@ try {
 const LAST_USER_KEY = 'spineflow_last_user_id';
 
 function RootLayout() {
+  const C = useTheme();
+  const isDark = useIsDark();
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const segments = useSegments();
@@ -193,14 +197,14 @@ function RootLayout() {
     >
     <ErrorBoundary>
       {isLoading ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F2F2F7' }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: C.bg }}>
           <LoadingSpinner size={80} />
         </View>
       ) : (
         <>
-          <StatusBar barStyle="dark-content" backgroundColor="#F2F2F7" translucent={false} />
+          <StatusBar style={isDark ? 'light' : 'dark'} />
           <OfflineBanner />
-          <Stack screenOptions={{ headerShown: false }}>
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }}>
             <Stack.Screen name="welcome" />
             <Stack.Screen name="auth" />
             <Stack.Screen name="consent" />

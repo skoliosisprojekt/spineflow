@@ -1,5 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, Dimensions, ViewToken } from 'react-native';
+import { useTheme } from '../../lib/theme';
+import type { ThemeColors } from '../../lib/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore';
@@ -7,6 +9,8 @@ import { useAuthStore } from '../../stores/authStore';
 const { width } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
+  const C = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const { setWelcomeSeen } = useAuthStore();
@@ -81,20 +85,22 @@ export default function WelcomeScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2F2F7' },
-  skip: { position: 'absolute', top: 56, right: 24, zIndex: 10, padding: 8 },
-  skipText: { fontSize: 16, color: '#00B894', fontWeight: '500' },
-  slide: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
-  iconCircle: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#E8FAF5',
-    justifyContent: 'center', alignItems: 'center', marginBottom: 32 },
-  title: { fontSize: 26, fontWeight: '700', color: '#1C1C1E', textAlign: 'center', marginBottom: 16 },
-  desc: { fontSize: 16, color: '#3C3C43', textAlign: 'center', lineHeight: 24 },
-  dots: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 24 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#E5E5EA' },
-  dotActive: { backgroundColor: '#00B894', width: 24 },
-  footer: { paddingHorizontal: 24, paddingBottom: 48 },
-  btn: { flexDirection: 'row', backgroundColor: '#00B894', borderRadius: 12,
-    paddingVertical: 16, justifyContent: 'center', alignItems: 'center', gap: 8, minHeight: 48 },
-  btnText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
-});
+function makeStyles(C: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.bg },
+    skip: { position: 'absolute', top: 56, right: 24, zIndex: 10, padding: 8 },
+    skipText: { fontSize: 16, color: C.accent, fontWeight: '500' },
+    slide: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
+    iconCircle: { width: 120, height: 120, borderRadius: 60, backgroundColor: C.accentLight,
+      justifyContent: 'center', alignItems: 'center', marginBottom: 32 },
+    title: { fontSize: 26, fontWeight: '700', color: C.text, textAlign: 'center', marginBottom: 16 },
+    desc: { fontSize: 16, color: C.text2, textAlign: 'center', lineHeight: 24 },
+    dots: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 24 },
+    dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.sep },
+    dotActive: { backgroundColor: C.accent, width: 24 },
+    footer: { paddingHorizontal: 24, paddingBottom: 48 },
+    btn: { flexDirection: 'row', backgroundColor: C.accent, borderRadius: 12,
+      paddingVertical: 16, justifyContent: 'center', alignItems: 'center', gap: 8, minHeight: 48 },
+    btnText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
+  });
+}

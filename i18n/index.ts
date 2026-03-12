@@ -45,6 +45,7 @@ i18n
     interpolation: {
       escapeValue: false,
     },
+    initImmediate: false,
   });
 
 // Load saved language preference (call on app start)

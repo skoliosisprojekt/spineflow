@@ -1,4 +1,6 @@
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useCallback } from 'react';
+import { useTheme } from '../../lib/theme';
+import type { ThemeColors } from '../../lib/theme';
 import { trackEvent } from '../../lib/posthog';
 import ErrorBoundary from '../../components/ErrorBoundary';
 import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, Modal, KeyboardAvoidingView, Platform, Animated as RNAnimated } from 'react-native';
@@ -7,8 +9,11 @@ import { useTranslation } from 'react-i18next';
 import { useNutritionStore, HydrationEntry, MealEntry, MealType } from '../../stores/nutritionStore';
 import type { HydrationType } from '../../types';
 import { WaterDrop } from '../../components/animations';
+import { useFocusEffect } from 'expo-router';
 import { useProfileStore } from '../../stores/settingsStore';
 import { calculateTDEE, calculateMacros } from '../../lib/nutrition';
+import { getSupplements } from '../../lib/supplements';
+import type { SupplementRec } from '../../lib/supplements';
 import type { Gender } from '../../types';
 
 const QUICK_ADDS: { type: HydrationType; labelKey: string; amount: number; icon: keyof typeof MaterialIcons.glyphMap; color: string }[] = [
@@ -26,6 +31,8 @@ const MEAL_CONFIG: Record<MealType, { labelKey: string; icon: keyof typeof Mater
 };
 
 function ProgressBar({ progress, color, label, value }: { progress: number; color: string; label: string; value: string }) {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const clamped = Math.min(progress, 1);
   return (
     <View style={styles.progressItem}>
@@ -41,6 +48,8 @@ function ProgressBar({ progress, color, label, value }: { progress: number; colo
 }
 
 function MealRow({ meal, onDelete }: { meal: MealEntry; onDelete: () => void }) {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { t } = useTranslation();
   const time = new Date(meal.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const cfg = MEAL_CONFIG[meal.mealType];
@@ -58,13 +67,15 @@ function MealRow({ meal, onDelete }: { meal: MealEntry; onDelete: () => void }) 
         <Text style={styles.mealMacros}>{meal.protein}P · {meal.carbs}C · {meal.fat}F</Text>
       </View>
       <Pressable onPress={onDelete} hitSlop={8} accessibilityRole="button" accessibilityLabel="Remove meal">
-        <MaterialIcons name="close" size={16} color="#AEAEB2" />
+        <MaterialIcons name="close" size={16} color={C.text4} />
       </Pressable>
     </View>
   );
 }
 
 function HydrationRow({ entry, onDelete }: { entry: HydrationEntry; onDelete: () => void }) {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { t } = useTranslation();
   const time = new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const config = { water: { icon: 'water-drop' as const, color: '#5B8DEF' }, shake: { icon: 'blender' as const, color: '#AF52DE' }, bcaa: { icon: 'science' as const, color: '#FF9500' } };
@@ -81,13 +92,15 @@ function HydrationRow({ entry, onDelete }: { entry: HydrationEntry; onDelete: ()
       </View>
       <Text style={styles.entryAmount}>{entry.amount} ml</Text>
       <Pressable onPress={onDelete} hitSlop={8} accessibilityRole="button" accessibilityLabel="Remove entry">
-        <MaterialIcons name="close" size={16} color="#AEAEB2" />
+        <MaterialIcons name="close" size={16} color={C.text4} />
       </Pressable>
     </View>
   );
 }
 
 function AddMealModal({ visible, onClose, onAdd }: { visible: boolean; onClose: () => void; onAdd: (meal: Omit<MealEntry, 'id' | 'time'>) => void }) {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { t } = useTranslation();
   const [mealType, setMealType] = useState<MealType>('lunch');
   const [name, setName] = useState('');
@@ -122,7 +135,7 @@ function AddMealModal({ visible, onClose, onAdd }: { visible: boolean; onClose: 
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{t('nutrition.addMeal')}</Text>
             <Pressable onPress={onClose} hitSlop={8}>
-              <MaterialIcons name="close" size={22} color="#8E8E93" />
+              <MaterialIcons name="close" size={22} color={C.text3} />
             </Pressable>
           </View>
 
@@ -148,7 +161,7 @@ function AddMealModal({ visible, onClose, onAdd }: { visible: boolean; onClose: 
           <TextInput
             style={styles.modalInput}
             placeholder={t('nutrition.mealPlaceholder')}
-            placeholderTextColor="#AEAEB2"
+            placeholderTextColor={C.text4}
             value={name}
             onChangeText={setName}
             accessibilityLabel="Meal name"
@@ -158,19 +171,19 @@ function AddMealModal({ visible, onClose, onAdd }: { visible: boolean; onClose: 
           <View style={styles.macroInputRow}>
             <View style={styles.macroInputGroup}>
               <Text style={styles.macroInputLabel}>{t('nutrition.kcal')}</Text>
-              <TextInput style={styles.macroInput} placeholder="0" placeholderTextColor="#AEAEB2" value={calories} onChangeText={setCalories} keyboardType="numeric" accessibilityLabel="Calories" />
+              <TextInput style={styles.macroInput} placeholder="0" placeholderTextColor={C.text4} value={calories} onChangeText={setCalories} keyboardType="numeric" accessibilityLabel="Calories" />
             </View>
             <View style={styles.macroInputGroup}>
               <Text style={styles.macroInputLabel}>{t('nutrition.protein')}</Text>
-              <TextInput style={styles.macroInput} placeholder="0" placeholderTextColor="#AEAEB2" value={protein} onChangeText={setProtein} keyboardType="numeric" accessibilityLabel="Protein grams" />
+              <TextInput style={styles.macroInput} placeholder="0" placeholderTextColor={C.text4} value={protein} onChangeText={setProtein} keyboardType="numeric" accessibilityLabel="Protein grams" />
             </View>
             <View style={styles.macroInputGroup}>
               <Text style={styles.macroInputLabel}>{t('nutrition.carbs')}</Text>
-              <TextInput style={styles.macroInput} placeholder="0" placeholderTextColor="#AEAEB2" value={carbs} onChangeText={setCarbs} keyboardType="numeric" accessibilityLabel="Carbs grams" />
+              <TextInput style={styles.macroInput} placeholder="0" placeholderTextColor={C.text4} value={carbs} onChangeText={setCarbs} keyboardType="numeric" accessibilityLabel="Carbs grams" />
             </View>
             <View style={styles.macroInputGroup}>
               <Text style={styles.macroInputLabel}>{t('nutrition.fat')}</Text>
-              <TextInput style={styles.macroInput} placeholder="0" placeholderTextColor="#AEAEB2" value={fat} onChangeText={setFat} keyboardType="numeric" accessibilityLabel="Fat grams" />
+              <TextInput style={styles.macroInput} placeholder="0" placeholderTextColor={C.text4} value={fat} onChangeText={setFat} keyboardType="numeric" accessibilityLabel="Fat grams" />
             </View>
           </View>
 
@@ -189,6 +202,8 @@ function AddMealModal({ visible, onClose, onAdd }: { visible: boolean; onClose: 
 }
 
 function BodyDataCard() {
+  const C = useTheme();
+  const bdStyles = useMemo(() => makeBdStyles(C), [C]);
   const { t } = useTranslation();
   const { setHeight, setWeight, setAge, setGender, saveBodyData } = useProfileStore();
   const [h, setH] = useState('');
@@ -212,7 +227,7 @@ function BodyDataCard() {
 
   return (
     <View style={bdStyles.card}>
-      <MaterialIcons name="person" size={36} color="#00B894" style={{ alignSelf: 'center', marginBottom: 8 }} />
+      <MaterialIcons name="person" size={36} color={C.accent} style={{ alignSelf: 'center', marginBottom: 8 }} />
       <Text style={bdStyles.title}>{t('nutrition.bodyDataTitle')}</Text>
       <Text style={bdStyles.subtitle}>{t('nutrition.bodyDataSubtitle')}</Text>
 
@@ -233,15 +248,15 @@ function BodyDataCard() {
       <View style={bdStyles.inputRow}>
         <View style={bdStyles.inputGroup}>
           <Text style={bdStyles.label}>{t('nutrition.height')}</Text>
-          <TextInput style={bdStyles.input} value={h} onChangeText={setH} placeholder="175" placeholderTextColor="#AEAEB2" inputMode="numeric" keyboardType="number-pad" accessibilityLabel="Height cm" />
+          <TextInput style={bdStyles.input} value={h} onChangeText={setH} placeholder="175" placeholderTextColor={C.text4} inputMode="numeric" keyboardType="number-pad" accessibilityLabel="Height cm" />
         </View>
         <View style={bdStyles.inputGroup}>
           <Text style={bdStyles.label}>{t('nutrition.weight')}</Text>
-          <TextInput style={bdStyles.input} value={w} onChangeText={setW} placeholder="75" placeholderTextColor="#AEAEB2" inputMode="decimal" keyboardType="decimal-pad" accessibilityLabel="Weight kg" />
+          <TextInput style={bdStyles.input} value={w} onChangeText={setW} placeholder="75" placeholderTextColor={C.text4} inputMode="decimal" keyboardType="decimal-pad" accessibilityLabel="Weight kg" />
         </View>
         <View style={bdStyles.inputGroup}>
           <Text style={bdStyles.label}>{t('nutrition.age')}</Text>
-          <TextInput style={bdStyles.input} value={a} onChangeText={setA} placeholder="30" placeholderTextColor="#AEAEB2" inputMode="numeric" keyboardType="number-pad" accessibilityLabel="Age" />
+          <TextInput style={bdStyles.input} value={a} onChangeText={setA} placeholder="30" placeholderTextColor={C.text4} inputMode="numeric" keyboardType="number-pad" accessibilityLabel="Age" />
         </View>
       </View>
 
@@ -258,35 +273,36 @@ function BodyDataCard() {
   );
 }
 
-const bdStyles = StyleSheet.create({
-  card: {
-    backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24, margin: 16,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
-  },
-  title: { fontSize: 20, fontWeight: '700', color: '#1C1C1E', textAlign: 'center', marginBottom: 6 },
-  subtitle: { fontSize: 13, color: '#8E8E93', textAlign: 'center', lineHeight: 19, marginBottom: 16 },
-  label: { fontSize: 11, fontWeight: '600', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, marginTop: 12 },
-  metabolicHint: { fontSize: 11, color: '#AEAEB2', lineHeight: 16, marginBottom: 8, marginTop: -2 },
-  genderRow: { flexDirection: 'row', gap: 8 },
-  genderBtn: { flex: 1, paddingVertical: 11, borderRadius: 10, borderWidth: 1.5, borderColor: '#E5E5EA', alignItems: 'center', backgroundColor: '#F2F2F7' },
-  genderActive: { borderColor: '#00B894', backgroundColor: '#E8FAF5' },
-  genderText: { fontSize: 14, fontWeight: '600', color: '#8E8E93' },
-  genderTextActive: { color: '#00B894' },
-  inputRow: { flexDirection: 'row', gap: 10, marginTop: 4, marginBottom: 20 },
-  inputGroup: { flex: 1, justifyContent: 'flex-end' },
-  input: { backgroundColor: '#F2F2F7', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 13, fontSize: 20, fontWeight: '700', color: '#1C1C1E', textAlign: 'center' },
-  btn: { flexDirection: 'row', backgroundColor: '#00B894', borderRadius: 14, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 52 },
-  btnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
-});
+function makeBdStyles(C: ThemeColors) {
+  return StyleSheet.create({
+    card: { backgroundColor: C.card, borderRadius: 20, padding: 24, margin: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+    title: { fontSize: 20, fontWeight: '700', color: C.text, textAlign: 'center', marginBottom: 6 },
+    subtitle: { fontSize: 13, color: C.text3, textAlign: 'center', lineHeight: 19, marginBottom: 16 },
+    label: { fontSize: 11, fontWeight: '600', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, marginTop: 12 },
+    metabolicHint: { fontSize: 11, color: C.text4, lineHeight: 16, marginBottom: 8, marginTop: -2 },
+    genderRow: { flexDirection: 'row', gap: 8 },
+    genderBtn: { flex: 1, paddingVertical: 11, borderRadius: 10, borderWidth: 1.5, borderColor: C.sep, alignItems: 'center', backgroundColor: C.bg },
+    genderActive: { borderColor: C.accent, backgroundColor: C.accentLight },
+    genderText: { fontSize: 14, fontWeight: '600', color: C.text3 },
+    genderTextActive: { color: C.accent },
+    inputRow: { flexDirection: 'row', gap: 10, marginTop: 4, marginBottom: 20 },
+    inputGroup: { flex: 1, justifyContent: 'flex-end' },
+    input: { backgroundColor: C.bg, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 13, fontSize: 20, fontWeight: '700', color: C.text, textAlign: 'center' },
+    btn: { flexDirection: 'row', backgroundColor: C.accent, borderRadius: 14, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 52 },
+    btnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  });
+}
 
 export default function NutritionScreenWrapper() {
   return <ErrorBoundary><NutritionScreen /></ErrorBoundary>;
 }
 
 function NutritionScreen() {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { t } = useTranslation();
   const { entries, meals, goals, addEntry, removeEntry, addMeal, removeMeal, setGoal, loadNutrition, clearToday } = useNutritionStore();
-  const { height, weight, age, gender, goal: fitnessGoal, bodyType } = useProfileStore();
+  const { height, weight, age, gender, goal: fitnessGoal, bodyType, experience, surgery } = useProfileStore();
   const hasBodyData = height > 0 && weight > 0 && age > 0;
   const targets = useMemo(() => {
     if (!hasBodyData) return null;
@@ -299,7 +315,7 @@ function NutritionScreen() {
   const [showDropAnim, setShowDropAnim] = useState(false);
   const dropOpacity = useRef(new RNAnimated.Value(0)).current;
 
-  useEffect(() => { loadNutrition(); }, []);
+  useFocusEffect(useCallback(() => { loadNutrition(); }, [loadNutrition]));
 
   const handleQuickAdd = (type: HydrationType, amount: number) => {
     addEntry(type, amount);
@@ -490,6 +506,17 @@ function NutritionScreen() {
           </>
         )}
 
+        {/* Supplement Recommendations */}
+        <SupplementSection
+          goal={fitnessGoal}
+          experience={experience}
+          bodyType={bodyType}
+          surgery={surgery}
+          age={age}
+          gender={gender}
+          styles={styles}
+        />
+
         {/* Premium banner */}
         <View style={styles.premiumBanner}>
           <MaterialIcons name="workspace-premium" size={15} color="#FF9500" />
@@ -509,160 +536,125 @@ function NutritionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2F2F7' },
+function SupplementSection({ goal, experience, bodyType, surgery, age, gender, styles }: {
+  goal: any; experience: any; bodyType: any; surgery: any; age: number; gender: any;
+  styles: ReturnType<typeof makeStyles>;
+}) {
+  const { t } = useTranslation();
+  const recs: SupplementRec[] = useMemo(
+    () => getSupplements({ goal, experience, bodyType, surgery, age, gender }),
+    [goal, experience, bodyType, surgery, age, gender],
+  );
+  if (recs.length === 0) return null;
 
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 8,
-  },
-  title: { fontSize: 26, fontWeight: '700', color: '#1C1C1E' },
-  subtitle: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
-  addMealHeaderBtn: {
-    width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFFFFF',
-    justifyContent: 'center', alignItems: 'center',
-  },
+  const catLabel = (cat: SupplementRec['category']) => {
+    if (cat === 'performance') return t('nutrition.supplements.categoryPerformance');
+    if (cat === 'spine')       return t('nutrition.supplements.categorySpine');
+    if (cat === 'recovery')    return t('nutrition.supplements.categoryRecovery');
+    return '';
+  };
 
-  scrollContent: { paddingHorizontal: 16, paddingBottom: 100 },
+  return (
+    <View style={styles.suppSection}>
+      <View style={styles.suppHeader}>
+        <Text style={styles.sectionTitle}>{t('nutrition.supplements.title')}</Text>
+        <Text style={styles.suppSubtitle}>{t('nutrition.supplements.subtitle')}</Text>
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suppScroll}>
+        {recs.map((rec) => (
+          <View key={rec.key} style={styles.suppCard}>
+            <View style={[styles.suppIconWrap, { backgroundColor: rec.color + '20' }]}>
+              <MaterialIcons name={rec.icon} size={26} color={rec.color} />
+            </View>
+            <View style={[styles.suppCatBadge, { backgroundColor: rec.color + '18' }]}>
+              <Text style={[styles.suppCatText, { color: rec.color }]}>{catLabel(rec.category)}</Text>
+            </View>
+            <Text style={styles.suppName}>{t(`nutrition.supplements.${rec.key}.name`)}</Text>
+            <Text style={styles.suppReason}>{t(`nutrition.supplements.${rec.key}.reason`)}</Text>
+          </View>
+        ))}
+      </ScrollView>
+      <Text style={styles.suppDisclaimer}>{t('nutrition.supplements.disclaimer')}</Text>
+    </View>
+  );
+}
 
-  // Overview card
-  overviewCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 14,
-  },
-  overviewTopRow: { alignItems: 'center', marginBottom: 16 },
-  calorieCircle: { alignItems: 'center' },
-  calorieValue: { fontSize: 36, fontWeight: '800', color: '#1C1C1E' },
-  calorieUnit: { fontSize: 12, color: '#8E8E93', fontWeight: '600' },
-
-  macrosRow: { gap: 10 },
-  progressItem: { marginBottom: 2 },
-  progressLabelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  progressLabel: { fontSize: 12, fontWeight: '600', color: '#3C3C43' },
-  progressValue: { fontSize: 12, fontWeight: '700' },
-  progressTrack: { height: 6, backgroundColor: '#E5E5EA', borderRadius: 3, overflow: 'hidden' },
-  progressFill: { height: 6, borderRadius: 3 },
-
-  goalEditRow: { marginTop: 12, alignItems: 'center' },
-  goalLinksRow: { flexDirection: 'row', alignItems: 'center' },
-  goalLink: { fontSize: 12, color: '#8E8E93', textDecorationLine: 'underline' },
-  goalDot: { fontSize: 12, color: '#8E8E93' },
-  goalEditInput: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  goalEditLabel: { fontSize: 12, color: '#3C3C43' },
-  goalInput: {
-    fontSize: 14, fontWeight: '600', color: '#1C1C1E', backgroundColor: '#F2F2F7',
-    borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4, width: 70, textAlign: 'center',
-  },
-
-  // Add meal button
-  addMealBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#00B894', borderRadius: 14, paddingVertical: 14, gap: 8,
-    marginBottom: 20, minHeight: 48,
-  },
-  addMealBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-
-  sectionTitle: {
-    fontSize: 16, fontWeight: '700', color: '#1C1C1E', marginBottom: 10, paddingHorizontal: 4,
-  },
-
-  // Quick Add
-  quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
-  quickBtn: {
-    width: '48%', flexGrow: 1, backgroundColor: '#FFFFFF', borderRadius: 12,
-    borderWidth: 1.5, padding: 10, alignItems: 'center', gap: 2, minHeight: 64, justifyContent: 'center',
-  },
-  quickLabel: { fontSize: 12, fontWeight: '700' },
-  quickAmount: { fontSize: 10, color: '#8E8E93', fontWeight: '500' },
-
-  // Log
-  logHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 4, marginBottom: 10,
-  },
-  clearBtn: { fontSize: 13, color: '#FF3B30', fontWeight: '500' },
-
-  entryRow: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
-    borderRadius: 12, padding: 12, marginBottom: 6, gap: 10,
-  },
-  entryIcon: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-  entryType: { fontSize: 14, fontWeight: '600', color: '#1C1C1E' },
-  entryTime: { fontSize: 11, color: '#8E8E93' },
-  entryAmount: { fontSize: 14, fontWeight: '700', color: '#3C3C43' },
-
-  // Meal-specific
-  macroCol: { alignItems: 'flex-end' },
-  mealCalories: { fontSize: 14, fontWeight: '700', color: '#1C1C1E' },
-  mealMacros: { fontSize: 10, color: '#8E8E93', marginTop: 1 },
-
-  // Modal
-  modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end',
-  },
-  modalCard: {
-    backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    padding: 24, paddingBottom: 40,
-  },
-  modalHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20,
-  },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: '#1C1C1E' },
-
-  mealTypeRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  mealTypeBtn: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 4, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5,
-    borderColor: '#E5E5EA', backgroundColor: '#F2F2F7',
-  },
-  mealTypeBtnText: { fontSize: 11, fontWeight: '600', color: '#8E8E93' },
-
-  modalInput: {
-    backgroundColor: '#F2F2F7', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 15, color: '#1C1C1E', marginBottom: 12,
-  },
-  macroInputRow: { flexDirection: 'row', gap: 8, marginBottom: 20 },
-  macroInputGroup: { flex: 1 },
-  macroInputLabel: { fontSize: 10, fontWeight: '600', color: '#8E8E93', textTransform: 'uppercase', marginBottom: 4, textAlign: 'center' },
-  macroInput: {
-    backgroundColor: '#F2F2F7', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 10,
-    fontSize: 15, fontWeight: '600', color: '#1C1C1E', textAlign: 'center',
-  },
-
-  modalAddBtn: {
-    backgroundColor: '#00B894', borderRadius: 14, paddingVertical: 16,
-    alignItems: 'center', minHeight: 52,
-  },
-  modalAddBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
-
-  dropAnimOverlay: {
-    position: 'absolute',
-    top: '45%',
-    alignSelf: 'center',
-    zIndex: 50,
-  },
-
-  // Premium badge + banner
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  premiumBadge: {
-    backgroundColor: '#FFF3E0', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3,
-    borderWidth: 1, borderColor: '#FF950040',
-  },
-  premiumBadgeText: { fontSize: 11, fontWeight: '700', color: '#FF9500' },
-  premiumBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#FFF8EC', borderRadius: 12, padding: 12, marginTop: 16, marginBottom: 8,
-    borderWidth: 1, borderColor: '#FF950030',
-  },
-  premiumBannerText: { fontSize: 12, color: '#8E8E93', flex: 1, lineHeight: 16 },
-
-  // Remaining calories row
-  remainingRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 10 },
-  remainingText: { fontSize: 13, fontWeight: '600', color: '#8E8E93' },
-});
+function makeStyles(C: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.bg },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 60, paddingHorizontal: 24, paddingBottom: 8 },
+    title: { fontSize: 26, fontWeight: '700', color: C.text },
+    subtitle: { fontSize: 13, color: C.text3, marginTop: 2 },
+    addMealHeaderBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.card, justifyContent: 'center', alignItems: 'center' },
+    scrollContent: { paddingHorizontal: 16, paddingBottom: 100 },
+    overviewCard: { backgroundColor: C.card, borderRadius: 16, padding: 20, marginBottom: 14 },
+    overviewTopRow: { alignItems: 'center', marginBottom: 16 },
+    calorieCircle: { alignItems: 'center' },
+    calorieValue: { fontSize: 36, fontWeight: '800', color: C.text },
+    calorieUnit: { fontSize: 12, color: C.text3, fontWeight: '600' },
+    macrosRow: { gap: 10 },
+    progressItem: { marginBottom: 2 },
+    progressLabelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+    progressLabel: { fontSize: 12, fontWeight: '600', color: C.text2 },
+    progressValue: { fontSize: 12, fontWeight: '700' },
+    progressTrack: { height: 6, backgroundColor: C.sep, borderRadius: 3, overflow: 'hidden' },
+    progressFill: { height: 6, borderRadius: 3 },
+    goalEditRow: { marginTop: 12, alignItems: 'center' },
+    goalLinksRow: { flexDirection: 'row', alignItems: 'center' },
+    goalLink: { fontSize: 12, color: C.text3, textDecorationLine: 'underline' },
+    goalDot: { fontSize: 12, color: C.text3 },
+    goalEditInput: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    goalEditLabel: { fontSize: 12, color: C.text2 },
+    goalInput: { fontSize: 14, fontWeight: '600', color: C.text, backgroundColor: C.bg, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4, width: 70, textAlign: 'center' },
+    addMealBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: C.accent, borderRadius: 14, paddingVertical: 14, gap: 8, marginBottom: 20, minHeight: 48 },
+    addMealBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+    sectionTitle: { fontSize: 16, fontWeight: '700', color: C.text, marginBottom: 10, paddingHorizontal: 4 },
+    quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
+    quickBtn: { width: '48%', flexGrow: 1, backgroundColor: C.card, borderRadius: 12, borderWidth: 1.5, padding: 10, alignItems: 'center', gap: 2, minHeight: 64, justifyContent: 'center' },
+    quickLabel: { fontSize: 12, fontWeight: '700' },
+    quickAmount: { fontSize: 10, color: C.text3, fontWeight: '500' },
+    logHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 4, marginBottom: 10 },
+    clearBtn: { fontSize: 13, color: C.red, fontWeight: '500' },
+    entryRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 12, padding: 12, marginBottom: 6, gap: 10 },
+    entryIcon: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+    entryType: { fontSize: 14, fontWeight: '600', color: C.text },
+    entryTime: { fontSize: 11, color: C.text3 },
+    entryAmount: { fontSize: 14, fontWeight: '700', color: C.text2 },
+    macroCol: { alignItems: 'flex-end' },
+    mealCalories: { fontSize: 14, fontWeight: '700', color: C.text },
+    mealMacros: { fontSize: 10, color: C.text3, marginTop: 1 },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+    modalCard: { backgroundColor: C.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+    modalTitle: { fontSize: 20, fontWeight: '700', color: C.text },
+    mealTypeRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+    mealTypeBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: C.sep, backgroundColor: C.bg },
+    mealTypeBtnText: { fontSize: 11, fontWeight: '600', color: C.text3 },
+    modalInput: { backgroundColor: C.bg, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: C.text, marginBottom: 12 },
+    macroInputRow: { flexDirection: 'row', gap: 8, marginBottom: 20 },
+    macroInputGroup: { flex: 1 },
+    macroInputLabel: { fontSize: 10, fontWeight: '600', color: C.text3, textTransform: 'uppercase', marginBottom: 4, textAlign: 'center' },
+    macroInput: { backgroundColor: C.bg, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 10, fontSize: 15, fontWeight: '600', color: C.text, textAlign: 'center' },
+    modalAddBtn: { backgroundColor: C.accent, borderRadius: 14, paddingVertical: 16, alignItems: 'center', minHeight: 52 },
+    modalAddBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+    dropAnimOverlay: { position: 'absolute', top: '45%', alignSelf: 'center', zIndex: 50 },
+    titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    premiumBadge: { backgroundColor: C.orangeLight, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: C.orange + '40' },
+    premiumBadgeText: { fontSize: 11, fontWeight: '700', color: C.orange },
+    premiumBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.orangeLight, borderRadius: 12, padding: 12, marginTop: 16, marginBottom: 8, borderWidth: 1, borderColor: C.orange + '30' },
+    premiumBannerText: { fontSize: 12, color: C.text3, flex: 1, lineHeight: 16 },
+    suppSection: { marginBottom: 8 },
+    suppHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingHorizontal: 4, marginBottom: 10 },
+    suppSubtitle: { fontSize: 12, color: C.text3 },
+    suppScroll: { gap: 10, paddingHorizontal: 4 },
+    suppCard: { width: 148, backgroundColor: C.card, borderRadius: 16, padding: 14, gap: 6 },
+    suppIconWrap: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', marginBottom: 2 },
+    suppCatBadge: { alignSelf: 'flex-start', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 2 },
+    suppCatText: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+    suppName: { fontSize: 14, fontWeight: '700', color: C.text, lineHeight: 18 },
+    suppReason: { fontSize: 12, color: C.text3, lineHeight: 16 },
+    suppDisclaimer: { fontSize: 11, color: C.text3, paddingHorizontal: 4, marginTop: 8, fontStyle: 'italic' },
+    remainingRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 10 },
+    remainingText: { fontSize: 13, fontWeight: '600', color: C.text3 },
+  });
+}

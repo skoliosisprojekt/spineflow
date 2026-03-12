@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useTheme } from '../../lib/theme';
+import type { ThemeColors } from '../../lib/theme';
 import { trackEvent } from '../../lib/posthog';
 import { useNetwork } from '../../lib/network';
 import {
@@ -21,6 +23,8 @@ import { SUPPORTED_LANGUAGES, setAppLanguage } from '../../i18n';
 import i18n from '../../i18n';
 
 export default function RegisterScreen() {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -116,7 +120,7 @@ export default function RegisterScreen() {
 
         {/* Language Selector */}
         <View style={styles.langRow}>
-          <MaterialIcons name="language" size={14} color="#8E8E93" />
+          <MaterialIcons name="language" size={14} color={C.text3} />
           <Text style={styles.langLabel}>{t('settings.language')}:</Text>
           {SUPPORTED_LANGUAGES.map((lang) => (
             <TouchableOpacity
@@ -192,7 +196,7 @@ export default function RegisterScreen() {
             onPress={() => { setAgeConfirmed(!ageConfirmed); setErrors((prev) => ({ ...prev, age: undefined })); }}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: ageConfirmed }}
-            accessibilityLabel="I confirm I am at least 16 years old"
+            accessibilityLabel="I confirm I am at least 18 years old"
           >
             <MaterialIcons
               name={ageConfirmed ? 'check-box' : 'check-box-outline-blank'}
@@ -243,170 +247,42 @@ export default function RegisterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F2F2F7',
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 24,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  logoText: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#1C1C1E',
-    marginTop: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#8E8E93',
-    marginTop: 4,
-  },
-  form: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#1C1C1E',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F2F2F7',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    marginBottom: 12,
-    minHeight: 48,
-  },
-  inputIcon: {
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1C1C1E',
-    paddingVertical: 12,
-  },
-  eyeIcon: {
-    padding: 8,
-    minWidth: 48,
-    minHeight: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorText: {
-    color: '#FF3B30',
-    fontSize: 12,
-    marginTop: -8,
-    marginBottom: 8,
-    marginLeft: 12,
-  },
-  checkboxRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 16,
-    minHeight: 48,
-  },
-  checkboxLabel: {
-    fontSize: 14,
-    color: '#3C3C43',
-    marginLeft: 8,
-    flex: 1,
-  },
-  button: {
-    backgroundColor: '#00B894',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 8,
-    minHeight: 48,
-  },
-  buttonDisabled: {
-    backgroundColor: '#AEAEB2',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  linkContainer: {
-    alignItems: 'center',
-    marginTop: 20,
-    minHeight: 48,
-    justifyContent: 'center',
-  },
-  linkText: {
-    fontSize: 14,
-    color: '#8E8E93',
-  },
-  linkBold: {
-    color: '#00B894',
-    fontWeight: '600',
-  },
-  formError: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF0EF',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 12,
-    gap: 8,
-  },
-  formErrorText: {
-    flex: 1,
-    color: '#FF3B30',
-    fontSize: 13,
-    lineHeight: 18,
-  },
-
-  langRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 6,
-    marginBottom: 16,
-  },
-  langLabel: {
-    fontSize: 13,
-    color: '#8E8E93',
-    marginRight: 2,
-  },
-  langPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
-  },
-  langPillActive: {
-    backgroundColor: '#00B894',
-    borderColor: '#00B894',
-  },
-  langPillText: {
-    fontSize: 13,
-    color: '#3C3C43',
-    fontWeight: '500',
-  },
-  langPillTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-});
+function makeStyles(C: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.bg },
+    scrollContent: { flexGrow: 1, justifyContent: 'center', padding: 24 },
+    logoContainer: { alignItems: 'center', marginBottom: 32 },
+    logoText: { fontSize: 32, fontWeight: '700', color: C.text, marginTop: 8 },
+    subtitle: { fontSize: 14, color: C.text3, marginTop: 4 },
+    form: {
+      backgroundColor: C.card, borderRadius: 16, padding: 24,
+      shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.04, shadowRadius: 3, elevation: 1,
+    },
+    title: { fontSize: 22, fontWeight: '600', color: C.text, marginBottom: 20, textAlign: 'center' },
+    inputContainer: {
+      flexDirection: 'row', alignItems: 'center', backgroundColor: C.bg,
+      borderRadius: 12, paddingHorizontal: 12, marginBottom: 12, minHeight: 48,
+    },
+    inputIcon: { marginRight: 8 },
+    input: { flex: 1, fontSize: 16, color: C.text, paddingVertical: 12 },
+    eyeIcon: { padding: 8, minWidth: 48, minHeight: 48, justifyContent: 'center', alignItems: 'center' },
+    errorText: { color: C.red, fontSize: 12, marginTop: -8, marginBottom: 8, marginLeft: 12 },
+    checkboxRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 16, minHeight: 48 },
+    checkboxLabel: { fontSize: 14, color: C.text2, marginLeft: 8, flex: 1 },
+    button: { backgroundColor: C.accent, borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 8, minHeight: 48 },
+    buttonDisabled: { backgroundColor: C.text4 },
+    buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
+    linkContainer: { alignItems: 'center', marginTop: 20, minHeight: 48, justifyContent: 'center' },
+    linkText: { fontSize: 14, color: C.text3 },
+    linkBold: { color: C.accent, fontWeight: '600' },
+    formError: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.redLight, borderRadius: 10, padding: 12, marginBottom: 12, gap: 8 },
+    formErrorText: { flex: 1, color: C.red, fontSize: 13, lineHeight: 18 },
+    langRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center', gap: 6, marginBottom: 16 },
+    langLabel: { fontSize: 13, color: C.text3, marginRight: 2 },
+    langPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: C.card, borderWidth: 1, borderColor: C.sep },
+    langPillActive: { backgroundColor: C.accent, borderColor: C.accent },
+    langPillText: { fontSize: 13, color: C.text2, fontWeight: '500' },
+    langPillTextActive: { color: '#FFFFFF', fontWeight: '600' },
+  });
+}

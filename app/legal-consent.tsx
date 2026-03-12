@@ -1,17 +1,20 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
-  View, Text, ScrollView, Pressable, StyleSheet,
-  StatusBar, Platform,
+  View, Text, ScrollView, Pressable, StyleSheet, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuthStore } from '../stores/authStore';
+import { useTheme } from '../lib/theme';
+import type { ThemeColors } from '../lib/theme';
 
 const BRAND = '#2196F3';
 const BRAND_DISABLED = '#90CAF9';
 
 export default function LegalConsentScreen() {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { setHasAcceptedBetaTerms } = useAuthStore();
@@ -25,7 +28,6 @@ export default function LegalConsentScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F2F2F7" />
 
       {/* Header */}
       <View style={styles.header}>
@@ -130,149 +132,49 @@ export default function LegalConsentScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#F2F2F7',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#1C1C1E',
-    letterSpacing: 0.2,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 16,
-  },
-  mainTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#1C1C1E',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 14,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  intro: {
-    fontSize: 13,
-    color: '#636366',
-    lineHeight: 20,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1C1C1E',
-    marginBottom: 6,
-    marginTop: 4,
-  },
-  sectionBody: {
-    fontSize: 13,
-    color: '#3A3A3C',
-    lineHeight: 21,
-    marginBottom: 18,
-  },
-  bold: {
-    fontWeight: '700',
-    color: '#1C1C1E',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#E5E5EA',
-    marginVertical: 16,
-  },
-  footerNote: {
-    fontSize: 11,
-    color: '#8E8E93',
-    lineHeight: 17,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-
-  // Footer
-  footer: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E5EA',
-    gap: 14,
-  },
-  checkRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#C7C7CC',
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 1,
-    flexShrink: 0,
-  },
-  checkboxChecked: {
-    backgroundColor: BRAND,
-    borderColor: BRAND,
-  },
-  checkLabel: {
-    flex: 1,
-    fontSize: 13,
-    color: '#1C1C1E',
-    lineHeight: 20,
-    fontWeight: '500',
-  },
-  continueBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: BRAND,
-    borderRadius: 14,
-    paddingVertical: 15,
-    ...Platform.select({
-      ios: {
-        shadowColor: BRAND,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.35,
-        shadowRadius: 8,
-      },
-      android: { elevation: 4 },
-    }),
-  },
-  continueBtnDisabled: {
-    backgroundColor: '#E5E5EA',
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  continueBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    letterSpacing: 0.3,
-  },
-  continueBtnTextDisabled: {
-    color: BRAND_DISABLED,
-  },
-});
+function makeStyles(C: ThemeColors) {
+  return StyleSheet.create({
+    root: { flex: 1, backgroundColor: C.bg },
+    header: {
+      flexDirection: 'row', alignItems: 'center', gap: 8,
+      paddingHorizontal: 20, paddingVertical: 14,
+      backgroundColor: C.card, borderBottomWidth: 1, borderBottomColor: C.sep,
+    },
+    headerTitle: { fontSize: 17, fontWeight: '700', color: C.text, letterSpacing: 0.2 },
+    scroll: { flex: 1 },
+    scrollContent: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 16 },
+    mainTitle: {
+      fontSize: 16, fontWeight: '800', color: C.text, textAlign: 'center',
+      lineHeight: 24, marginBottom: 14, textTransform: 'uppercase', letterSpacing: 0.4,
+    },
+    intro: { fontSize: 13, color: C.text3, lineHeight: 20, marginBottom: 20, textAlign: 'center' },
+    sectionTitle: { fontSize: 14, fontWeight: '700', color: C.text, marginBottom: 6, marginTop: 4 },
+    sectionBody: { fontSize: 13, color: C.text2, lineHeight: 21, marginBottom: 18 },
+    bold: { fontWeight: '700', color: C.text },
+    divider: { height: 1, backgroundColor: C.sep, marginVertical: 16 },
+    footerNote: { fontSize: 11, color: C.text3, lineHeight: 17, textAlign: 'center', marginBottom: 8 },
+    footer: {
+      backgroundColor: C.card, paddingHorizontal: 20, paddingTop: 16,
+      borderTopWidth: 1, borderTopColor: C.sep, gap: 14,
+    },
+    checkRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+    checkbox: {
+      width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: C.text4,
+      backgroundColor: C.card, alignItems: 'center', justifyContent: 'center',
+      marginTop: 1, flexShrink: 0,
+    },
+    checkboxChecked: { backgroundColor: BRAND, borderColor: BRAND },
+    checkLabel: { flex: 1, fontSize: 13, color: C.text, lineHeight: 20, fontWeight: '500' },
+    continueBtn: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+      gap: 8, backgroundColor: BRAND, borderRadius: 14, paddingVertical: 15,
+      ...Platform.select({
+        ios: { shadowColor: BRAND, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8 },
+        android: { elevation: 4 },
+      }),
+    },
+    continueBtnDisabled: { backgroundColor: C.sep, shadowOpacity: 0, elevation: 0 },
+    continueBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF', letterSpacing: 0.3 },
+    continueBtnTextDisabled: { color: BRAND_DISABLED },
+  });
+}

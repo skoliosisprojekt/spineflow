@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { trackEvent } from '../../lib/posthog';
 import { trackAccountDeleted } from '../../lib/analytics';
-import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { CustomModal } from '../../components/CustomModal';
+import { useTheme } from '../../lib/theme';
+import type { ThemeColors } from '../../lib/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +22,8 @@ import type { ThemeMode, WeightUnit, SurgeryType, CurveType, GoalType, Experienc
 type OptionItem<T extends string> = { value: T; label: string };
 
 function SegmentedPicker<T extends string>({ options, value, onChange }: { options: OptionItem<T>[]; value: T; onChange: (v: T) => void }) {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   return (
     <View style={styles.segmented}>
       {options.map((opt) => {
@@ -40,9 +45,11 @@ function SegmentedPicker<T extends string>({ options, value, onChange }: { optio
 }
 
 function SettingRow({ icon, label, value, color }: { icon: keyof typeof MaterialIcons.glyphMap; label: string; value?: string; color?: string }) {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   return (
     <View style={styles.settingRow}>
-      <MaterialIcons name={icon} size={20} color={color || '#8E8E93'} />
+      <MaterialIcons name={icon} size={20} color={color || C.text3} />
       <Text style={styles.settingLabel}>{label}</Text>
       {value && <Text style={styles.settingValue}>{value}</Text>}
     </View>
@@ -50,6 +57,8 @@ function SettingRow({ icon, label, value, color }: { icon: keyof typeof Material
 }
 
 export default function SettingsScreen() {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const { email } = useAuthStore();
@@ -67,6 +76,9 @@ export default function SettingsScreen() {
   const [soundOn, setSoundOn] = useState(true);
   const [reassessing, setReassessing] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDeleteErrorModal, setShowDeleteErrorModal] = useState(false);
+  const [showReassessModal, setShowReassessModal] = useState(false);
 
   useEffect(() => {
     loadSettings(); loadProfile();
@@ -137,33 +149,7 @@ export default function SettingsScreen() {
     await supabase.auth.signOut();
   };
 
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      t('settings.deleteAccountTitle'),
-      t('settings.deleteAccountWarning'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('settings.deleteAccountConfirm'),
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert(
-              t('settings.deleteAccountTitle'),
-              t('settings.deleteAccountWarning'),
-              [
-                { text: t('common.cancel'), style: 'cancel' },
-                {
-                  text: t('settings.deleteAccountConfirm'),
-                  style: 'destructive',
-                  onPress: confirmDeleteAccount,
-                },
-              ],
-            );
-          },
-        },
-      ],
-    );
-  };
+  const handleDeleteAccount = () => setShowDeleteModal(true);
 
   const confirmDeleteAccount = async () => {
     setDeletingAccount(true);
@@ -188,30 +174,21 @@ export default function SettingsScreen() {
       router.replace('/welcome');
     } catch {
       setDeletingAccount(false);
-      Alert.alert(t('settings.deleteAccountTitle'), t('settings.deleteAccountError'));
+      setShowDeleteModal(false);
+      setShowDeleteErrorModal(true);
     }
   };
 
-  const handleReassess = () => {
-    Alert.alert(
-      t('settings.reassessTitle'),
-      t('settings.reassessConfirm'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.continue'),
-          onPress: async () => {
-            setReassessing(true);
-            await saveProfile();
-            // Small delay for visual feedback
-            setTimeout(() => {
-              setReassessing(false);
-              router.replace('/(tabs)/exercises' as any);
-            }, 600);
-          },
-        },
-      ],
-    );
+  const handleReassess = () => setShowReassessModal(true);
+
+  const confirmReassess = async () => {
+    setShowReassessModal(false);
+    setReassessing(true);
+    await saveProfile();
+    setTimeout(() => {
+      setReassessing(false);
+      router.replace('/(tabs)/exercises' as any);
+    }, 600);
   };
 
   const updateProfile = <T,>(setter: (v: T) => void, value: T) => {
@@ -232,7 +209,7 @@ export default function SettingsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
-          <MaterialIcons name="arrow-back" size={24} color="#1C1C1E" />
+          <MaterialIcons name="arrow-back" size={24} color={C.text} />
         </Pressable>
         <Text style={styles.title}>{t('settings.title')}</Text>
         <View style={{ width: 44 }} />
@@ -460,199 +437,139 @@ export default function SettingsScreen() {
           <Text style={styles.appVersion}>Version 1.0.0</Text>
         </View>
       </ScrollView>
+
+      {/* Delete Account — single-tap, no double-dialog */}
+      <CustomModal
+        visible={showDeleteModal}
+        onClose={() => !deletingAccount && setShowDeleteModal(false)}
+        title={t('settings.deleteAccountTitle')}
+        description={t('settings.deleteAccountWarning')}
+        primaryLabel={t('settings.deleteAccountConfirm')}
+        onPrimary={confirmDeleteAccount}
+        cancelLabel={t('common.cancel')}
+        variant="danger"
+        icon="delete-forever"
+        loading={deletingAccount}
+      />
+
+      {/* Delete Account Error */}
+      <CustomModal
+        visible={showDeleteErrorModal}
+        onClose={() => setShowDeleteErrorModal(false)}
+        title={t('settings.deleteAccountTitle')}
+        description={t('settings.deleteAccountError')}
+        primaryLabel={t('common.ok') ?? 'OK'}
+        onPrimary={() => setShowDeleteErrorModal(false)}
+        cancelLabel={t('common.cancel')}
+        variant="warning"
+        icon="error-outline"
+      />
+
+      {/* Reassess Exercises */}
+      <CustomModal
+        visible={showReassessModal}
+        onClose={() => setShowReassessModal(false)}
+        title={t('settings.reassessTitle')}
+        description={t('settings.reassessConfirm')}
+        primaryLabel={t('common.continue')}
+        onPrimary={confirmReassess}
+        cancelLabel={t('common.cancel')}
+        variant="warning"
+        icon="refresh"
+      />
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2F2F7' },
+function makeStyles(C: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.bg },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 60,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-  },
-  backBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 20, fontWeight: '700', color: '#1C1C1E' },
+    header: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      paddingTop: 60, paddingHorizontal: 16, paddingBottom: 12,
+    },
+    backBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+    title: { fontSize: 20, fontWeight: '700', color: C.text },
 
-  scrollContent: { paddingHorizontal: 16, paddingBottom: 100 },
+    scrollContent: { paddingHorizontal: 16, paddingBottom: 100 },
 
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#8E8E93',
-    textTransform: 'uppercase',
-    marginTop: 20,
-    marginBottom: 8,
-    paddingHorizontal: 4,
-  },
+    sectionTitle: {
+      fontSize: 13, fontWeight: '600', color: C.text3, textTransform: 'uppercase',
+      marginTop: 20, marginBottom: 8, paddingHorizontal: 4,
+    },
 
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 4,
-  },
-  cardDivider: { height: 1, backgroundColor: '#F2F2F7', marginVertical: 14 },
+    card: { backgroundColor: C.card, borderRadius: 14, padding: 16, marginBottom: 4 },
+    cardDivider: { height: 1, backgroundColor: C.bg, marginVertical: 14 },
+    fieldLabel: { fontSize: 13, fontWeight: '600', color: C.text2, marginBottom: 8 },
 
-  fieldLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#3C3C43',
-    marginBottom: 8,
-  },
+    segmented: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    segmentedItem: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: C.bg },
+    segmentedItemActive: { backgroundColor: C.accent },
+    segmentedText: { fontSize: 13, fontWeight: '500', color: C.text2 },
+    segmentedTextActive: { color: '#FFFFFF', fontWeight: '600' },
 
-  // Segmented picker
-  segmented: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  segmentedItem: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#F2F2F7',
-  },
-  segmentedItemActive: {
-    backgroundColor: '#00B894',
-  },
-  segmentedText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#3C3C43',
-  },
-  segmentedTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
+    settingRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 },
+    settingLabel: { fontSize: 14, color: C.text2, flex: 1 },
+    settingValue: { fontSize: 14, fontWeight: '500', color: C.text3 },
 
-  // Setting row
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 4,
-  },
-  settingLabel: { fontSize: 14, color: '#3C3C43', flex: 1 },
-  settingValue: { fontSize: 14, fontWeight: '500', color: '#8E8E93' },
+    saveBtn: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+      backgroundColor: C.accent, borderRadius: 14, paddingVertical: 16,
+      gap: 8, marginTop: 20, minHeight: 52,
+    },
+    saveBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
 
-  // Buttons
-  saveBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#00B894',
-    borderRadius: 14,
-    paddingVertical: 16,
-    gap: 8,
-    marginTop: 20,
-    minHeight: 52,
-  },
-  saveBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+    regenerateBtn: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+      backgroundColor: C.card, borderRadius: 14, borderWidth: 1.5, borderColor: C.orange,
+      paddingVertical: 14, gap: 8, marginTop: 12, minHeight: 48,
+    },
+    regenerateBtnText: { fontSize: 15, fontWeight: '600', color: C.orange },
 
-  regenerateBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#FF9500',
-    paddingVertical: 14,
-    gap: 8,
-    marginTop: 12,
-    minHeight: 48,
-  },
-  regenerateBtnText: { fontSize: 15, fontWeight: '600', color: '#FF9500' },
+    logoutBtn: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+      backgroundColor: C.card, borderRadius: 14, borderWidth: 1.5, borderColor: C.red,
+      paddingVertical: 14, gap: 8, marginTop: 16, minHeight: 48,
+    },
+    logoutBtnText: { fontSize: 15, fontWeight: '600', color: C.red },
 
-  logoutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#FF3B30',
-    paddingVertical: 14,
-    gap: 8,
-    marginTop: 16,
-    minHeight: 48,
-  },
-  logoutBtnText: { fontSize: 15, fontWeight: '600', color: '#FF3B30' },
+    deleteAccountBtn: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+      backgroundColor: C.redLight, borderRadius: 14, borderWidth: 1.5, borderColor: C.red,
+      paddingVertical: 14, gap: 8, marginTop: 10, minHeight: 48,
+    },
+    deleteAccountBtnText: { fontSize: 15, fontWeight: '700', color: C.red },
 
-  deleteAccountBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFF0EF',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#FF3B30',
-    paddingVertical: 14,
-    gap: 8,
-    marginTop: 10,
-    minHeight: 48,
-  },
-  deleteAccountBtnText: { fontSize: 15, fontWeight: '700', color: '#FF3B30' },
+    reassessBtn: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+      backgroundColor: C.card, borderRadius: 14, borderWidth: 1.5, borderColor: C.blue,
+      paddingVertical: 14, gap: 8, marginTop: 12, minHeight: 48,
+    },
+    reassessBtnText: { fontSize: 15, fontWeight: '600', color: C.blue },
 
-  reassessBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#5B8DEF',
-    paddingVertical: 14,
-    gap: 8,
-    marginTop: 12,
-    minHeight: 48,
-  },
-  reassessBtnText: { fontSize: 15, fontWeight: '600', color: '#5B8DEF' },
+    equipChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    equipChip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+    equipChipActive: { backgroundColor: C.accentLight, borderWidth: 1, borderColor: C.accent + '30' },
+    equipChipText: { fontSize: 13, fontWeight: '600', color: C.accent },
+    equipChipCustom: { backgroundColor: C.orangeLight, borderWidth: 1, borderColor: C.orange + '30' },
+    equipChipTextCustom: { fontSize: 13, fontWeight: '600', color: C.text },
+    customInputRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+    customInput: { flex: 1, backgroundColor: C.bg, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: C.text },
+    customAddBtn: { width: 40, height: 40, borderRadius: 10, backgroundColor: C.orange, justifyContent: 'center', alignItems: 'center' },
+    disclaimerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: 4 },
+    disclaimerText: { fontSize: 11, color: C.text3, lineHeight: 16, flex: 1 },
 
-  // Equipment
-  equipChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  equipChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6,
-  },
-  equipChipActive: { backgroundColor: '#E8FAF5', borderWidth: 1, borderColor: '#00B89430' },
-  equipChipText: { fontSize: 13, fontWeight: '600', color: '#00B894' },
-  equipChipCustom: { backgroundColor: '#FFF3E0', borderWidth: 1, borderColor: '#FF950030' },
-  equipChipTextCustom: { fontSize: 13, fontWeight: '600', color: '#1C1C1E' },
-  customInputRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
-  customInput: {
-    flex: 1, backgroundColor: '#F2F2F7', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10,
-    fontSize: 14, color: '#1C1C1E',
-  },
-  customAddBtn: {
-    width: 40, height: 40, borderRadius: 10, backgroundColor: '#FF9500',
-    justifyContent: 'center', alignItems: 'center',
-  },
-  disclaimerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: 4 },
-  disclaimerText: { fontSize: 11, color: '#8E8E93', lineHeight: 16, flex: 1 },
+    toggleTrack: { width: 44, height: 26, borderRadius: 13, backgroundColor: C.sep, justifyContent: 'center', paddingHorizontal: 2 },
+    toggleTrackOn: { backgroundColor: C.accent },
+    toggleThumb: {
+      width: 22, height: 22, borderRadius: 11, backgroundColor: '#FFFFFF',
+      shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 2,
+    },
+    toggleThumbOn: { alignSelf: 'flex-end' as const },
 
-  // Toggle switch
-  toggleTrack: {
-    width: 44, height: 26, borderRadius: 13,
-    backgroundColor: '#E5E5EA', justifyContent: 'center', paddingHorizontal: 2,
-  },
-  toggleTrackOn: { backgroundColor: '#00B894' },
-  toggleThumb: {
-    width: 22, height: 22, borderRadius: 11, backgroundColor: '#FFFFFF',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 2,
-  },
-  toggleThumbOn: { alignSelf: 'flex-end' as const },
-
-  appInfo: {
-    alignItems: 'center',
-    marginTop: 32,
-    marginBottom: 16,
-  },
-  appName: { fontSize: 16, fontWeight: '700', color: '#AEAEB2' },
-  appVersion: { fontSize: 12, color: '#C7C7CC', marginTop: 2 },
-});
+    appInfo: { alignItems: 'center', marginTop: 32, marginBottom: 16 },
+    appName: { fontSize: 16, fontWeight: '700', color: C.text4 },
+    appVersion: { fontSize: 12, color: C.text4, marginTop: 2 },
+  });
+}

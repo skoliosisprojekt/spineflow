@@ -1,5 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { View, Text, TextInput, FlatList, Pressable, StyleSheet } from 'react-native';
+import { useTheme } from '../../lib/theme';
+import type { ThemeColors } from '../../lib/theme';
 import ErrorBoundary from '../../components/ErrorBoundary';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -18,6 +20,8 @@ export default function ExercisesScreenWrapper() {
 }
 
 function ExercisesScreen() {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const [filter, setFilter] = useState<MuscleFilter>('all');
   const [search, setSearch] = useState('');
   const router = useRouter();
@@ -67,7 +71,7 @@ function ExercisesScreen() {
 
       {/* Search */}
       <View style={styles.searchContainer}>
-        <MaterialIcons name="search" size={20} color="#8E8E93" style={styles.searchIcon} />
+        <MaterialIcons name="search" size={20} color={C.text3} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           placeholder={t('exercises.searchPlaceholder')}
@@ -134,49 +138,35 @@ function ExercisesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2F2F7' },
-  header: { paddingTop: 60, paddingHorizontal: 24, paddingBottom: 4 },
-  title: { fontSize: 26, fontWeight: '700', color: '#1C1C1E' },
-  subtitle: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
+function makeStyles(C: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.bg },
+    header: { paddingTop: 60, paddingHorizontal: 24, paddingBottom: 4 },
+    title: { fontSize: 26, fontWeight: '700', color: C.text },
+    subtitle: { fontSize: 13, color: C.text3, marginTop: 2 },
 
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 4,
-    paddingHorizontal: 12,
-    height: 44,
-  },
-  searchIcon: { marginRight: 8 },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: '#1C1C1E',
-    height: 44,
-    padding: 0,
-  },
+    searchContainer: {
+      flexDirection: 'row', alignItems: 'center', backgroundColor: C.card,
+      borderRadius: 12, marginHorizontal: 16, marginTop: 12, marginBottom: 4,
+      paddingHorizontal: 12, height: 44,
+    },
+    searchIcon: { marginRight: 8 },
+    searchInput: { flex: 1, fontSize: 15, color: C.text, height: 44, padding: 0 },
 
-  filterList: { flexGrow: 0, flexShrink: 0 },
-  filterContainer: { paddingHorizontal: 16, paddingVertical: 10, gap: 8, alignItems: 'center' },
-  filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    minHeight: 36,
-    justifyContent: 'center',
-  },
-  filterChipActive: { backgroundColor: '#00B894' },
-  filterLabel: { fontSize: 13, fontWeight: '600', color: '#3C3C43' },
-  filterLabelActive: { color: '#FFFFFF' },
+    filterList: { flexGrow: 0, flexShrink: 0 },
+    filterContainer: { paddingHorizontal: 16, paddingVertical: 10, gap: 8, alignItems: 'center' },
+    filterChip: {
+      paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
+      backgroundColor: C.card, minHeight: 36, justifyContent: 'center',
+    },
+    filterChipActive: { backgroundColor: C.accent },
+    filterLabel: { fontSize: 13, fontWeight: '600', color: C.text2 },
+    filterLabelActive: { color: '#FFFFFF' },
 
-  listContent: { paddingTop: 4, paddingBottom: 100 },
+    listContent: { paddingTop: 4, paddingBottom: 100 },
 
-  empty: { alignItems: 'center', paddingTop: 60 },
-  emptyTitle: { fontSize: 16, fontWeight: '600', color: '#1C1C1E', marginTop: 12 },
-  emptyText: { fontSize: 13, color: '#8E8E93', marginTop: 4 },
-});
+    empty: { alignItems: 'center', paddingTop: 60 },
+    emptyTitle: { fontSize: 16, fontWeight: '600', color: C.text, marginTop: 12 },
+    emptyText: { fontSize: 13, color: C.text3, marginTop: 4 },
+  });
+}

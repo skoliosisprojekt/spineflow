@@ -101,7 +101,7 @@ export default function ExerciseIllustration({ muscle, exerciseName, exerciseId 
           const isDone = i < activeStep;
           return (
             <View key={i} style={styles.timelineItem}>
-              {/* Connector line (not on first) */}
+              {/* Connector line (not on first) — marginTop centres it with the icon circle */}
               {i > 0 && (
                 <View
                   style={[
@@ -110,30 +110,33 @@ export default function ExerciseIllustration({ muscle, exerciseName, exerciseId 
                   ]}
                 />
               )}
-              <View
-                style={[
-                  styles.timelineIcon,
-                  {
-                    backgroundColor: isActive ? config.color : isDone ? config.color + '30' : '#FFFFFF',
-                    borderColor: isActive ? config.color : isDone ? config.color : config.accent,
-                    transform: [{ scale: isActive ? 1.15 : 1 }],
-                  },
-                ]}
-              >
-                <MaterialIcons
-                  name={s.icon}
-                  size={isActive ? 18 : 14}
-                  color={isActive ? '#FFFFFF' : isDone ? config.color : config.accent}
-                />
+              {/* Icon + number stacked in a column so the label is always centred under its icon */}
+              <View style={styles.timelineCell}>
+                <View
+                  style={[
+                    styles.timelineIcon,
+                    {
+                      backgroundColor: isActive ? config.color : isDone ? config.color + '30' : '#FFFFFF',
+                      borderColor: isActive ? config.color : isDone ? config.color : config.accent,
+                      transform: [{ scale: isActive ? 1.15 : 1 }],
+                    },
+                  ]}
+                >
+                  <MaterialIcons
+                    name={s.icon}
+                    size={isActive ? 18 : 14}
+                    color={isActive ? '#FFFFFF' : isDone ? config.color : config.accent}
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.timelineLabel,
+                    { color: isActive ? config.color : '#AEAEB2', fontWeight: isActive ? '700' : '500' },
+                  ]}
+                >
+                  {i + 1}
+                </Text>
               </View>
-              <Text
-                style={[
-                  styles.timelineLabel,
-                  { color: isActive ? config.color : '#AEAEB2', fontWeight: isActive ? '700' : '500' },
-                ]}
-              >
-                {i + 1}
-              </Text>
             </View>
           );
         })}
@@ -261,13 +264,17 @@ const styles = StyleSheet.create({
   },
   timelineItem: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   connector: {
     width: 28,
     height: 2,
     borderRadius: 1,
     marginHorizontal: 2,
+    marginTop: 17,
+  },
+  timelineCell: {
+    alignItems: 'center',
   },
   timelineIcon: {
     width: 34,
@@ -278,8 +285,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   timelineLabel: {
-    position: 'absolute',
-    bottom: -16,
+    marginTop: 4,
     fontSize: 10,
     textAlign: 'center',
     width: 34,

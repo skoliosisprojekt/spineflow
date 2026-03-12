@@ -2,15 +2,15 @@
   "expo": {
     "name": "SpineFlow",
     "slug": "SpineFlow",
-    "version": "1.0.3",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "spineflow",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./assets/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#1E5B87"
     },
     "ios": {
       "supportsTablet": true
@@ -18,11 +18,16 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundColor": "#00B894"
+        "monochromeImage": "./assets/images/android-icon-monochrome.png",
+        "backgroundColor": "#1E5B87"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.skoliosisprojekt.SpineFlow",
-      "versionCode": 4
+      "versionCode": 5,
+      "permissions": [
+        "android.permission.VIBRATE",
+        "android.permission.WAKE_LOCK"
+      ]
     },
     "web": {
       "bundler": "metro",

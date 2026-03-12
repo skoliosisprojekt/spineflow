@@ -4,6 +4,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import Svg, { Path, Defs, LinearGradient, Stop, Text as SvgText, Circle } from 'react-native-svg';
 import type { WorkoutRecord } from '../stores/historyStore';
+import { useTheme } from '../lib/theme';
+import type { ThemeColors } from '../lib/theme';
 
 export function useChartInfo() {
   const { t } = useTranslation();
@@ -28,6 +30,8 @@ const CHART_HEIGHT = 120;
 const PADDING = { top: 12, bottom: 28, left: 8, right: 8 };
 
 export default function PerformanceChart({ workouts, width }: Props) {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { t, i18n } = useTranslation();
   const [period, setPeriod] = useState<Period>(30);
 
@@ -109,7 +113,7 @@ export default function PerformanceChart({ workouts, width }: Props) {
               x={pt.x}
               y={PADDING.top + chartH + 16}
               fontSize="9"
-              fill="#8E8E93"
+              fill={C.text3}
               textAnchor="middle"
             >
               {days[i].label}
@@ -118,37 +122,19 @@ export default function PerformanceChart({ workouts, width }: Props) {
         )}
 
         {hasTodayData && (
-          <Circle cx={todayPt.x} cy={todayPt.y} r="4" fill="#00B894" stroke="#FFFFFF" strokeWidth="2" />
+          <Circle cx={todayPt.x} cy={todayPt.y} r="4" fill={C.accent} stroke={C.card} strokeWidth="2" />
         )}
       </Svg>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  periodRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginBottom: 8,
-  },
-  periodBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 20,
-    backgroundColor: '#F2F2F7',
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  periodBtnActive: {
-    backgroundColor: '#E8FAF5',
-    borderColor: '#00B894',
-  },
-  periodBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#8E8E93',
-  },
-  periodBtnTextActive: {
-    color: '#00B894',
-  },
-});
+function makeStyles(C: ThemeColors) {
+  return StyleSheet.create({
+    periodRow: { flexDirection: 'row', gap: 6, marginBottom: 8 },
+    periodBtn: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, backgroundColor: C.bg, borderWidth: 1.5, borderColor: 'transparent' },
+    periodBtnActive: { backgroundColor: C.accentLight, borderColor: C.accent },
+    periodBtnText: { fontSize: 12, fontWeight: '600', color: C.text3 },
+    periodBtnTextActive: { color: C.accent },
+  });
+}

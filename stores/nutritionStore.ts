@@ -113,7 +113,8 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
         const userId = getAuthUserId();
         if (userId) pushNutritionToCloud(userId).catch(() => {});
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('[nutritionStore] addEntry failed:', err);
         set((s) => ({ entries: s.entries.filter((e) => e.id !== tempId) }));
       });
   },
@@ -158,7 +159,8 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
         const userId = getAuthUserId();
         if (userId) pushNutritionToCloud(userId).catch(() => {});
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('[nutritionStore] addMeal failed:', err);
         set((s) => ({ meals: s.meals.filter((m) => m.id !== tempId) }));
       });
   },
@@ -187,14 +189,24 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
         dbGetHydrationForDate(date),
         AsyncStorage.getItem(GOALS_KEY),
       ]);
-      set({
-        meals: mealRows.map(rowToMeal),
-        entries: hydrationRows.map(rowToEntry),
+      // Merge DB results with any in-flight optimistic entries (tmp_ IDs) so a
+      // concurrent addMeal call does not get its optimistic entry wiped.
+      set((s) => ({
+        meals: [
+          ...mealRows.map(rowToMeal),
+          ...s.meals.filter((m) => m.id.startsWith('tmp_')),
+        ],
+        entries: [
+          ...hydrationRows.map(rowToEntry),
+          ...s.entries.filter((e) => e.id.startsWith('tmp_')),
+        ],
         goals: goalsRaw
           ? { ...DEFAULT_GOALS, ...JSON.parse(goalsRaw) }
           : { ...DEFAULT_GOALS },
-      });
-    } catch {}
+      }));
+    } catch (err) {
+      console.error('[nutritionStore] loadNutrition failed:', err);
+    }
   },
 
   clearToday: () => {

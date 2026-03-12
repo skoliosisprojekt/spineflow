@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   View, Text, ScrollView, Pressable, StyleSheet,
@@ -19,7 +19,8 @@ import {
 } from '../lib/workoutGenerator';
 import { runAIWorkoutGeneration } from '../lib/aiAnalysis';
 import { useNetwork } from '../lib/network';
-import { lightTheme as C } from '../lib/theme';
+import { useTheme } from '../lib/theme';
+import type { ThemeColors } from '../lib/theme';
 import { exercises as allExercises } from '../data/exercises';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -36,16 +37,11 @@ const DURATION_COUNTS: Record<Duration, string> = {
 
 const MUSCLE_IDS = ['all', 'back', 'chest', 'legs', 'shoulders', 'arms', 'core'] as const;
 
-const CATEGORY_COLORS: Record<string, string> = {
-  activation: C.blue,
-  compound:   C.accent,
-  isolation:  C.text3,
-  core:       C.purple,
-};
-
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function PlannerScreen() {
+  const C = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const router  = useRouter();
   const { t } = useTranslation();
   const profile = useProfileStore();
@@ -374,7 +370,10 @@ function ExerciseCard({
   index: number;
   onRemove: () => void;
 }) {
+  const C = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { t } = useTranslation();
+  const CATEGORY_COLORS: Record<string, string> = { activation: C.blue, compound: C.accent, isolation: C.text3, core: C.purple };
   const catColor = CATEGORY_COLORS[ex.category] ?? C.text3;
   const catLabel = t(`planner.${ex.category}`, { defaultValue: ex.category });
 
@@ -464,7 +463,8 @@ function ExerciseCard({
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const s = StyleSheet.create({
+function makeStyles(C: ThemeColors) {
+  return StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: C.bg,
@@ -872,4 +872,5 @@ const s = StyleSheet.create({
     paddingVertical: 2,
     overflow: 'hidden',
   },
-});
+  });
+}

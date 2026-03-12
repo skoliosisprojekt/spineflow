@@ -18,6 +18,8 @@ interface WorkoutState {
   exercises: WorkoutExercise[];
   /** Whether a workout is actively in progress */
   isActive: boolean;
+  /** Unix ms timestamp of when the current workout was started (null when not active) */
+  workoutStartTime: number | null;
 
   addExercise: (exerciseId: number, defaultSets?: number) => boolean;
   removeExercise: (exerciseId: number) => void;
@@ -39,6 +41,7 @@ const PENDING_KEY  = 'spineflow_next_workout_pending';
 export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   exercises: [],
   isActive: false,
+  workoutStartTime: null,
 
   addExercise: (exerciseId: number, defaultSets = 3) => {
     const state = get();
@@ -51,8 +54,10 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       addedAt: Date.now(),
     };
     const updated = [...state.exercises, entry];
-    set({ exercises: updated, isActive: true });
+    const startTime = get().workoutStartTime ?? Date.now();
+    set({ exercises: updated, isActive: true, workoutStartTime: startTime });
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated)).catch(() => {});
+    AsyncStorage.setItem(STORAGE_KEY + '_start', String(startTime)).catch(() => {});
     return true;
   },
 
@@ -108,12 +113,15 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   },
 
   clearWorkout: () => {
-    set({ exercises: [], isActive: false });
+    set({ exercises: [], isActive: false, workoutStartTime: null });
     AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
+    AsyncStorage.removeItem(STORAGE_KEY + '_start').catch(() => {});
   },
 
   startWorkout: () => {
-    set({ isActive: true });
+    const startTime = get().workoutStartTime ?? Date.now();
+    set({ isActive: true, workoutStartTime: startTime });
+    AsyncStorage.setItem(STORAGE_KEY + '_start', String(startTime)).catch(() => {});
   },
 
   loadWorkout: async () => {
@@ -145,7 +153,12 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
 
       if (exercises.length > 0) {
         // isActive=true only for resumed sessions; pending-only = preview (not started)
-        set({ exercises, isActive: hadActiveSession });
+        let workoutStartTime: number | null = null;
+        if (hadActiveSession) {
+          const storedStart = await AsyncStorage.getItem(STORAGE_KEY + '_start');
+          workoutStartTime = storedStart ? Number(storedStart) : Date.now();
+        }
+        set({ exercises, isActive: hadActiveSession, workoutStartTime });
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(exercises));
       }
     } catch {}
@@ -155,13 +168,9 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     try {
       const raw = await AsyncStorage.getItem(PENDING_KEY);
       const pending: PendingExercise[] = raw ? JSON.parse(raw) : [];
-      console.log('[WorkoutStore] saveForNext: existing pending=', pending.length, 'adding exerciseId=', exerciseId);
       if (!pending.some((p) => p.exerciseId === exerciseId)) {
         pending.push({ exerciseId, numSets, weight });
         await AsyncStorage.setItem(PENDING_KEY, JSON.stringify(pending));
-        console.log('[WorkoutStore] saveForNext: saved. total pending=', pending.length);
-      } else {
-        console.log('[WorkoutStore] saveForNext: already in pending, skipped');
       }
     } catch (e) { console.error('[WorkoutStore] saveForNext error:', e); }
   },

@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { useTheme } from '../lib/theme';
+import type { ThemeColors } from '../lib/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
@@ -8,15 +10,18 @@ import { supabase } from '../lib/supabase';
 const CURRENT_VERSION = '1.0';
 
 export default function ConsentScreen() {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const [tosAccepted, setTosAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
+  const [ageAccepted, setAgeAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const { setConsentGiven, userId } = useAuthStore();
   const { t } = useTranslation();
 
-  const allAccepted = tosAccepted && privacyAccepted && disclaimerAccepted;
+  const allAccepted = tosAccepted && privacyAccepted && disclaimerAccepted && ageAccepted;
 
   const handleContinue = async () => {
     if (!allAccepted) return;
@@ -141,6 +146,22 @@ export default function ConsentScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Age Confirmation */}
+        <TouchableOpacity
+          style={styles.ageCheckboxRow}
+          onPress={() => setAgeAccepted(!ageAccepted)}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: ageAccepted }}
+          accessibilityLabel="I confirm I am at least 18 years old"
+        >
+          <MaterialIcons
+            name={ageAccepted ? 'check-box' : 'check-box-outline-blank'}
+            size={24}
+            color={ageAccepted ? '#00B894' : '#8E8E93'}
+          />
+          <Text style={styles.ageCheckboxLabel}>{t('consent.ageConfirmLabel')}</Text>
+        </TouchableOpacity>
+
         {/* Continue Button */}
         <TouchableOpacity
           style={[styles.button, !allAccepted && styles.buttonDisabled]}
@@ -158,95 +179,35 @@ export default function ConsentScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F2F2F7',
-  },
-  scrollContent: {
-    padding: 24,
-    paddingTop: 60,
-    paddingBottom: 40,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: '#1C1C1E',
-    marginTop: 12,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#8E8E93',
-    textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 20,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  disclaimerCard: {
-    borderWidth: 1,
-    borderColor: '#FFF0EF',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1C1C1E',
-    marginLeft: 8,
-  },
-  legalText: {
-    backgroundColor: '#F9F9FB',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-  },
-  legalContent: {
-    fontSize: 12,
-    color: '#3C3C43',
-    lineHeight: 18,
-  },
-  checkboxRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 48,
-  },
-  checkboxLabel: {
-    fontSize: 14,
-    color: '#1C1C1E',
-    marginLeft: 8,
-    fontWeight: '500',
-  },
-  button: {
-    backgroundColor: '#00B894',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 8,
-    minHeight: 48,
-  },
-  buttonDisabled: {
-    backgroundColor: '#AEAEB2',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
+function makeStyles(C: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.bg },
+    scrollContent: { padding: 24, paddingTop: 60, paddingBottom: 40 },
+    header: { alignItems: 'center', marginBottom: 24 },
+    title: { fontSize: 26, fontWeight: '700', color: C.text, marginTop: 12 },
+    subtitle: { fontSize: 14, color: C.text3, textAlign: 'center', marginTop: 8, lineHeight: 20 },
+    card: {
+      backgroundColor: C.card, borderRadius: 16, padding: 16, marginBottom: 16,
+      shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.04, shadowRadius: 3, elevation: 1,
+    },
+    disclaimerCard: { borderWidth: 1, borderColor: C.redLight },
+    cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+    cardTitle: { fontSize: 16, fontWeight: '600', color: C.text, marginLeft: 8 },
+    legalText: { backgroundColor: C.sepLight, borderRadius: 8, padding: 12, marginBottom: 12 },
+    legalContent: { fontSize: 12, color: C.text2, lineHeight: 18 },
+    checkboxRow: { flexDirection: 'row', alignItems: 'center', minHeight: 48 },
+    checkboxLabel: { fontSize: 14, color: C.text, marginLeft: 8, fontWeight: '500' },
+    button: { backgroundColor: C.accent, borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 8, minHeight: 48 },
+    buttonDisabled: { backgroundColor: C.text4 },
+    buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
+    ageCheckboxRow: {
+      flexDirection: 'row', alignItems: 'center', minHeight: 52,
+      backgroundColor: C.card, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14,
+      marginBottom: 16, borderWidth: 2, borderColor: C.accent,
+      shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.04, shadowRadius: 3, elevation: 1,
+    },
+    ageCheckboxLabel: { fontSize: 14, color: C.text, marginLeft: 10, fontWeight: '600', flex: 1 },
+  });
+}

@@ -291,8 +291,6 @@ export async function runAIAnalysis(params: AIAnalysisParams): Promise<AIAnalysi
 
   // The Edge Function returns the raw text with optional <adjustments> block
   const rawText = typeof data === 'string' ? data : (data?.analysis || data?.text || JSON.stringify(data));
-  console.log('[AI analyse] rawText preview:', rawText?.slice(-300));
   const result = parseResponse(rawText);
-  console.log('[AI analyse] adjustments parsed:', result.adjustments.length, JSON.stringify(result.adjustments));
   return result;
 }

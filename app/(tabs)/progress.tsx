@@ -1,5 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { useTheme } from '../../lib/theme';
+import type { ThemeColors } from '../../lib/theme';
 import ErrorBoundary from '../../components/ErrorBoundary';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +15,8 @@ import { EmptyChart } from '../../components/animations';
 const WEEKDAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
 function StatCard({ icon, value, label, color }: { icon: keyof typeof MaterialIcons.glyphMap; value: string; label: string; color: string }) {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   return (
     <View style={styles.statCard}>
       <MaterialIcons name={icon} size={22} color={color} />
@@ -23,6 +27,8 @@ function StatCard({ icon, value, label, color }: { icon: keyof typeof MaterialIc
 }
 
 function VolumeTrendChart({ workouts }: { workouts: WorkoutRecord[] }) {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { t } = useTranslation();
 
   const data = useMemo(() => {
@@ -136,6 +142,8 @@ interface CalendarProps {
 }
 
 function TrainingCalendar({ workoutDays, selectedDate, onSelectDate }: CalendarProps) {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { t } = useTranslation();
   const [viewDate, setViewDate] = useState(() => new Date());
   const year = viewDate.getFullYear();
@@ -164,11 +172,11 @@ function TrainingCalendar({ workoutDays, selectedDate, onSelectDate }: CalendarP
       {/* Month Nav */}
       <View style={styles.calNav}>
         <Pressable onPress={prevMonth} hitSlop={8} accessibilityRole="button" accessibilityLabel="Previous month">
-          <MaterialIcons name="chevron-left" size={24} color="#1C1C1E" />
+          <MaterialIcons name="chevron-left" size={24} color={C.text} />
         </Pressable>
         <Text style={styles.calMonthLabel}>{monthLabel}</Text>
         <Pressable onPress={nextMonth} hitSlop={8} accessibilityRole="button" accessibilityLabel="Next month" style={{ opacity: canGoNext ? 1 : 0.25 }}>
-          <MaterialIcons name="chevron-right" size={24} color="#1C1C1E" />
+          <MaterialIcons name="chevron-right" size={24} color={C.text} />
         </Pressable>
       </View>
 
@@ -207,7 +215,7 @@ function TrainingCalendar({ workoutDays, selectedDate, onSelectDate }: CalendarP
                 <Text style={[
                   styles.calDayText,
                   isSelected && styles.calDayTextSelected,
-                  isFuture && { color: '#CFCFD2' },
+                  isFuture && { color: C.text4 },
                 ]}>
                   {day}
                 </Text>
@@ -224,6 +232,8 @@ function TrainingCalendar({ workoutDays, selectedDate, onSelectDate }: CalendarP
 }
 
 function DayDetail({ records, dateKey, onDelete }: { records: WorkoutRecord[]; dateKey: string; onDelete: (id: string) => void }) {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { t } = useTranslation();
   const parts = dateKey.split('-');
   const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
@@ -234,7 +244,7 @@ function DayDetail({ records, dateKey, onDelete }: { records: WorkoutRecord[]; d
       <View style={styles.dayDetailCard}>
         <Text style={styles.dayDetailDate}>{label}</Text>
         <View style={styles.dayDetailEmpty}>
-          <MaterialIcons name="event-busy" size={28} color="#CFCFD2" />
+          <MaterialIcons name="event-busy" size={28} color={C.text4} />
           <Text style={styles.dayDetailEmptyText}>{t('progress.restDay')}</Text>
         </View>
       </View>
@@ -254,10 +264,10 @@ function DayDetail({ records, dateKey, onDelete }: { records: WorkoutRecord[]; d
               <Text style={styles.dayWorkoutTime}>{time}</Text>
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <Pressable onPress={() => shareWorkout(rec)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Export workout">
-                  <MaterialIcons name="share" size={16} color="#00B894" />
+                  <MaterialIcons name="share" size={16} color={C.accent} />
                 </Pressable>
                 <Pressable onPress={() => onDelete(rec.id)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Delete workout">
-                  <MaterialIcons name="delete-outline" size={16} color="#AEAEB2" />
+                  <MaterialIcons name="delete-outline" size={16} color={C.text4} />
                 </Pressable>
               </View>
             </View>
@@ -363,6 +373,8 @@ for (const ex of allExercises) {
 }
 
 function MuscleBalance({ workouts, curveType, goal }: { workouts: WorkoutRecord[]; curveType: CurveType; goal: GoalType }) {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { t } = useTranslation();
   const recommendations = getRecommendedSets(curveType, goal);
 
@@ -413,7 +425,7 @@ function MuscleBalance({ workouts, curveType, goal }: { workouts: WorkoutRecord[
           <View key={muscle} style={styles.balanceRow}>
             <View style={styles.balanceRowTop}>
               <View style={styles.balanceMuscleInfo}>
-                <MaterialIcons name={MUSCLE_ICONS[muscle]} size={16} color="#3C3C43" />
+                <MaterialIcons name={MUSCLE_ICONS[muscle]} size={16} color={C.text2} />
                 <Text style={styles.balanceMuscleName}>{t(MUSCLE_LABEL_KEYS[muscle])}</Text>
                 {rec.priority !== 'normal' && (
                   <View style={[styles.balancePriorityBadge, { backgroundColor: priorityColor + '18' }]}>
@@ -503,6 +515,8 @@ function formatPRDate(iso: string): string {
 }
 
 function PersonalRecords({ workouts }: { workouts: WorkoutRecord[] }) {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { t } = useTranslation();
   const prs = useMemo(() => computePRs(workouts), [workouts]);
 
@@ -576,6 +590,8 @@ export default function ProgressScreenWrapper() {
 }
 
 function ProgressScreen() {
+  const C = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { t } = useTranslation();
   const { workouts, loadHistory, deleteWorkout } = useHistoryStore();
   const { curveType, goal } = useProfileStore();
@@ -710,10 +726,10 @@ function ProgressScreen() {
                     <Text style={styles.historyDate}>{dateStr}</Text>
                     <View style={{ flexDirection: 'row', gap: 12 }}>
                       <Pressable onPress={() => shareWorkout(w)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Export workout">
-                        <MaterialIcons name="share" size={16} color="#00B894" />
+                        <MaterialIcons name="share" size={16} color={C.accent} />
                       </Pressable>
                       <Pressable onPress={() => deleteWorkout(w.id)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Delete workout">
-                        <MaterialIcons name="delete-outline" size={18} color="#AEAEB2" />
+                        <MaterialIcons name="delete-outline" size={18} color={C.text4} />
                       </Pressable>
                     </View>
                   </View>
@@ -733,125 +749,103 @@ function ProgressScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2F2F7' },
-  header: { paddingTop: 60, paddingHorizontal: 24, paddingBottom: 8 },
-  title: { fontSize: 26, fontWeight: '700', color: '#1C1C1E' },
-  scrollContent: { paddingHorizontal: 16, paddingBottom: 100 },
-
-  // Stats
-  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
-  statCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, alignItems: 'center', gap: 4 },
-  statValue: { fontSize: 20, fontWeight: '800' },
-  statLabel: { fontSize: 11, fontWeight: '600', color: '#8E8E93', textTransform: 'uppercase' },
-
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1C1C1E', marginTop: 12, marginBottom: 12, paddingHorizontal: 4 },
-
-  // Calendar
-  calCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12 },
-  calNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-  calMonthLabel: { fontSize: 16, fontWeight: '700', color: '#1C1C1E' },
-  calWeekRow: { flexDirection: 'row' },
-  calWeekday: { flex: 1, textAlign: 'center', fontSize: 11, fontWeight: '600', color: '#8E8E93', marginBottom: 8 },
-  calDayCell: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 8, minHeight: 42 },
-  calDaySelected: { backgroundColor: '#00B894', borderRadius: 10 },
-  calDayToday: { backgroundColor: '#E8FAF5', borderRadius: 10 },
-  calDayText: { fontSize: 14, fontWeight: '600', color: '#1C1C1E' },
-  calDayTextSelected: { color: '#FFFFFF' },
-  calDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#00B894', marginTop: 3 },
-  calDotSelected: { backgroundColor: '#FFFFFF' },
-
-  // Day Detail
-  dayDetailCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginTop: 4, marginBottom: 12 },
-  dayDetailDate: { fontSize: 16, fontWeight: '700', color: '#1C1C1E', marginBottom: 2 },
-  dayDetailCount: { fontSize: 12, color: '#8E8E93', marginBottom: 12 },
-  dayDetailEmpty: { alignItems: 'center', paddingVertical: 20, gap: 6 },
-  dayDetailEmptyText: { fontSize: 13, color: '#AEAEB2' },
-
-  dayWorkout: { borderTopWidth: 1, borderTopColor: '#F2F2F7', paddingTop: 12, marginTop: 8 },
-  dayWorkoutHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  dayWorkoutTime: { fontSize: 12, fontWeight: '600', color: '#8E8E93' },
-
-  dayExRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
-  dayExDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#00B894' },
-  dayExName: { flex: 1, fontSize: 13, fontWeight: '600', color: '#1C1C1E' },
-  dayExMeta: { fontSize: 12, color: '#8E8E93', fontWeight: '500' },
-
-  dayWorkoutStats: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10, backgroundColor: '#F2F2F7', borderRadius: 8, padding: 8 },
-  dayWorkoutStat: { fontSize: 12, fontWeight: '600', color: '#3C3C43' },
-  dayWorkoutStatDot: { fontSize: 12, color: '#AEAEB2' },
-
-  // Muscle Balance
-  balanceCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12 },
-  balanceHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
-  balanceTitle: { fontSize: 15, fontWeight: '700', color: '#1C1C1E', flex: 1 },
-  balancePeriod: { fontSize: 11, fontWeight: '600', color: '#8E8E93' },
-  balanceRow: { marginBottom: 14 },
-  balanceRowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 },
-  balanceMuscleInfo: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  balanceMuscleName: { fontSize: 13, fontWeight: '600', color: '#1C1C1E' },
-  balancePriorityBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  balancePriorityText: { fontSize: 9, fontWeight: '700', textTransform: 'uppercase' },
-  balanceSetsText: { fontSize: 12, fontWeight: '600', color: '#8E8E93' },
-  balanceBarTrack: { height: 6, backgroundColor: '#F2F2F7', borderRadius: 3, overflow: 'hidden' },
-  balanceBarFill: { height: 6, borderRadius: 3 },
-  balanceHint: { fontSize: 11, fontWeight: '500', marginTop: 3 },
-
-  // History Card (compact)
-  historyCard: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, marginBottom: 8 },
-  historyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  historyDate: { fontSize: 14, fontWeight: '700', color: '#1C1C1E' },
-  historyExercises: { fontSize: 12, color: '#8E8E93', lineHeight: 16, marginBottom: 8 },
-  historyStats: { backgroundColor: '#F2F2F7', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
-  historyMiniStat: { fontSize: 12, fontWeight: '600', color: '#3C3C43' },
-
-  // Tab Bar
-  tabBar: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 8, backgroundColor: '#E5E5EA', borderRadius: 10, padding: 3 },
-  tabBtn: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 8 },
-  tabBtnActive: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 2, elevation: 2 },
-  tabBtnText: { fontSize: 13, fontWeight: '600', color: '#8E8E93' },
-  tabBtnTextActive: { color: '#1C1C1E' },
-
-  // Personal Records
-  prEmpty: { alignItems: 'center', paddingTop: 60, gap: 8 },
-  prEmptyTitle: { fontSize: 18, fontWeight: '600', color: '#1C1C1E' },
-  prEmptyText: { fontSize: 14, color: '#8E8E93', textAlign: 'center', maxWidth: 260, lineHeight: 20 },
-
-  prCard: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10 },
-  prCardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  prName: { fontSize: 15, fontWeight: '700', color: '#1C1C1E' },
-  prMuscle: { fontSize: 12, color: '#8E8E93', marginTop: 2 },
-
-  prStatsRow: { flexDirection: 'row', gap: 8 },
-  prStatBox: { flex: 1, backgroundColor: '#F2F2F7', borderRadius: 10, padding: 10, alignItems: 'center', gap: 3 },
-  prStatIconRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 },
-  prStatLabel: { fontSize: 10, fontWeight: '600', color: '#8E8E93', textTransform: 'uppercase' },
-  prStatValue: { fontSize: 16, fontWeight: '800', color: '#1C1C1E' },
-  prStatDate: { fontSize: 10, fontWeight: '500', color: '#AEAEB2' },
-
-  // Empty state
-  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#1C1C1E', marginTop: 16 },
-  emptyText: { fontSize: 14, color: '#8E8E93', textAlign: 'center', marginTop: 8, lineHeight: 20, maxWidth: 260 },
-
-  // Volume Trend Chart
-  trendCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12 },
-  trendHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-  trendTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  trendTitle: { fontSize: 15, fontWeight: '700', color: '#1C1C1E' },
-  trendPeriod: { fontSize: 11, fontWeight: '600', color: '#8E8E93' },
-  trendEmpty: { alignItems: 'center', paddingVertical: 24, gap: 8 },
-  trendEmptyText: { fontSize: 13, color: '#AEAEB2', textAlign: 'center' },
-  trendSummaryRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, backgroundColor: '#F2F2F7', borderRadius: 10, padding: 12 },
-  trendSummaryItem: { flex: 1, alignItems: 'center' },
-  trendSummaryValue: { fontSize: 16, fontWeight: '800', color: '#1C1C1E' },
-  trendSummaryLabel: { fontSize: 10, fontWeight: '600', color: '#8E8E93', textTransform: 'uppercase', marginTop: 2 },
-  trendSummaryDivider: { width: 1, height: 28, backgroundColor: '#E5E5EA' },
-  trendChartArea: { flexDirection: 'row', alignItems: 'flex-end', height: 130, gap: 2 },
-  trendBarCol: { flex: 1, alignItems: 'center' },
-  trendBarWrapper: { alignItems: 'center', justifyContent: 'flex-end', height: 110 },
-  trendBar: { width: '70%', minWidth: 6, borderRadius: 3 },
-  trendBarValue: { fontSize: 8, fontWeight: '600', color: '#8E8E93', marginBottom: 2 },
-  trendBarLabel: { fontSize: 9, fontWeight: '600', color: '#8E8E93', marginTop: 4 },
-  trendBarLabelHidden: { opacity: 0 },
-});
+function makeStyles(C: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.bg },
+    header: { paddingTop: 60, paddingHorizontal: 24, paddingBottom: 8 },
+    title: { fontSize: 26, fontWeight: '700', color: C.text },
+    scrollContent: { paddingHorizontal: 16, paddingBottom: 100 },
+    statsRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+    statCard: { flex: 1, backgroundColor: C.card, borderRadius: 14, padding: 14, alignItems: 'center', gap: 4 },
+    statValue: { fontSize: 20, fontWeight: '800' },
+    statLabel: { fontSize: 11, fontWeight: '600', color: C.text3, textTransform: 'uppercase' },
+    sectionTitle: { fontSize: 18, fontWeight: '700', color: C.text, marginTop: 12, marginBottom: 12, paddingHorizontal: 4 },
+    calCard: { backgroundColor: C.card, borderRadius: 16, padding: 16, marginBottom: 12 },
+    calNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+    calMonthLabel: { fontSize: 16, fontWeight: '700', color: C.text },
+    calWeekRow: { flexDirection: 'row' },
+    calWeekday: { flex: 1, textAlign: 'center', fontSize: 11, fontWeight: '600', color: C.text3, marginBottom: 8 },
+    calDayCell: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 8, minHeight: 42 },
+    calDaySelected: { backgroundColor: C.accent, borderRadius: 10 },
+    calDayToday: { backgroundColor: C.accentLight, borderRadius: 10 },
+    calDayText: { fontSize: 14, fontWeight: '600', color: C.text },
+    calDayTextSelected: { color: '#FFFFFF' },
+    calDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.accent, marginTop: 3 },
+    calDotSelected: { backgroundColor: '#FFFFFF' },
+    dayDetailCard: { backgroundColor: C.card, borderRadius: 16, padding: 16, marginTop: 4, marginBottom: 12 },
+    dayDetailDate: { fontSize: 16, fontWeight: '700', color: C.text, marginBottom: 2 },
+    dayDetailCount: { fontSize: 12, color: C.text3, marginBottom: 12 },
+    dayDetailEmpty: { alignItems: 'center', paddingVertical: 20, gap: 6 },
+    dayDetailEmptyText: { fontSize: 13, color: C.text4 },
+    dayWorkout: { borderTopWidth: 1, borderTopColor: C.bg, paddingTop: 12, marginTop: 8 },
+    dayWorkoutHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+    dayWorkoutTime: { fontSize: 12, fontWeight: '600', color: C.text3 },
+    dayExRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
+    dayExDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.accent },
+    dayExName: { flex: 1, fontSize: 13, fontWeight: '600', color: C.text },
+    dayExMeta: { fontSize: 12, color: C.text3, fontWeight: '500' },
+    dayWorkoutStats: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10, backgroundColor: C.bg, borderRadius: 8, padding: 8 },
+    dayWorkoutStat: { fontSize: 12, fontWeight: '600', color: C.text2 },
+    dayWorkoutStatDot: { fontSize: 12, color: C.text4 },
+    balanceCard: { backgroundColor: C.card, borderRadius: 16, padding: 16, marginBottom: 12 },
+    balanceHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+    balanceTitle: { fontSize: 15, fontWeight: '700', color: C.text, flex: 1 },
+    balancePeriod: { fontSize: 11, fontWeight: '600', color: C.text3 },
+    balanceRow: { marginBottom: 14 },
+    balanceRowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 },
+    balanceMuscleInfo: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    balanceMuscleName: { fontSize: 13, fontWeight: '600', color: C.text },
+    balancePriorityBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+    balancePriorityText: { fontSize: 9, fontWeight: '700', textTransform: 'uppercase' },
+    balanceSetsText: { fontSize: 12, fontWeight: '600', color: C.text3 },
+    balanceBarTrack: { height: 6, backgroundColor: C.bg, borderRadius: 3, overflow: 'hidden' },
+    balanceBarFill: { height: 6, borderRadius: 3 },
+    balanceHint: { fontSize: 11, fontWeight: '500', marginTop: 3 },
+    historyCard: { backgroundColor: C.card, borderRadius: 14, padding: 14, marginBottom: 8 },
+    historyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+    historyDate: { fontSize: 14, fontWeight: '700', color: C.text },
+    historyExercises: { fontSize: 12, color: C.text3, lineHeight: 16, marginBottom: 8 },
+    historyStats: { backgroundColor: C.bg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+    historyMiniStat: { fontSize: 12, fontWeight: '600', color: C.text2 },
+    tabBar: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 8, backgroundColor: C.sep, borderRadius: 10, padding: 3 },
+    tabBtn: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 8 },
+    tabBtnActive: { backgroundColor: C.card, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 2, elevation: 2 },
+    tabBtnText: { fontSize: 13, fontWeight: '600', color: C.text3 },
+    tabBtnTextActive: { color: C.text },
+    prEmpty: { alignItems: 'center', paddingTop: 60, gap: 8 },
+    prEmptyTitle: { fontSize: 18, fontWeight: '600', color: C.text },
+    prEmptyText: { fontSize: 14, color: C.text3, textAlign: 'center', maxWidth: 260, lineHeight: 20 },
+    prCard: { backgroundColor: C.card, borderRadius: 14, padding: 16, marginBottom: 10 },
+    prCardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+    prName: { fontSize: 15, fontWeight: '700', color: C.text },
+    prMuscle: { fontSize: 12, color: C.text3, marginTop: 2 },
+    prStatsRow: { flexDirection: 'row', gap: 8 },
+    prStatBox: { flex: 1, backgroundColor: C.bg, borderRadius: 10, padding: 10, alignItems: 'center', gap: 3 },
+    prStatIconRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 },
+    prStatLabel: { fontSize: 10, fontWeight: '600', color: C.text3, textTransform: 'uppercase' },
+    prStatValue: { fontSize: 16, fontWeight: '800', color: C.text },
+    prStatDate: { fontSize: 10, fontWeight: '500', color: C.text4 },
+    empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+    emptyTitle: { fontSize: 18, fontWeight: '600', color: C.text, marginTop: 16 },
+    emptyText: { fontSize: 14, color: C.text3, textAlign: 'center', marginTop: 8, lineHeight: 20, maxWidth: 260 },
+    trendCard: { backgroundColor: C.card, borderRadius: 16, padding: 16, marginBottom: 12 },
+    trendHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+    trendTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    trendTitle: { fontSize: 15, fontWeight: '700', color: C.text },
+    trendPeriod: { fontSize: 11, fontWeight: '600', color: C.text3 },
+    trendEmpty: { alignItems: 'center', paddingVertical: 24, gap: 8 },
+    trendEmptyText: { fontSize: 13, color: C.text4, textAlign: 'center' },
+    trendSummaryRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, backgroundColor: C.bg, borderRadius: 10, padding: 12 },
+    trendSummaryItem: { flex: 1, alignItems: 'center' },
+    trendSummaryValue: { fontSize: 16, fontWeight: '800', color: C.text },
+    trendSummaryLabel: { fontSize: 10, fontWeight: '600', color: C.text3, textTransform: 'uppercase', marginTop: 2 },
+    trendSummaryDivider: { width: 1, height: 28, backgroundColor: C.sep },
+    trendChartArea: { flexDirection: 'row', alignItems: 'flex-end', height: 130, gap: 2 },
+    trendBarCol: { flex: 1, alignItems: 'center' },
+    trendBarWrapper: { alignItems: 'center', justifyContent: 'flex-end', height: 110 },
+    trendBar: { width: '70%', minWidth: 6, borderRadius: 3 },
+    trendBarValue: { fontSize: 8, fontWeight: '600', color: C.text3, marginBottom: 2 },
+    trendBarLabel: { fontSize: 9, fontWeight: '600', color: C.text3, marginTop: 4 },
+    trendBarLabelHidden: { opacity: 0 },
+  });
+}
